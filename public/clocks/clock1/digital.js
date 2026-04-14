@@ -1,6 +1,7 @@
 (function (global) {
-  const COLS = 30;
-  const ROWS = 18;
+  const COLS = 40;
+  const ROWS = 24;
+  const MASK_CELL_PX = 16;
   const CELL_STATE = Array.from({ length: COLS * ROWS }, () => ({
     front: false,
     anim: null,
@@ -31,8 +32,8 @@
 
   function buildMask(text, family) {
     const maskCanvas = document.createElement("canvas");
-    maskCanvas.width = COLS * 18;
-    maskCanvas.height = ROWS * 18;
+    maskCanvas.width = COLS * MASK_CELL_PX;
+    maskCanvas.height = ROWS * MASK_CELL_PX;
     const maskCtx = maskCanvas.getContext("2d");
     maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
     maskCtx.fillStyle = "#000";
@@ -141,7 +142,7 @@
 
     const stepX = w / (COLS + 2);
     const stepY = h / (ROWS + 2);
-    const radius = Math.min(stepX, stepY) * 0.42;
+    const radius = Math.min(stepX, stepY) * 0.34;
     const offsetX = (w - stepX * (COLS - 1)) / 2;
     const offsetY = (h - stepY * (ROWS - 1)) / 2;
 
