@@ -1,44 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clock App</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyClock</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="ui-bar">
-    <button id="settings-btn" title="Settings">⚙</button>
+    <button id="settings-btn" type="button" title="Settings" aria-label="Open settings">&#9881;</button>
     <div id="settings-panel" class="hidden">
-  <!-- Preview is rendered on the main canvas when settings are open -->
-
       <div class="settings-group">
-        <label>Clock Style:</label>
-        <button id="clock-style-prev">◀</button>
-        <span id="clock-style-label">Digital</span>
-        <button id="clock-style-next">▶</button>
+        <label for="clock-style-label">Clock Style:</label>
+        <button id="clock-style-prev" type="button" aria-label="Previous clock style">&#9664;</button>
+        <span id="clock-style-label">Clock 1</span>
+        <button id="clock-style-next" type="button" aria-label="Next clock style">&#9654;</button>
       </div>
 
       <div class="settings-group">
         <label>Font Color:</label>
-        <div style="height:10px;"></div>
-        <div style="display:none;">
-          <!-- font mode selector removed; half-swatch controls gradient editing -->
-        </div>
         <div id="color-options"></div>
-        <div id="font-special-swatches" style="margin-top:8px; display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <!-- half-swatch shows two colors split in a circle; clicking activates gradient editing for font -->
-            <button id="font-half-swatch" title="Half / Half font color" style="border:none;background:transparent;cursor:pointer;padding:0;margin-left:6px;"></button>
+        <div id="font-special-swatches">
+          <div class="font-special-row">
+            <button id="font-half-swatch" type="button" title="Edit gradient font color" aria-label="Edit gradient font color"></button>
           </div>
           <div id="font-gradient-controls" class="gradient-controls hidden">
-            <input type="color" id="font-grad-c1">
-            <input type="color" id="font-grad-c2">
-            <select id="font-grad-pattern">
+            <input type="color" id="font-grad-c1" aria-label="Gradient color 1" />
+            <input type="color" id="font-grad-c2" aria-label="Gradient color 2" />
+            <select id="font-grad-pattern" aria-label="Gradient direction">
               <option value="vertical">Vertical</option>
               <option value="horizontal">Horizontal</option>
-              <option value="diag-tlbr">Diagonal TL→BR</option>
-              <option value="diag-bltr">Diagonal BL→TR</option>
+              <option value="diag-tlbr">Diagonal TL-BR</option>
+              <option value="diag-bltr">Diagonal BL-TR</option>
               <option value="radial">Radial</option>
             </select>
           </div>
@@ -47,17 +40,12 @@
 
       <div class="settings-group">
         <label>Size:</label>
-        <button id="size-minus">−</button>
+        <button id="size-minus" type="button" aria-label="Decrease size">&minus;</button>
         <span id="size-label">180</span>
-        <button id="size-plus">＋</button>
+        <button id="size-plus" type="button" aria-label="Increase size">&#65291;</button>
       </div>
 
-      
-
-      <!-- Mode toggle removed per user request -->
-
-      <button id="apply-btn">Confirm Change</button>
-      <!-- Back + Warning are injected by JS -->
+      <button id="apply-btn" type="button">Confirm Change</button>
     </div>
   </div>
 

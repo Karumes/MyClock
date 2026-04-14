@@ -1,656 +1,456 @@
-// renderer.js
-// ===========
-// Clock App
-// ===========
-
-// ------------------
-// 初期設定
-// ------------------
 const canvas = document.getElementById("clockCanvas");
 const ctx = canvas.getContext("2d");
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-// 設定ボタン & パネル
 const settingsBtn = document.getElementById("settings-btn");
 const settingsPanel = document.getElementById("settings-panel");
-
-// パネル内UI
 const stylePrevBtn = document.getElementById("clock-style-prev");
 const styleNextBtn = document.getElementById("clock-style-next");
 const styleLabel = document.getElementById("clock-style-label");
-
 const colorOptionsDiv = document.getElementById("color-options");
-// removed background color panel element to hide background controls from settings
-// const bgColorOptionsDiv = document.getElementById("bg-color-options");
-
-// gradient controls
-const fontGradC1 = document.getElementById('font-grad-c1');
-const fontGradC2 = document.getElementById('font-grad-c2');
-const fontGradPattern = document.getElementById('font-grad-pattern');
-// background gradient inputs are no longer used; keep variables only if DOM exists but do not use them
-const bgGradC1 = document.getElementById('bg-grad-c1');
-const bgGradC2 = document.getElementById('bg-grad-c2');
-const bgGradPattern = document.getElementById('bg-grad-pattern');
-
+const fontHalfSwatchBtn = document.getElementById("font-half-swatch");
+const fontGradientControls = document.getElementById("font-gradient-controls");
+const fontGradC1 = document.getElementById("font-grad-c1");
+const fontGradC2 = document.getElementById("font-grad-c2");
+const fontGradPattern = document.getElementById("font-grad-pattern");
 const sizeMinusBtn = document.getElementById("size-minus");
 const sizePlusBtn = document.getElementById("size-plus");
 const sizeLabel = document.getElementById("size-label");
-
 const applyBtn = document.getElementById("apply-btn");
 
-// (Preview removed from DOM) preview will render on the main canvas while settings are open
-
-// ------------------
-// 時計スタイル
-// ------------------
 const clockStyles = ["Clock 1", "Clock 2", "Clock 3", "Clock 4", "Clock 5", "Clock 6", "Clock 7", "Clock 8"];
-let currentStyleIndex = 0;
+const palette = [
+  "#2196f3", "#ff4081", "#ff9800", "#ffffff", "#00ff88",
+  "#ffd600", "#8e24aa", "#00bcd4", "#4caf50", "#e91e63",
+  "#9e9d24", "#795548", "#607d8b", "#f06292", "#ff7043",
+  "#c2185b", "#7c4dff", "#03a9f4", "#388e3c", "#ffeb3b",
+  "#ad1457", "#00c853", "#b388ff", "#ff8a65", "#d500f9",
+  "#263238", "#ff5252", "#ffab00", "#304ffe", "#69f0ae",
+];
 
-// 選択状態（未保存の編集）
+const clockModules = {
+  0: { globalName: "renderClock1", src: "clocks/clock1/digital.js" },
+  1: { globalName: "renderClock2", src: "clocks/clock2/analog.js" },
+  2: { globalName: "renderClock3", src: "clocks/clock3/clock3.js" },
+  3: { globalName: "renderClock4", src: "clocks/clock4/clock4.js" },
+  4: { globalName: "renderClock5", src: "clocks/clock5/binary.js" },
+  5: { globalName: "renderClock6", src: "clocks/clock6/clock6.js" },
+  6: { globalName: "renderClock7", src: "clocks/clock7/clock7.js" },
+  7: { globalName: "renderClock8", src: "clocks/clock8/clock8.js" },
+};
+
 let editingSettings = {
-  styleIndex: currentStyleIndex,
-  color: "#ffffffff",
+  styleIndex: 0,
+  color: "#ffffff",
   size: 180,
-  // font/bg modes: 'solid' | 'gradient' | 'split' | 'transparent'
-  fontMode: 'solid',
-  fontGrad: ['#fff700ff', '#00e5ffff', 'vertical'],
-  // make background transparent by default and remove bg swatches from UI
-  bgMode: 'transparent',
+  fontMode: "solid",
+  fontGrad: ["#fff700", "#00e5ff", "vertical"],
+  bgMode: "transparent",
   bgGrad: [],
   clock6Speed: 1,
 };
 
-// 適用済み状態
-let appliedSettings = { ...editingSettings };
+let appliedSettings = cloneSettings(editingSettings);
+let hideSettingsBtnTimeout = null;
 
-// カラーパレット (expanded)
-const palette = [
-  "#2196f3","#ff4081","#ff9800","#ffffff","#00ff88",
-  "#ffd600","#8e24aa","#00bcd4","#4caf50","#e91e63",
-  "#9e9d24","#795548","#607d8b","#f06292","#ff7043",
-  "#c2185b","#7c4dff","#03a9f4","#388e3c","#ffeb3b",
-  "#ad1457","#00c853","#b388ff","#ff8a65","#d500f9",
-  "#263238","#ff5252","#ffab00","#304ffe","#69f0ae"
-];
+const offscreenCanvas = document.createElement("canvas");
+const offscreenCtx = offscreenCanvas.getContext("2d");
+const loadedScripts = new Map();
+
+function cloneSettings(settings) {
+  return {
+    ...settings,
+    fontGrad: Array.isArray(settings.fontGrad) ? [...settings.fontGrad] : [],
+    bgGrad: Array.isArray(settings.bgGrad) ? [...settings.bgGrad] : [],
+  };
+}
+
+function syncGlobalSettings() {
+  window.editingSettings = editingSettings;
+  window.appliedSettings = appliedSettings;
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  offscreenCanvas.width = canvas.width;
+  offscreenCanvas.height = canvas.height;
+}
+
+function isSettingsOpen() {
+  return !settingsPanel.classList.contains("hidden");
+}
+
+function makeGradient(targetCtx, width, height, c1, c2, pattern) {
+  if (pattern === "split") {
+    const tmp = document.createElement("canvas");
+    tmp.width = Math.max(1, width);
+    tmp.height = Math.max(1, height);
+    const tctx = tmp.getContext("2d");
+    tctx.fillStyle = c1;
+    tctx.fillRect(0, 0, Math.floor(width / 2), height);
+    tctx.fillStyle = c2;
+    tctx.fillRect(Math.floor(width / 2), 0, width - Math.floor(width / 2), height);
+    return targetCtx.createPattern(tmp, "no-repeat");
+  }
+
+  if (!pattern || pattern === "vertical") {
+    const gradient = targetCtx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, c1);
+    gradient.addColorStop(1, c2);
+    return gradient;
+  }
+
+  if (pattern === "horizontal") {
+    const gradient = targetCtx.createLinearGradient(0, 0, width, 0);
+    gradient.addColorStop(0, c1);
+    gradient.addColorStop(1, c2);
+    return gradient;
+  }
+
+  if (pattern === "diag-tlbr") {
+    const gradient = targetCtx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, c1);
+    gradient.addColorStop(1, c2);
+    return gradient;
+  }
+
+  if (pattern === "diag-bltr") {
+    const gradient = targetCtx.createLinearGradient(0, height, width, 0);
+    gradient.addColorStop(0, c1);
+    gradient.addColorStop(1, c2);
+    return gradient;
+  }
+
+  const radial = targetCtx.createRadialGradient(width / 2, height / 2, 1, width / 2, height / 2, Math.max(width, height));
+  radial.addColorStop(0, c1);
+  radial.addColorStop(1, c2);
+  return radial;
+}
+
+function getFontPaint(targetCtx, settings, width, height) {
+  if (settings.fontMode === "gradient" || settings.fontMode === "split") {
+    const [c1, c2, pattern] = settings.fontGrad || [settings.color, "#ffffff", "vertical"];
+    return makeGradient(targetCtx, width, height, c1, c2, pattern);
+  }
+
+  return settings.color;
+}
+
+function getClockOptions(settings) {
+  const bg = settings.bgMode === "solid" ? settings.bgGrad?.[0] ?? null : null;
+  const bgGradient = settings.bgMode === "gradient" || settings.bgMode === "split" ? settings.bgGrad : null;
+
+  return {
+    bg,
+    bgGradient,
+    clock6Speed: settings.clock6Speed,
+    suppressBg: true,
+  };
+}
+
+function getClockSize(styleIndex, size, width, height) {
+  if (styleIndex === 1) {
+    return Math.min(Math.floor(Math.min(width, height) * 0.94), Math.round(size * 2.6));
+  }
+  return size;
+}
+
+function ensureClockScript(styleIndex) {
+  const module = clockModules[styleIndex];
+  if (!module) return;
+  if (typeof window[module.globalName] === "function") return;
+  if (loadedScripts.has(styleIndex)) return;
+
+  const script = document.createElement("script");
+  script.src = module.src;
+  loadedScripts.set(styleIndex, script);
+  script.addEventListener("load", () => {
+    renderCurrentFrame();
+  });
+  script.addEventListener("error", () => {
+    console.error(`Failed to load ${module.src}`);
+    loadedScripts.delete(styleIndex);
+  });
+  document.body.appendChild(script);
+}
+
+function renderClockTo(targetCtx, settings, now) {
+  const module = clockModules[settings.styleIndex];
+  if (!module) return;
+
+  targetCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const renderer = window[module.globalName];
+  if (typeof renderer !== "function") {
+    ensureClockScript(settings.styleIndex);
+    return;
+  }
+
+  const fontPaint = getFontPaint(targetCtx, settings, canvas.width, canvas.height);
+  const drawSize = getClockSize(settings.styleIndex, settings.size, canvas.width, canvas.height);
+  renderer(targetCtx, canvas.width, canvas.height, fontPaint, drawSize, now, getClockOptions(settings));
+}
+
+function renderCurrentFrame() {
+  const activeSettings = isSettingsOpen() ? editingSettings : appliedSettings;
+  renderClockTo(offscreenCtx, activeSettings, new Date());
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(offscreenCanvas, 0, 0);
+}
+
+function updateLabels() {
+  styleLabel.textContent = clockStyles[editingSettings.styleIndex];
+  sizeLabel.textContent = editingSettings.size;
+}
+
 function renderColorOptions() {
   colorOptionsDiv.innerHTML = "";
-  palette.forEach((c) => {
-    const div = document.createElement("div");
-    div.classList.add("color-circle");
-    div.style.background = c;
-    if (c === editingSettings.color) div.classList.add("selected");
-    div.addEventListener("click", () => {
-      // switch to solid font color when user picks a palette swatch
-      editingSettings.fontMode = 'solid';
-      editingSettings.color = c;
-      // removed automatic background-setting behavior to keep background transparent
-      // hide font gradient controls if visible
-      const fCtr = document.getElementById('font-gradient-controls'); if (fCtr) fCtr.classList.add('hidden');
+
+  palette.forEach((color) => {
+    const swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = "color-circle";
+    swatch.style.background = color;
+    swatch.setAttribute("aria-label", `Choose ${color}`);
+    swatch.classList.toggle("selected", editingSettings.fontMode === "solid" && editingSettings.color === color);
+    swatch.addEventListener("click", () => {
+      editingSettings.fontMode = "solid";
+      editingSettings.color = color;
+      syncGradientInputs();
       renderColorOptions();
       renderFontHalfSwatch();
-      drawPreview();
+      renderCurrentFrame();
     });
-    colorOptionsDiv.appendChild(div);
+    colorOptionsDiv.appendChild(swatch);
   });
 }
-renderColorOptions();
-// update font half-swatch when palette changes
-renderFontHalfSwatch();
 
-// (monochrome UI removed)
-
-// Initialize labels to reflect current editingSettings
-styleLabel.textContent = clockStyles[editingSettings.styleIndex];
-sizeLabel.textContent = editingSettings.size;
-// gradient inputs init
-if (fontGradC1) fontGradC1.value = editingSettings.fontGrad[0];
-if (fontGradC2) fontGradC2.value = editingSettings.fontGrad[1];
-if (fontGradPattern) fontGradPattern.value = editingSettings.fontGrad[2];
-// removed background gradient input initializers to avoid creating/using background controls
-
-// Render the half-swatch button for font special swatch
 function renderFontHalfSwatch() {
-  const btn = document.getElementById('font-half-swatch');
-  if (!btn) return;
-  // create a small canvas to draw half/half circle
-  const c = document.createElement('canvas'); c.width = 40; c.height = 40;
-  const t = c.getContext('2d');
-  const [c1,c2,pat] = editingSettings.fontGrad || ['#C800FF', '#00EBE7','vertical'];
-  // draw left half
-  t.beginPath(); t.moveTo(20,20); t.arc(20,20,18,Math.PI/2,Math.PI*3/2); t.closePath(); t.fillStyle = c1; t.fill();
-  // draw right half
-  t.beginPath(); t.moveTo(20,20); t.arc(20,20,18,Math.PI*3/2,Math.PI/2); t.closePath(); t.fillStyle = c2; t.fill();
-  btn.style.width = '40px'; btn.style.height = '40px'; btn.style.borderRadius = '50%';
-  btn.style.backgroundImage = `url(${c.toDataURL()})`;
-  btn.classList.toggle('selected', editingSettings.fontMode === 'gradient');
-  btn.onclick = () => {
-    // activate font gradient editing and ensure fontMode=gradient
-    editingSettings.fontMode = 'gradient';
-    // ensure fontGrad has two colors; if not, initialize
-    if (!editingSettings.fontGrad || editingSettings.fontGrad.length < 2) editingSettings.fontGrad = [editingSettings.color || '#00ff88','#ffffff','vertical'];
-    // open gradient UI
-    const fCtr = document.getElementById('font-gradient-controls'); if (fCtr) fCtr.classList.remove('hidden');
-    // focus first color input for quick editing
-    setTimeout(() => { const el = document.getElementById('font-grad-c1'); if (el) el.focus(); }, 0);
-    renderFontHalfSwatch();
-    drawPreview();
-  };
-}
-renderFontHalfSwatch();
+  const previewCanvas = document.createElement("canvas");
+  previewCanvas.width = 40;
+  previewCanvas.height = 40;
+  const previewCtx = previewCanvas.getContext("2d");
+  const [c1, c2] = editingSettings.fontGrad || ["#C800FF", "#00EBE7"];
 
-// helper
-function makeGradient(ctx,w,h,c1,c2,pattern) {
-  if (pattern === 'split') {
-    // paint left half c1, right half c2 via a canvas pattern
-    const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
-    const tctx = tmp.getContext('2d');
-    tctx.fillStyle = c1; tctx.fillRect(0,0,Math.floor(w/2),h);
-    tctx.fillStyle = c2; tctx.fillRect(Math.floor(w/2),0,w-Math.floor(w/2),h);
-    return ctx.createPattern(tmp, 'no-repeat');
-  }
-  if (!pattern || pattern === 'vertical') {
-    const g = ctx.createLinearGradient(0,0,0,h);
-    g.addColorStop(0,c1); g.addColorStop(1,c2); return g;
-  }
-  if (pattern === 'horizontal') {
-    const g = ctx.createLinearGradient(0,0,w,0);
-    g.addColorStop(0,c1); g.addColorStop(1,c2); return g;
-  }
-  if (pattern === 'diag-tlbr') {
-    const g = ctx.createLinearGradient(0,0,w,h);
-    g.addColorStop(0,c1); g.addColorStop(1,c2); return g;
-  }
-  if (pattern === 'diag-bltr') {
-    const g = ctx.createLinearGradient(0,h,w,0);
-    g.addColorStop(0,c1); g.addColorStop(1,c2); return g;
-  }
-  // radial
-  const rg = ctx.createRadialGradient(w/2,h/2,1,w/2,h/2,Math.max(w,h));
-  rg.addColorStop(0,c1); rg.addColorStop(1,c2); return rg;
+  previewCtx.beginPath();
+  previewCtx.moveTo(20, 20);
+  previewCtx.arc(20, 20, 18, Math.PI / 2, Math.PI * 1.5);
+  previewCtx.closePath();
+  previewCtx.fillStyle = c1;
+  previewCtx.fill();
+
+  previewCtx.beginPath();
+  previewCtx.moveTo(20, 20);
+  previewCtx.arc(20, 20, 18, Math.PI * 1.5, Math.PI / 2);
+  previewCtx.closePath();
+  previewCtx.fillStyle = c2;
+  previewCtx.fill();
+
+  fontHalfSwatchBtn.style.backgroundImage = `url(${previewCanvas.toDataURL()})`;
+  fontHalfSwatchBtn.classList.toggle("selected", editingSettings.fontMode === "gradient");
 }
 
-// ------------------
-// 時計描画関数
-// ------------------
-function drawDigital(ctx, w, h, color, size) {
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = color;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `bold ${size}px 'SF Pro Display', 'Segoe UI', sans-serif`;
-  const now = new Date();
-  const text = now.toLocaleTimeString("en-GB", { hour12: false });
-  ctx.fillText(text, w / 2, h / 2);
+function syncGradientInputs() {
+  fontGradC1.value = editingSettings.fontGrad[0];
+  fontGradC2.value = editingSettings.fontGrad[1];
+  fontGradPattern.value = editingSettings.fontGrad[2];
+  fontGradientControls.classList.toggle("hidden", editingSettings.fontMode !== "gradient");
 }
 
-function drawMinimal(ctx, w, h, color, size) {
-  ctx.clearRect(0, 0, w, h);
-  // removed filling a background color so canvas remains transparent
-  ctx.fillStyle = color;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `600 ${Math.floor(size * 0.9)}px 'Segoe UI', sans-serif`;
-  const now = new Date();
-  const text = now.toLocaleTimeString("en-GB", { hour12: false });
-  ctx.fillText(text, w / 2, h / 2);
+function showSettingsButton() {
+  settingsBtn.style.opacity = "1";
+  settingsBtn.style.pointerEvents = "auto";
 }
 
-function drawDots(ctx, w, h, color, size) {
-  ctx.clearRect(0, 0, w, h);
-  // removed background fill to preserve transparency
-  const now = new Date();
-  const hours = now.getHours();
-  const mins = now.getMinutes();
-  const secs = now.getSeconds();
-  const gap = Math.max(6, Math.floor(size / 6));
-  const radius = Math.max(3, Math.floor(size / 12));
-  const startX = w / 2 - 3 * (gap + radius);
-  const baseY = h / 2;
-  ctx.fillStyle = color;
-  const drawSeries = (value, offsetY) => {
-    const str = value.toString().padStart(2, "0");
-    for (let i = 0; i < str.length; i++) {
-      const x = startX + i * (gap + radius * 2);
-      const y = baseY + offsetY;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
+function hideSettingsButton() {
+  settingsBtn.style.opacity = "0";
+  settingsBtn.style.pointerEvents = "none";
+}
+
+function hideSettingsBtnAfterDelay() {
+  clearTimeout(hideSettingsBtnTimeout);
+  hideSettingsBtnTimeout = setTimeout(() => {
+    if (!isSettingsOpen()) {
+      hideSettingsButton();
     }
-  };
-  drawSeries(hours, -gap - radius);
-  drawSeries(mins, 0);
-  drawSeries(secs, gap + radius);
+    hideSettingsBtnTimeout = null;
+  }, 10000);
 }
 
-function drawBinary(ctx, w, h, color, size) {
-  ctx.clearRect(0, 0, w, h);
-  // removed background fill to preserve transparency
-  const now = new Date();
-  const parts = [now.getHours(), now.getMinutes(), now.getSeconds()];
-  ctx.fillStyle = color;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `${Math.floor(size * 0.12)}px monospace`;
-  const pad = Math.max(6, Math.floor(size * 0.08));
-  const totalHeight = parts.length * (size * 0.15) + (parts.length - 1) * pad;
-  const startY = h / 2 - totalHeight / 2 + (size * 0.15) / 2;
-  parts.forEach((p, idx) => {
-    const bin = p.toString(2).padStart(6, "0");
-    ctx.fillText(bin, w / 2, startY + idx * (size * 0.15 + pad));
+function openSettingsPanel() {
+  clearTimeout(hideSettingsBtnTimeout);
+  settingsPanel.classList.remove("hidden");
+  showSettingsButton();
+  renderCurrentFrame();
+}
+
+function closeSettingsPanel() {
+  settingsPanel.classList.add("hidden");
+  showSettingsButton();
+  hideSettingsBtnAfterDelay();
+  renderCurrentFrame();
+}
+
+function hasUnsavedChanges() {
+  return JSON.stringify(editingSettings) !== JSON.stringify(appliedSettings);
+}
+
+function discardChanges() {
+  editingSettings = cloneSettings(appliedSettings);
+  syncGlobalSettings();
+  updateLabels();
+  syncGradientInputs();
+  renderColorOptions();
+  renderFontHalfSwatch();
+}
+
+function showWarning() {
+  if (document.getElementById("warning-div")) return;
+
+  const warning = document.createElement("div");
+  warning.id = "warning-div";
+  warning.innerHTML = `
+    <p>Discard changes and go back?</p>
+    <button id="discard-btn" type="button">Discard</button>
+    <button id="stay-btn" type="button">Stay</button>
+  `;
+  settingsPanel.appendChild(warning);
+
+  warning.querySelector("#discard-btn").addEventListener("click", () => {
+    discardChanges();
+    warning.remove();
+    closeSettingsPanel();
+  });
+
+  warning.querySelector("#stay-btn").addEventListener("click", () => {
+    warning.remove();
   });
 }
 
-// Helper to decide background mode for a given context. Preview uses editingSettings, main uses appliedSettings
-function modeForContext(ctx) {
-  // Background/mode removed; default to dark aesthetics for contexts
-  return 'dark';
-}
-
-// ------------------
-// 時計レンダリング
-// ------------------
-function renderClock() {
-  // If settings panel is open, render preview on the main canvas instead
-  if (!settingsPanel.classList.contains("hidden")) {
-    drawPreview();
-    return;
-  }
-
-  const { styleIndex, color, size, mode } = appliedSettings;
-  const w = canvas.width;
-  const h = canvas.height;
-
-  // Do not paint a solid background — clear canvas to transparent so the wall shows through
-  ctx.clearRect(0, 0, w, h);
-
-  // Render the active clock into an offscreen canvas, then composite it on top
-  const off = document.createElement('canvas'); off.width = w; off.height = h;
-  const offCtx = off.getContext('2d');
-
-  // prepare font paint using the offscreen context
-  let fontPaint = color;
-  if (appliedSettings.fontMode === 'gradient' || appliedSettings.fontMode === 'split') {
-    const fg = appliedSettings.fontGrad || [color, '#ffffff', 'vertical'];
-    fontPaint = makeGradient(offCtx, w, h, fg[0], fg[1], fg[2]);
-  }
-
-  const style = clockStyles[styleIndex];
-  if (style === "Clock 1") {
-    if (typeof window.renderClock1 === 'function') window.renderClock1(offCtx,w,h,fontPaint,size,new Date(),{bg:(appliedSettings.bgMode==='solid'?appliedSettings.bgGrad&&appliedSettings.bgGrad[0]:null),bgGradient:(appliedSettings.bgMode==='gradient'||appliedSettings.bgMode==='split'?appliedSettings.bgGrad:null),suppressBg:true});
-    else lazyLoadClock(1);
-  } else if (style === "Clock 2") {
-    // Make analog bigger but cap to fit canvas
-    const effSize = Math.min(
-      Math.floor(Math.min(w, h) * 0.94),  // bigger radius cap; still safe from clipping
-      Math.round(size * 2.60)             // stronger scale from user size
-    );
-    if (typeof window.renderClock2 === 'function') {
-      window.renderClock2(
-        offCtx, w, h, fontPaint, effSize, new Date(),
-        { bg: (appliedSettings.bgMode==='solid' ? appliedSettings.bgGrad && appliedSettings.bgGrad[0] : null),
-          bgGradient: ((appliedSettings.bgMode==='gradient'||appliedSettings.bgMode==='split') ? appliedSettings.bgGrad : null),
-          suppressBg: true }
-      );
-    } else {
-      lazyLoadClock(2);
-    }
-  } else if (style === "Clock 3") {
-    // Use external Clock 3 implementation (lazy-load if needed)
-    if (typeof window.renderClock3 === 'function') {
-      window.renderClock3(offCtx, w, h, fontPaint, size, new Date(), { suppressBg: true });
-    } else {
-      lazyLoadClock(3);
-    }
-  } else if (style === "Clock 4") {
-    // Use external Clock 4 implementation (lazy-load if needed)
-    if (typeof window.renderClock4 === 'function') {
-      window.renderClock4(offCtx, w, h, fontPaint, size, new Date(), { suppressBg: true });
-    } else {
-      lazyLoadClock(4);
-    }
-  } else if (style === "Clock 5") {
-    if (typeof window.renderClock5 === 'function') window.renderClock5(offCtx,w,h,fontPaint,size,new Date(),{bg:(appliedSettings.bgMode==='solid'?appliedSettings.bgGrad&&appliedSettings.bgGrad[0]:null),bgGradient:(appliedSettings.bgMode==='gradient'||appliedSettings.bgMode==='split'?appliedSettings.bgGrad:null),suppressBg:true});
-    else lazyLoadClock(5);
-  } else if (style === "Clock 6") {
-    // lazy-load Clock 6 script once
-    if (typeof window.renderClock6 === 'function') {
-      const bgArg = (appliedSettings.bgMode === 'solid') ? (appliedSettings.bgGrad && appliedSettings.bgGrad[0] ? appliedSettings.bgGrad[0] : '#000') : null;
-      const bgGradArg = (appliedSettings.bgMode === 'gradient' || appliedSettings.bgMode === 'split') ? appliedSettings.bgGrad : null;
-      window.renderClock6(offCtx, w, h, fontPaint, size, new Date(), { bg: bgArg, bgGradient: bgGradArg, clock6Speed: appliedSettings.clock6Speed, suppressBg: true });
-    } else if (!window._clock6ScriptLoading) {
-      window._clock6ScriptLoading = true;
-      const s = document.createElement('script');
-      s.src = 'clocks/clock6/clock6.js';
-      s.onload = () => { window._clock6ScriptLoaded = true; };
-      document.body.appendChild(s);
-    }
-  } else if (style === "Clock 7") {
-    // lazy-load Clock 7 script once
-    if (typeof window.renderClock7 === 'function') {
-      window.renderClock7(offCtx, w, h, fontPaint, size, new Date(), { suppressBg: true });
-    } else if (!window._clock7ScriptLoading) {
-      window._clock7ScriptLoading = true;
-      const s = document.createElement('script');
-      s.src = 'clocks/clock7/clock7.js';
-      s.onload = () => { window._clock7ScriptLoaded = true; };
-      document.body.appendChild(s);
-    }
-  } else if (style === "Clock 8") {
-    if (typeof window.renderClock8 === 'function') {
-      window.renderClock8(offCtx, w, h, fontPaint, size, new Date(), { suppressBg: true });
-    } else {
-      lazyLoadClock(8);
-    }
-  }
-
-  // Composite offscreen rendering on top of the centralized background
-  ctx.drawImage(off, 0, 0);
-}
-
-function lazyLoadClock(n) {
-  const key = `_clock${n}Loading`;
-  if (window[key]) return;
-  window[key] = true;
-  const s = document.createElement('script');
-  s.src = `clocks/clock${n}/${
-    n===1? 'digital' :
-    n===2? 'analog'  :
-    n===3? 'clock3'  :
-    n===4? 'clock4'  :
-    n===5? 'binary'  :
-    n===6? 'clock6'  :
-    n===7? 'clock7'  : 'clock8'
-  }.js`;
-  s.onload = () => { /* loaded */ };
-  document.body.appendChild(s);
-}
-
-function drawPreview() {
-  const { styleIndex, color, size, mode } = editingSettings;
-  const w = canvas.width;
-  const h = canvas.height;
-  // Do not paint a preview background — keep preview transparent
-  ctx.clearRect(0, 0, w, h);
-
-  // Render clock to offscreen canvas then composite so per-clock clearRect doesn't remove the background
-  const off = document.createElement('canvas'); off.width = w; off.height = h;
-  const offCtx = off.getContext('2d');
-
-  // prepare font paint for preview
-  let fontPaint = color;
-  if (editingSettings.fontMode === 'gradient' || editingSettings.fontMode === 'split') {
-    const fg = editingSettings.fontGrad || [color, '#ffffff', 'vertical'];
-    fontPaint = makeGradient(offCtx, w, h, fg[0], fg[1], fg[2]);
-  }
-
-  // Use the chosen `size` directly for preview so the clock doesn't shrink
-  const previewSize = size;
-
-  const style = clockStyles[styleIndex];
-  if (style === "Clock 1") {
-    if (typeof window.renderClock1 === 'function') window.renderClock1(offCtx,w,h,fontPaint,previewSize,new Date(),{bg:(editingSettings.bgMode==='solid'?editingSettings.bgGrad&&editingSettings.bgGrad[0]:null),bgGradient:(editingSettings.bgMode==='gradient'||editingSettings.bgMode==='split'?editingSettings.bgGrad:null),suppressBg:true});
-    else lazyLoadClock(1);
-  } else if (style === "Clock 2") {
-    // Bigger preview size
-    const effPrev = Math.min(
-      Math.floor(Math.min(w, h) * 0.94),
-      Math.round(previewSize * 2.60)
-    );
-    if (typeof window.renderClock2 === 'function') {
-      window.renderClock2(
-        offCtx, w, h, fontPaint, effPrev, new Date(),
-        { bg: (editingSettings.bgMode==='solid' ? editingSettings.bgGrad && editingSettings.bgGrad[0] : null),
-          bgGradient: ((editingSettings.bgMode==='gradient'||editingSettings.bgMode==='split') ? editingSettings.bgGrad : null),
-          suppressBg: true }
-      );
-    } else {
-      lazyLoadClock(2);
-    }
-  } else if (style === "Clock 3") {
-    // Flip clock preview (external, lazy-load if needed)
-    if (typeof window.renderClock3 === 'function') {
-      window.renderClock3(offCtx, w, h, fontPaint, previewSize, new Date(), { suppressBg: true });
-    } else {
-      lazyLoadClock(3);
-    }
-  } else if (style === "Clock 4") {
-    // preview uses external renderer for Clock 4
-    if (typeof window.renderClock4 === 'function') {
-      window.renderClock4(offCtx, w, h, fontPaint, previewSize, new Date(), { suppressBg: true });
-    } else {
-      lazyLoadClock(4);
-    }
-  } else if (style === "Clock 5") {
-    if (typeof window.renderClock5 === 'function') window.renderClock5(offCtx,w,h,fontPaint,previewSize,new Date(),{bg:(editingSettings.bgMode==='solid'?editingSettings.bgGrad&&editingSettings.bgGrad[0]:null),bgGradient:(editingSettings.bgMode==='gradient'||editingSettings.bgMode==='split'?editingSettings.bgGrad:null),suppressBg:true});
-    else lazyLoadClock(5);
-  } else if (style === "Clock 6") {
-    if (typeof window.renderClock6 === 'function') {
-      const bgArg = (editingSettings.bgMode === 'solid') ? (editingSettings.bgGrad && editingSettings.bgGrad[0] ? editingSettings.bgGrad[0] : '#000') : null;
-      const bgGradArg = (editingSettings.bgMode === 'gradient' || editingSettings.bgMode === 'split') ? editingSettings.bgGrad : null;
-      window.renderClock6(offCtx, w, h, fontPaint, previewSize, new Date(), { bg: bgArg, bgGradient: bgGradArg, clock6Speed: editingSettings.clock6Speed, suppressBg: true });
-    } else {
-      lazyLoadClock(6);
-    }
-  } else if (style === "Clock 7") {
-    if (typeof window.renderClock7 === 'function') {
-      window.renderClock7(offCtx, w, h, fontPaint, previewSize, new Date(), { suppressBg: true });
-    } else {
-      lazyLoadClock(7);
-    }
-  } else if (style === "Clock 8") {
-    if (typeof window.renderClock8 === 'function') {
-      window.renderClock8(offCtx, w, h, fontPaint, previewSize, new Date(), { suppressBg: true });
-    } else {
-      lazyLoadClock(8);
-    }
-  }
-
-  // composite preview
-  ctx.drawImage(off, 0, 0);
-}
-
-// ------------------
-// イベント設定
-// ------------------
-
-// 時計クリック → 設定ボタン表示/非表示
-canvas.addEventListener("click", (e) => {
-  // If settings panel is open, ignore clicks on canvas so controls remain usable
-  if (!settingsPanel.classList.contains("hidden")) {
-    return;
-  }
-
-  if (settingsBtn.style.opacity === "1") {
-    // hide immediately and cancel any pending hide timer
-    settingsBtn.style.opacity = "0";
-    settingsBtn.style.pointerEvents = "none";
-    if (hideSettingsBtnTimeout) { clearTimeout(hideSettingsBtnTimeout); hideSettingsBtnTimeout = null; }
-  } else {
-    // show and start the hide timer
-    settingsBtn.style.opacity = "1";
-    settingsBtn.style.pointerEvents = "auto";
-    hideSettingsBtnAfterDelay();
-  }
-});
-
-// Prevent clicks inside the settings panel from bubbling to the canvas
-settingsPanel.addEventListener("click", (e) => {
-  e.stopPropagation();
-});
-
-// 設定ボタンクリック → パネル表示
-settingsBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  // Cancel any pending hide timer while user opens/settings
-  if (hideSettingsBtnTimeout) {
-    clearTimeout(hideSettingsBtnTimeout);
-    hideSettingsBtnTimeout = null;
-  }
-  settingsPanel.classList.remove("hidden");
-  // Ensure panel receives pointer events (in case parent/other css blocks them)
-  settingsPanel.style.pointerEvents = "auto";
-  // Keep settings button visible while settings are open
-  settingsBtn.style.opacity = "1";
-  settingsBtn.style.pointerEvents = "auto";
-  drawPreview();
-});
-
-// Helper to hide settings button after 10 seconds
-let hideSettingsBtnTimeout = null;
-function hideSettingsBtnAfterDelay() {
-  if (hideSettingsBtnTimeout) clearTimeout(hideSettingsBtnTimeout);
-  hideSettingsBtnTimeout = setTimeout(() => {
-    settingsBtn.style.opacity = "0";
-    settingsBtn.style.pointerEvents = "none";
-    hideSettingsBtnTimeout = null;
-  }, 10000); // 10 seconds
-}
-
-// 時計スタイル切替
-stylePrevBtn.addEventListener("click", () => {
-  editingSettings.styleIndex =
-    (editingSettings.styleIndex - 1 + clockStyles.length) % clockStyles.length;
-  styleLabel.textContent = clockStyles[editingSettings.styleIndex];
-  drawPreview();
-});
-styleNextBtn.addEventListener("click", () => {
-  editingSettings.styleIndex =
-    (editingSettings.styleIndex + 1) % clockStyles.length;
-  styleLabel.textContent = clockStyles[editingSettings.styleIndex];
-  drawPreview();
-});
-
-// サイズ変更
-sizeMinusBtn.addEventListener("click", () => {
-  editingSettings.size = Math.max(100, editingSettings.size - 20);
-  sizeLabel.textContent = editingSettings.size;
-  drawPreview();
-});
-sizePlusBtn.addEventListener("click", () => {
-  editingSettings.size = Math.min(400, editingSettings.size + 20);
-  sizeLabel.textContent = editingSettings.size;
-  drawPreview();
-});
-
-// mode toggle removed
-
-// Confirm Change
-applyBtn.addEventListener("click", () => {
-  appliedSettings = { ...editingSettings, fontMode: editingSettings.fontMode, fontGrad: editingSettings.fontGrad, bgMode: editingSettings.bgMode, bgGrad: editingSettings.bgGrad };
-  settingsPanel.classList.add("hidden");
-  // Show settings button and start 5s timer to hide
-  settingsBtn.style.opacity = "1";
-  settingsBtn.style.pointerEvents = "auto";
-  hideSettingsBtnAfterDelay();
-  // Immediately update main clock rendering and preview
-  renderClock();
-  drawPreview();
-});
-
-// 戻るボタン
 function createBackButton() {
-  if (!document.getElementById("back-btn")) {
-    const btn = document.createElement("button");
-    btn.id = "back-btn";
-    btn.textContent = "Back to Time";
-    settingsPanel.appendChild(btn);
+  const button = document.createElement("button");
+  button.id = "back-btn";
+  button.type = "button";
+  button.textContent = "Back to Time";
+  settingsPanel.appendChild(button);
 
-    btn.addEventListener("click", () => {
-      if (
-        JSON.stringify(editingSettings) !== JSON.stringify(appliedSettings)
-      ) {
-        showWarning();
-      } else {
-        settingsPanel.classList.add("hidden");
-        // Show settings button and start 5s timer to hide
-        settingsBtn.style.opacity = "1";
-        settingsBtn.style.pointerEvents = "auto";
-        hideSettingsBtnAfterDelay();
-      }
-    });
-  }
-}
-createBackButton();
-
-// 警告
-function showWarning() {
-  if (!document.getElementById("warning-div")) {
-    const div = document.createElement("div");
-    div.id = "warning-div";
-    div.innerHTML = `
-      <p>Discard changes and go back?</p>
-      <button id="discard-btn">Discard</button>
-      <button id="stay-btn">Stay</button>
-    `;
-    settingsPanel.appendChild(div);
-
-    document.getElementById("discard-btn").addEventListener("click", () => {
-      editingSettings = { ...appliedSettings };
-      settingsPanel.classList.add("hidden");
-      // Show settings button and start 5s timer to hide
-      settingsBtn.style.opacity = "1";
-      settingsBtn.style.pointerEvents = "auto";
-      hideSettingsBtnAfterDelay();
-      div.remove();
-    });
-    document.getElementById("stay-btn").addEventListener("click", () => {
-      div.remove();
-    });
-  }
+  button.addEventListener("click", () => {
+    if (hasUnsavedChanges()) {
+      showWarning();
+      return;
+    }
+    closeSettingsPanel();
+  });
 }
 
-// ------------------
-// アニメーションループ
-// ------------------
+function applyChanges() {
+  appliedSettings = cloneSettings(editingSettings);
+  syncGlobalSettings();
+  closeSettingsPanel();
+}
+
+function updateGradientSetting() {
+  editingSettings.fontMode = "gradient";
+  editingSettings.fontGrad = [
+    fontGradC1.value,
+    fontGradC2.value,
+    fontGradPattern.value,
+  ];
+  renderColorOptions();
+  renderFontHalfSwatch();
+  renderCurrentFrame();
+}
+
+function initEvents() {
+  window.addEventListener("resize", () => {
+    resizeCanvas();
+    renderCurrentFrame();
+  });
+
+  canvas.addEventListener("click", () => {
+    if (isSettingsOpen()) return;
+
+    if (settingsBtn.style.opacity === "1") {
+      hideSettingsButton();
+      clearTimeout(hideSettingsBtnTimeout);
+      hideSettingsBtnTimeout = null;
+      return;
+    }
+
+    showSettingsButton();
+    hideSettingsBtnAfterDelay();
+  });
+
+  settingsPanel.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+
+  settingsBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openSettingsPanel();
+  });
+
+  stylePrevBtn.addEventListener("click", () => {
+    editingSettings.styleIndex = (editingSettings.styleIndex - 1 + clockStyles.length) % clockStyles.length;
+    updateLabels();
+    ensureClockScript(editingSettings.styleIndex);
+    renderCurrentFrame();
+  });
+
+  styleNextBtn.addEventListener("click", () => {
+    editingSettings.styleIndex = (editingSettings.styleIndex + 1) % clockStyles.length;
+    updateLabels();
+    ensureClockScript(editingSettings.styleIndex);
+    renderCurrentFrame();
+  });
+
+  sizeMinusBtn.addEventListener("click", () => {
+    editingSettings.size = Math.max(100, editingSettings.size - 20);
+    updateLabels();
+    renderCurrentFrame();
+  });
+
+  sizePlusBtn.addEventListener("click", () => {
+    editingSettings.size = Math.min(400, editingSettings.size + 20);
+    updateLabels();
+    renderCurrentFrame();
+  });
+
+  fontHalfSwatchBtn.addEventListener("click", () => {
+    editingSettings.fontMode = "gradient";
+    if (!editingSettings.fontGrad || editingSettings.fontGrad.length < 3) {
+      editingSettings.fontGrad = [editingSettings.color || "#00ff88", "#ffffff", "vertical"];
+    }
+    syncGradientInputs();
+    renderFontHalfSwatch();
+    renderCurrentFrame();
+    setTimeout(() => fontGradC1.focus(), 0);
+  });
+
+  [fontGradC1, fontGradC2, fontGradPattern].forEach((input) => {
+    input.addEventListener("input", updateGradientSetting);
+    input.addEventListener("change", updateGradientSetting);
+  });
+
+  applyBtn.addEventListener("click", applyChanges);
+}
+
 function loop() {
-  renderClock();
+  renderCurrentFrame();
   requestAnimationFrame(loop);
 }
 
-// Start rendering only after rounded fonts are requested and (ideally) loaded.
-// Replace the previous Poppins-only guard with this:
-(function startWhenRoundedReady(){
-  // Inject Google Fonts for rounded families if not already present
-  if (!document.querySelector('link[data-rounded]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.setAttribute('data-rounded', '1');
-    // M PLUS Rounded 1c (700/800) + Nunito (700/800). Poppins already injected earlier is OK too.
-    link.href = 'https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Nunito:wght@700;800&display=swap';
-    document.head.appendChild(link);
-  }
-  // Inject sharp-cornered font for Clock 3 only
-  if (!document.querySelector('link[data-cornered]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.setAttribute('data-cornered', '1');
-    link.href = 'https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap';
-    document.head.appendChild(link);
-  }
-  // Optionally keep existing Poppins link (harmless). Now wait for the rounded font.
-  const wants = [
-    '800 32px "M PLUS Rounded 1c"',
-    '800 32px "Nunito"',
-    '800 32px "Poppins"',
-    '700 32px "Oswald"' // ensure cornered font is ready for Clock 3
-  ];
-  if (document.fonts && document.fonts.load) {
-    const loads = Promise.all(wants.map(f => document.fonts.load(f)));
-    const timeout = new Promise(res => setTimeout(res, 1500));
-    Promise.race([loads, timeout]).then(() => {
-      loop();
-    });
-  } else {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => loop());
-    } else {
-      loop();
-    }
-  }
-})();
+function init() {
+  resizeCanvas();
+  syncGlobalSettings();
+  updateLabels();
+  syncGradientInputs();
+  renderColorOptions();
+  renderFontHalfSwatch();
+  createBackButton();
+  initEvents();
+  ensureClockScript(appliedSettings.styleIndex);
+  loop();
+}
+
+init();
