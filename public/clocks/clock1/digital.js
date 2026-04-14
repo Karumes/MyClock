@@ -55,17 +55,24 @@
       for (let col = 0; col < COLS; col += 1) {
         const sampleX = Math.floor((col + 0.5) * (maskCanvas.width / COLS));
         const sampleY = Math.floor((row + 0.5) * (maskCanvas.height / ROWS));
-        const index = (sampleY * maskCanvas.width + sampleX) * 4 + 3;
-        mask.push(imageData[index] > 80);
+        const base = (sampleY * maskCanvas.width + sampleX) * 4;
+        const r = imageData[base];
+        const g = imageData[base + 1];
+        const b = imageData[base + 2];
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        mask.push(luminance > 120);
       }
     }
     return mask;
   }
 
+  function shade(color, amount) {
+    return amount >= 0 ? mixColor(color, "#ffffff", amount) : mixColor(color, "#000000", -amount);
+  }
+
   function drawSphere(ctx, x, y, radius, visibleColor, hiddenColor, progress) {
     const angle = progress * Math.PI;
     const faceColor = progress < 0.5 ? visibleColor : hiddenColor;
-    const edgeHighlight = progress < 0.5 ? mixColor(visibleColor, hiddenColor, 0.25) : mixColor(hiddenColor, visibleColor, 0.25);
     const scaleX = Math.max(0.15, Math.abs(Math.cos(angle)));
 
     ctx.save();
@@ -73,17 +80,31 @@
     ctx.scale(scaleX, 1);
     ctx.shadowColor = mixColor(faceColor, "#000000", 0.35);
     ctx.shadowBlur = radius * 0.75;
-    const gradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.35, radius * 0.18, 0, 0, radius);
-    gradient.addColorStop(0, mixColor(faceColor, "#ffffff", 0.42));
-    gradient.addColorStop(0.72, faceColor);
-    gradient.addColorStop(1, mixColor(faceColor, "#000000", 0.18));
-    ctx.fillStyle = gradient;
+
+    const faceGradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.35, radius * 0.12, 0, 0, radius);
+    faceGradient.addColorStop(0, shade(faceColor, 0.4));
+    faceGradient.addColorStop(0.68, faceColor);
+    faceGradient.addColorStop(1, shade(faceColor, -0.25));
+
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fillStyle = faceGradient;
+    ctx.fill();
+
+    const gloss = ctx.createRadialGradient(-radius * 0.35, -radius * 0.45, radius * 0.08, -radius * 0.2, -radius * 0.3, radius * 1.1);
+    gloss.addColorStop(0, "rgba(255,255,255,0.36)");
+    gloss.addColorStop(0.5, "rgba(255,255,255,0.08)");
+    gloss.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = gloss;
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fill();
+
     ctx.shadowBlur = 0;
     ctx.lineWidth = Math.max(1.5, radius * 0.1);
-    ctx.strokeStyle = edgeHighlight;
+    ctx.strokeStyle = mixColor(faceColor, "#000000", 0.2);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }

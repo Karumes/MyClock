@@ -34,15 +34,15 @@
 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.textBaseline = "alphabetic";
     ctx.font = `700 ${fontSize}px ${family}`;
 
-    const leftX = width * 0.25;
-    const rightX = width * 0.75;
-    const centerY = height * 0.5;
+    const metrics = ctx.measureText(pairText);
+    const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.72;
+    const descent = metrics.actualBoundingBoxDescent || fontSize * 0.28;
+    const centerY = (height + ascent - descent) / 2;
 
-    ctx.fillText(pairText[0], leftX, centerY);
-    ctx.fillText(pairText[1], rightX, centerY);
+    ctx.fillText(pairText, width / 2, centerY);
     return canvas;
   }
 
