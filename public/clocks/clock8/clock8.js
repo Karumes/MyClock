@@ -27,7 +27,7 @@
 
     // font setup (square/straight font)
     const weight = 700; // Oswald
-    const family = `system-ui, sans-serif`;
+    const family = (opts && opts.fontFamily) || "system-ui, sans-serif";
 
     // vertical shift: hours lower, minutes higher
     const vShiftMag = Math.round(panelH * 0.01); // minimize shift to allow bigger font

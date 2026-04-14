@@ -47,7 +47,7 @@
     // font + layout
     const weight = '800';
     // Prefer fully rounded corners (M PLUS Rounded 1c). Fall back to other rounded families.
-    const family = "'Nunito', 'Quicksand', 'Cabin Rounded', 'Segoe UI', system-ui, sans-serif";
+    const family = (opts && opts.fontFamily) || "'Nunito', 'Quicksand', 'Cabin Rounded', 'Segoe UI', system-ui, sans-serif";
     const margin = Math.max(12, Math.floor(Math.min(w,h) * 0.02));
     const usableW = w - margin*2;
     const usableH = h - margin*2;

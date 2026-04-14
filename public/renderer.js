@@ -6,7 +6,21 @@ const settingsPanel = document.getElementById("settings-panel");
 const stylePrevBtn = document.getElementById("clock-style-prev");
 const styleNextBtn = document.getElementById("clock-style-next");
 const styleLabel = document.getElementById("clock-style-label");
+const fontColorGroup = document.getElementById("font-color-group");
+const fontColorLabel = document.getElementById("font-color-label");
 const colorOptionsDiv = document.getElementById("color-options");
+const clock1BackGroup = document.getElementById("clock1-back-group");
+const clock1BackColorOptionsDiv = document.getElementById("clock1-back-color-options");
+const clock1BackCustomColorInput = document.getElementById("clock1-back-custom-color");
+const bgColorOptionsDiv = document.getElementById("bg-color-options");
+const bgCustomColorInput = document.getElementById("bg-custom-color");
+const bgHalfSwatchBtn = document.getElementById("bg-half-swatch");
+const bgGradientControls = document.getElementById("bg-gradient-controls");
+const bgGradC1 = document.getElementById("bg-grad-c1");
+const bgGradC2 = document.getElementById("bg-grad-c2");
+const bgGradPattern = document.getElementById("bg-grad-pattern");
+const fontFamilyGroup = document.getElementById("font-family-group");
+const fontFamilySelect = document.getElementById("font-family-select");
 const fontHalfSwatchBtn = document.getElementById("font-half-swatch");
 const fontGradientControls = document.getElementById("font-gradient-controls");
 const fontGradC1 = document.getElementById("font-grad-c1");
@@ -19,13 +33,29 @@ const applyBtn = document.getElementById("apply-btn");
 
 const clockStyles = ["Clock 1", "Clock 2", "Clock 3", "Clock 4", "Clock 5", "Clock 6", "Clock 7", "Clock 8"];
 const palette = [
-  "#2196f3", "#ff4081", "#ff9800", "#ffffff", "#00ff88",
-  "#ffd600", "#8e24aa", "#00bcd4", "#4caf50", "#e91e63",
-  "#9e9d24", "#795548", "#607d8b", "#f06292", "#ff7043",
-  "#c2185b", "#7c4dff", "#03a9f4", "#388e3c", "#ffeb3b",
-  "#ad1457", "#00c853", "#b388ff", "#ff8a65", "#d500f9",
-  "#263238", "#ff5252", "#ffab00", "#304ffe", "#69f0ae",
+  "#ffffff", "#e2e8f0", "#cbd5e1", "#94a3b8", "#64748b",
+  "#1e293b", "#0f172a", "#2196f3", "#03a9f4", "#00bcd4",
+  "#00e5ff", "#00ff88", "#4caf50", "#8bc34a", "#cddc39",
+  "#ffd600", "#ff9800", "#ff7043", "#ff5252", "#e91e63",
+  "#ff4081", "#c2185b", "#8e24aa", "#7c4dff", "#304ffe",
+  "#795548", "#8d6e63", "#607d8b", "#69f0ae", "#b388ff",
 ];
+
+const backgroundPalette = [
+  "#ffffff", "#f4f1de", "#d9e8f5", "#bcd4e6", "#98c1d9",
+  "#6c95b5", "#264653", "#2d3142", "#1b2336", "#101728",
+  "#050816", "#0d3b66", "#144552", "#2a9d8f", "#588157",
+  "#7f5539", "#9c6644", "#5f0f40", "#9a031e", "#3a86ff",
+  "#8338ec", "#fb5607", "#ff006e", "#ffbe0b", "#adb5bd",
+];
+
+const fontFamilies = {
+  rounded: '"Avenir Next Rounded", "Nunito", "M PLUS Rounded 1c", "Segoe UI", sans-serif',
+  modern: '"SF Pro Display", "Inter", "Segoe UI", sans-serif',
+  mono: '"JetBrains Mono", "SFMono-Regular", "Cascadia Code", monospace',
+  condensed: '"Roboto Condensed", "Oswald", "Arial Narrow", sans-serif',
+  serif: '"Cormorant Garamond", "Georgia", serif',
+};
 
 const clockModules = {
   0: { globalName: "renderClock1", src: "clocks/clock1/digital.js" },
@@ -38,35 +68,79 @@ const clockModules = {
   7: { globalName: "renderClock8", src: "clocks/clock8/clock8.js" },
 };
 
-let editingSettings = {
-  styleIndex: 0,
-  color: "#ffffff",
-  size: 180,
-  fontMode: "solid",
-  fontGrad: ["#fff700", "#00e5ff", "vertical"],
-  bgMode: "transparent",
-  bgGrad: [],
-  clock6Speed: 1,
+const styleCapabilities = {
+  0: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, showBackground: true },
+  1: { showColor: true, colorLabel: "Accent Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+  2: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+  3: { showColor: true, colorLabel: "Hand Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+  4: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+  5: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+  6: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+  7: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
 };
 
-let appliedSettings = cloneSettings(editingSettings);
+function defaultProfile() {
+  return {
+    color: "#ffffff",
+    bgMode: "solid",
+    bgColor: "#bcd4e6",
+    bgGrad: ["#d9e8f5", "#98c1d9", "radial"],
+    size: 100,
+    fontMode: "solid",
+    fontGrad: ["#fff700", "#00e5ff", "vertical"],
+    fontFamily: "rounded",
+    clock6Speed: 1,
+    flipBackColor: "#1e293b",
+  };
+}
+
+function createInitialState(styleIndex = 0) {
+  return {
+    styleIndex,
+    profiles: clockStyles.map(() => defaultProfile()),
+  };
+}
+
+let editingState = createInitialState();
+let appliedState = createInitialState();
 let hideSettingsBtnTimeout = null;
 
 const offscreenCanvas = document.createElement("canvas");
 const offscreenCtx = offscreenCanvas.getContext("2d");
+const clockLayerCanvas = document.createElement("canvas");
+const clockLayerCtx = clockLayerCanvas.getContext("2d");
 const loadedScripts = new Map();
 
-function cloneSettings(settings) {
+function cloneProfile(profile) {
   return {
-    ...settings,
-    fontGrad: Array.isArray(settings.fontGrad) ? [...settings.fontGrad] : [],
-    bgGrad: Array.isArray(settings.bgGrad) ? [...settings.bgGrad] : [],
+    ...profile,
+    bgGrad: [...profile.bgGrad],
+    fontGrad: [...profile.fontGrad],
   };
 }
 
+function cloneState(state) {
+  return {
+    styleIndex: state.styleIndex,
+    profiles: state.profiles.map(cloneProfile),
+  };
+}
+
+appliedState = cloneState(editingState);
+
+function currentEditingProfile() {
+  return editingState.profiles[editingState.styleIndex];
+}
+
+function currentAppliedProfile() {
+  return appliedState.profiles[appliedState.styleIndex];
+}
+
 function syncGlobalSettings() {
-  window.editingSettings = editingSettings;
-  window.appliedSettings = appliedSettings;
+  window.editingSettings = currentEditingProfile();
+  window.appliedSettings = currentAppliedProfile();
+  window.editingState = editingState;
+  window.appliedState = appliedState;
 }
 
 function resizeCanvas() {
@@ -74,6 +148,8 @@ function resizeCanvas() {
   canvas.height = window.innerHeight;
   offscreenCanvas.width = canvas.width;
   offscreenCanvas.height = canvas.height;
+  clockLayerCanvas.width = canvas.width;
+  clockLayerCanvas.height = canvas.height;
 }
 
 function isSettingsOpen() {
@@ -81,180 +157,224 @@ function isSettingsOpen() {
 }
 
 function makeGradient(targetCtx, width, height, c1, c2, pattern) {
-  if (pattern === "split") {
-    const tmp = document.createElement("canvas");
-    tmp.width = Math.max(1, width);
-    tmp.height = Math.max(1, height);
-    const tctx = tmp.getContext("2d");
-    tctx.fillStyle = c1;
-    tctx.fillRect(0, 0, Math.floor(width / 2), height);
-    tctx.fillStyle = c2;
-    tctx.fillRect(Math.floor(width / 2), 0, width - Math.floor(width / 2), height);
-    return targetCtx.createPattern(tmp, "no-repeat");
-  }
-
   if (!pattern || pattern === "vertical") {
     const gradient = targetCtx.createLinearGradient(0, 0, 0, height);
     gradient.addColorStop(0, c1);
     gradient.addColorStop(1, c2);
     return gradient;
   }
-
   if (pattern === "horizontal") {
     const gradient = targetCtx.createLinearGradient(0, 0, width, 0);
     gradient.addColorStop(0, c1);
     gradient.addColorStop(1, c2);
     return gradient;
   }
-
   if (pattern === "diag-tlbr") {
     const gradient = targetCtx.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, c1);
     gradient.addColorStop(1, c2);
     return gradient;
   }
-
   if (pattern === "diag-bltr") {
     const gradient = targetCtx.createLinearGradient(0, height, width, 0);
     gradient.addColorStop(0, c1);
     gradient.addColorStop(1, c2);
     return gradient;
   }
-
-  const radial = targetCtx.createRadialGradient(width / 2, height / 2, 1, width / 2, height / 2, Math.max(width, height));
+  const radial = targetCtx.createRadialGradient(width / 2, height / 2, 1, width / 2, height / 2, Math.max(width, height) * 0.7);
   radial.addColorStop(0, c1);
   radial.addColorStop(1, c2);
   return radial;
 }
 
-function getFontPaint(targetCtx, settings, width, height) {
-  if (settings.fontMode === "gradient" || settings.fontMode === "split") {
-    const [c1, c2, pattern] = settings.fontGrad || [settings.color, "#ffffff", "vertical"];
-    return makeGradient(targetCtx, width, height, c1, c2, pattern);
+function fillBackground(targetCtx, profile, width, height) {
+  targetCtx.clearRect(0, 0, width, height);
+  if (profile.bgMode === "gradient") {
+    const [c1, c2, pattern] = profile.bgGrad;
+    targetCtx.fillStyle = makeGradient(targetCtx, width, height, c1, c2, pattern);
+  } else {
+    targetCtx.fillStyle = profile.bgColor;
   }
-
-  return settings.color;
+  targetCtx.fillRect(0, 0, width, height);
 }
 
-function getClockOptions(settings) {
-  const bg = settings.bgMode === "solid" ? settings.bgGrad?.[0] ?? null : null;
-  const bgGradient = settings.bgMode === "gradient" || settings.bgMode === "split" ? settings.bgGrad : null;
+function getFontPaint(targetCtx, profile, width, height) {
+  if (profile.fontMode === "gradient") {
+    const [c1, c2, pattern] = profile.fontGrad;
+    return makeGradient(targetCtx, width, height, c1, c2, pattern);
+  }
+  return profile.color;
+}
 
+function getClockOptions(profile) {
   return {
-    bg,
-    bgGradient,
-    clock6Speed: settings.clock6Speed,
+    bg: profile.bgMode === "gradient" ? profile.bgGrad[0] : profile.bgColor,
+    bgMode: profile.bgMode,
+    bgGrad: profile.bgGrad,
+    fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
+    clock6Speed: profile.clock6Speed,
+    flipBackColor: profile.flipBackColor,
     suppressBg: true,
   };
 }
 
 function getClockSize(styleIndex, size, width, height) {
+  const scaled = size * 1.8;
   if (styleIndex === 1) {
-    return Math.min(Math.floor(Math.min(width, height) * 0.94), Math.round(size * 2.6));
+    return Math.min(Math.floor(Math.min(width, height) * 0.52), Math.round(scaled));
   }
-  return size;
+  return scaled;
 }
 
 function ensureClockScript(styleIndex) {
   const module = clockModules[styleIndex];
-  if (!module) return;
-  if (typeof window[module.globalName] === "function") return;
-  if (loadedScripts.has(styleIndex)) return;
-
+  if (!module || typeof window[module.globalName] === "function" || loadedScripts.has(styleIndex)) return;
   const script = document.createElement("script");
   script.src = module.src;
   loadedScripts.set(styleIndex, script);
-  script.addEventListener("load", () => {
-    renderCurrentFrame();
-  });
-  script.addEventListener("error", () => {
-    console.error(`Failed to load ${module.src}`);
-    loadedScripts.delete(styleIndex);
-  });
+  script.addEventListener("load", renderCurrentFrame);
+  script.addEventListener("error", () => loadedScripts.delete(styleIndex));
   document.body.appendChild(script);
 }
 
-function renderClockTo(targetCtx, settings, now) {
-  const module = clockModules[settings.styleIndex];
+function renderClockTo(targetCtx, styleIndex, profile, now) {
+  const module = clockModules[styleIndex];
   if (!module) return;
-
   targetCtx.clearRect(0, 0, canvas.width, canvas.height);
-
   const renderer = window[module.globalName];
   if (typeof renderer !== "function") {
-    ensureClockScript(settings.styleIndex);
+    ensureClockScript(styleIndex);
     return;
   }
-
-  const fontPaint = getFontPaint(targetCtx, settings, canvas.width, canvas.height);
-  const drawSize = getClockSize(settings.styleIndex, settings.size, canvas.width, canvas.height);
-  renderer(targetCtx, canvas.width, canvas.height, fontPaint, drawSize, now, getClockOptions(settings));
+  const paint = getFontPaint(targetCtx, profile, canvas.width, canvas.height);
+  const drawSize = getClockSize(styleIndex, profile.size, canvas.width, canvas.height);
+  renderer(targetCtx, canvas.width, canvas.height, paint, drawSize, now, getClockOptions(profile));
 }
 
 function renderCurrentFrame() {
-  const activeSettings = isSettingsOpen() ? editingSettings : appliedSettings;
-  renderClockTo(offscreenCtx, activeSettings, new Date());
+  const state = isSettingsOpen() ? editingState : appliedState;
+  const profile = state.profiles[state.styleIndex];
+  fillBackground(offscreenCtx, profile, canvas.width, canvas.height);
+  renderClockTo(clockLayerCtx, state.styleIndex, profile, new Date());
+  offscreenCtx.drawImage(clockLayerCanvas, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(offscreenCanvas, 0, 0);
 }
 
-function updateLabels() {
-  styleLabel.textContent = clockStyles[editingSettings.styleIndex];
-  sizeLabel.textContent = editingSettings.size;
-}
-
-function renderColorOptions() {
-  colorOptionsDiv.innerHTML = "";
-
-  palette.forEach((color) => {
-    const swatch = document.createElement("button");
-    swatch.type = "button";
-    swatch.className = "color-circle";
-    swatch.style.background = color;
-    swatch.setAttribute("aria-label", `Choose ${color}`);
-    swatch.classList.toggle("selected", editingSettings.fontMode === "solid" && editingSettings.color === color);
-    swatch.addEventListener("click", () => {
-      editingSettings.fontMode = "solid";
-      editingSettings.color = color;
-      syncGradientInputs();
-      renderColorOptions();
-      renderFontHalfSwatch();
-      renderCurrentFrame();
-    });
-    colorOptionsDiv.appendChild(swatch);
-  });
-}
-
-function renderFontHalfSwatch() {
+function renderHalfSwatch(button, grad, selected) {
   const previewCanvas = document.createElement("canvas");
   previewCanvas.width = 40;
   previewCanvas.height = 40;
   const previewCtx = previewCanvas.getContext("2d");
-  const [c1, c2] = editingSettings.fontGrad || ["#C800FF", "#00EBE7"];
-
   previewCtx.beginPath();
   previewCtx.moveTo(20, 20);
   previewCtx.arc(20, 20, 18, Math.PI / 2, Math.PI * 1.5);
   previewCtx.closePath();
-  previewCtx.fillStyle = c1;
+  previewCtx.fillStyle = grad[0];
   previewCtx.fill();
-
   previewCtx.beginPath();
   previewCtx.moveTo(20, 20);
   previewCtx.arc(20, 20, 18, Math.PI * 1.5, Math.PI / 2);
   previewCtx.closePath();
-  previewCtx.fillStyle = c2;
+  previewCtx.fillStyle = grad[1];
   previewCtx.fill();
+  button.style.backgroundImage = `url(${previewCanvas.toDataURL()})`;
+  button.classList.toggle("selected", selected);
+}
 
-  fontHalfSwatchBtn.style.backgroundImage = `url(${previewCanvas.toDataURL()})`;
-  fontHalfSwatchBtn.classList.toggle("selected", editingSettings.fontMode === "gradient");
+function renderPalette(container, colors, selectedColor, onClick) {
+  container.innerHTML = "";
+  colors.forEach((color) => {
+    const swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = "color-circle";
+    swatch.style.background = color;
+    swatch.classList.toggle("selected", selectedColor === color);
+    swatch.addEventListener("click", () => onClick(color));
+    container.appendChild(swatch);
+  });
+}
+
+function updateVisibleControls() {
+  const caps = styleCapabilities[editingState.styleIndex] || styleCapabilities[0];
+  fontColorGroup.classList.toggle("hidden", !caps.showColor);
+  fontColorLabel.textContent = caps.colorLabel;
+  fontFamilyGroup.classList.toggle("hidden", !caps.showFontFamily);
+  clock1BackGroup.classList.toggle("hidden", !caps.showBackColor);
+  fontGradientControls.classList.toggle("hidden", !(caps.showFontGradient && currentEditingProfile().fontMode === "gradient"));
+}
+
+function updateLabels() {
+  const profile = currentEditingProfile();
+  styleLabel.textContent = clockStyles[editingState.styleIndex];
+  sizeLabel.textContent = profile.size;
+  fontFamilySelect.value = profile.fontFamily;
+  bgCustomColorInput.value = profile.bgColor;
+  clock1BackCustomColorInput.value = profile.flipBackColor;
+  updateVisibleControls();
+}
+
+function renderFontOptions() {
+  const profile = currentEditingProfile();
+  renderPalette(colorOptionsDiv, palette, profile.fontMode === "solid" ? profile.color : "", (color) => {
+    profile.fontMode = "solid";
+    profile.color = color;
+    syncGradientInputs();
+    renderFontOptions();
+    renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
+    renderCurrentFrame();
+  });
+}
+
+function renderClock1BackOptions() {
+  const profile = currentEditingProfile();
+  renderPalette(clock1BackColorOptionsDiv, palette, profile.flipBackColor, (color) => {
+    profile.flipBackColor = color;
+    clock1BackCustomColorInput.value = color;
+    renderClock1BackOptions();
+    renderCurrentFrame();
+  });
+}
+
+function renderBackgroundOptions() {
+  const profile = currentEditingProfile();
+  renderPalette(bgColorOptionsDiv, backgroundPalette, profile.bgMode === "solid" ? profile.bgColor : "", (color) => {
+    profile.bgMode = "solid";
+    profile.bgColor = color;
+    bgCustomColorInput.value = color;
+    syncBackgroundGradientInputs();
+    renderBackgroundOptions();
+    renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, profile.bgMode === "gradient");
+    renderCurrentFrame();
+  });
 }
 
 function syncGradientInputs() {
-  fontGradC1.value = editingSettings.fontGrad[0];
-  fontGradC2.value = editingSettings.fontGrad[1];
-  fontGradPattern.value = editingSettings.fontGrad[2];
-  fontGradientControls.classList.toggle("hidden", editingSettings.fontMode !== "gradient");
+  const profile = currentEditingProfile();
+  fontGradC1.value = profile.fontGrad[0];
+  fontGradC2.value = profile.fontGrad[1];
+  fontGradPattern.value = profile.fontGrad[2];
+  updateVisibleControls();
+}
+
+function syncBackgroundGradientInputs() {
+  const profile = currentEditingProfile();
+  bgGradC1.value = profile.bgGrad[0];
+  bgGradC2.value = profile.bgGrad[1];
+  bgGradPattern.value = profile.bgGrad[2];
+  bgGradientControls.classList.toggle("hidden", profile.bgMode !== "gradient");
+}
+
+function renderAllControls() {
+  updateLabels();
+  syncGradientInputs();
+  syncBackgroundGradientInputs();
+  renderFontOptions();
+  renderBackgroundOptions();
+  renderClock1BackOptions();
+  const profile = currentEditingProfile();
+  renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
+  renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, profile.bgMode === "gradient");
 }
 
 function showSettingsButton() {
@@ -270,9 +390,7 @@ function hideSettingsButton() {
 function hideSettingsBtnAfterDelay() {
   clearTimeout(hideSettingsBtnTimeout);
   hideSettingsBtnTimeout = setTimeout(() => {
-    if (!isSettingsOpen()) {
-      hideSettingsButton();
-    }
+    if (!isSettingsOpen()) hideSettingsButton();
     hideSettingsBtnTimeout = null;
   }, 10000);
 }
@@ -292,21 +410,17 @@ function closeSettingsPanel() {
 }
 
 function hasUnsavedChanges() {
-  return JSON.stringify(editingSettings) !== JSON.stringify(appliedSettings);
+  return JSON.stringify(editingState) !== JSON.stringify(appliedState);
 }
 
 function discardChanges() {
-  editingSettings = cloneSettings(appliedSettings);
+  editingState = cloneState(appliedState);
   syncGlobalSettings();
-  updateLabels();
-  syncGradientInputs();
-  renderColorOptions();
-  renderFontHalfSwatch();
+  renderAllControls();
 }
 
 function showWarning() {
   if (document.getElementById("warning-div")) return;
-
   const warning = document.createElement("div");
   warning.id = "warning-div";
   warning.innerHTML = `
@@ -315,16 +429,12 @@ function showWarning() {
     <button id="stay-btn" type="button">Stay</button>
   `;
   settingsPanel.appendChild(warning);
-
   warning.querySelector("#discard-btn").addEventListener("click", () => {
     discardChanges();
     warning.remove();
     closeSettingsPanel();
   });
-
-  warning.querySelector("#stay-btn").addEventListener("click", () => {
-    warning.remove();
-  });
+  warning.querySelector("#stay-btn").addEventListener("click", () => warning.remove());
 }
 
 function createBackButton() {
@@ -333,7 +443,6 @@ function createBackButton() {
   button.type = "button";
   button.textContent = "Back to Time";
   settingsPanel.appendChild(button);
-
   button.addEventListener("click", () => {
     if (hasUnsavedChanges()) {
       showWarning();
@@ -344,20 +453,35 @@ function createBackButton() {
 }
 
 function applyChanges() {
-  appliedSettings = cloneSettings(editingSettings);
+  appliedState = cloneState(editingState);
   syncGlobalSettings();
   closeSettingsPanel();
 }
 
-function updateGradientSetting() {
-  editingSettings.fontMode = "gradient";
-  editingSettings.fontGrad = [
-    fontGradC1.value,
-    fontGradC2.value,
-    fontGradPattern.value,
-  ];
-  renderColorOptions();
-  renderFontHalfSwatch();
+function updateFontGradient() {
+  const profile = currentEditingProfile();
+  profile.fontMode = "gradient";
+  profile.fontGrad = [fontGradC1.value, fontGradC2.value, fontGradPattern.value];
+  renderFontOptions();
+  renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, true);
+  renderCurrentFrame();
+}
+
+function updateBackgroundGradient() {
+  const profile = currentEditingProfile();
+  profile.bgMode = "gradient";
+  profile.bgGrad = [bgGradC1.value, bgGradC2.value, bgGradPattern.value];
+  renderBackgroundOptions();
+  renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, true);
+  syncBackgroundGradientInputs();
+  renderCurrentFrame();
+}
+
+function switchEditingStyle(direction) {
+  editingState.styleIndex = (editingState.styleIndex + direction + clockStyles.length) % clockStyles.length;
+  syncGlobalSettings();
+  ensureClockScript(editingState.styleIndex);
+  renderAllControls();
   renderCurrentFrame();
 }
 
@@ -369,67 +493,86 @@ function initEvents() {
 
   canvas.addEventListener("click", () => {
     if (isSettingsOpen()) return;
-
     if (settingsBtn.style.opacity === "1") {
       hideSettingsButton();
       clearTimeout(hideSettingsBtnTimeout);
       hideSettingsBtnTimeout = null;
       return;
     }
-
     showSettingsButton();
     hideSettingsBtnAfterDelay();
   });
 
-  settingsPanel.addEventListener("click", (event) => {
-    event.stopPropagation();
-  });
-
+  settingsPanel.addEventListener("click", (event) => event.stopPropagation());
   settingsBtn.addEventListener("click", (event) => {
     event.stopPropagation();
     openSettingsPanel();
   });
 
-  stylePrevBtn.addEventListener("click", () => {
-    editingSettings.styleIndex = (editingSettings.styleIndex - 1 + clockStyles.length) % clockStyles.length;
-    updateLabels();
-    ensureClockScript(editingSettings.styleIndex);
-    renderCurrentFrame();
-  });
-
-  styleNextBtn.addEventListener("click", () => {
-    editingSettings.styleIndex = (editingSettings.styleIndex + 1) % clockStyles.length;
-    updateLabels();
-    ensureClockScript(editingSettings.styleIndex);
-    renderCurrentFrame();
-  });
+  stylePrevBtn.addEventListener("click", () => switchEditingStyle(-1));
+  styleNextBtn.addEventListener("click", () => switchEditingStyle(1));
 
   sizeMinusBtn.addEventListener("click", () => {
-    editingSettings.size = Math.max(100, editingSettings.size - 20);
+    const profile = currentEditingProfile();
+    profile.size = Math.max(40, profile.size - 10);
     updateLabels();
     renderCurrentFrame();
   });
 
   sizePlusBtn.addEventListener("click", () => {
-    editingSettings.size = Math.min(400, editingSettings.size + 20);
+    const profile = currentEditingProfile();
+    profile.size = Math.min(220, profile.size + 10);
     updateLabels();
     renderCurrentFrame();
   });
 
   fontHalfSwatchBtn.addEventListener("click", () => {
-    editingSettings.fontMode = "gradient";
-    if (!editingSettings.fontGrad || editingSettings.fontGrad.length < 3) {
-      editingSettings.fontGrad = [editingSettings.color || "#00ff88", "#ffffff", "vertical"];
-    }
+    const profile = currentEditingProfile();
+    profile.fontMode = "gradient";
     syncGradientInputs();
-    renderFontHalfSwatch();
+    renderFontOptions();
+    renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, true);
     renderCurrentFrame();
-    setTimeout(() => fontGradC1.focus(), 0);
+  });
+
+  bgHalfSwatchBtn.addEventListener("click", () => {
+    const profile = currentEditingProfile();
+    profile.bgMode = "gradient";
+    syncBackgroundGradientInputs();
+    renderBackgroundOptions();
+    renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, true);
+    renderCurrentFrame();
   });
 
   [fontGradC1, fontGradC2, fontGradPattern].forEach((input) => {
-    input.addEventListener("input", updateGradientSetting);
-    input.addEventListener("change", updateGradientSetting);
+    input.addEventListener("input", updateFontGradient);
+    input.addEventListener("change", updateFontGradient);
+  });
+
+  [bgGradC1, bgGradC2, bgGradPattern].forEach((input) => {
+    input.addEventListener("input", updateBackgroundGradient);
+    input.addEventListener("change", updateBackgroundGradient);
+  });
+
+  bgCustomColorInput.addEventListener("input", () => {
+    const profile = currentEditingProfile();
+    profile.bgMode = "solid";
+    profile.bgColor = bgCustomColorInput.value;
+    renderBackgroundOptions();
+    renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, false);
+    syncBackgroundGradientInputs();
+    renderCurrentFrame();
+  });
+
+  clock1BackCustomColorInput.addEventListener("input", () => {
+    currentEditingProfile().flipBackColor = clock1BackCustomColorInput.value;
+    renderClock1BackOptions();
+    renderCurrentFrame();
+  });
+
+  fontFamilySelect.addEventListener("change", () => {
+    currentEditingProfile().fontFamily = fontFamilySelect.value;
+    renderCurrentFrame();
   });
 
   applyBtn.addEventListener("click", applyChanges);
@@ -443,13 +586,10 @@ function loop() {
 function init() {
   resizeCanvas();
   syncGlobalSettings();
-  updateLabels();
-  syncGradientInputs();
-  renderColorOptions();
-  renderFontHalfSwatch();
+  renderAllControls();
   createBackButton();
   initEvents();
-  ensureClockScript(appliedSettings.styleIndex);
+  ensureClockScript(appliedState.styleIndex);
   loop();
 }
 

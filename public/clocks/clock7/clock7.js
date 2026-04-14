@@ -17,7 +17,7 @@
 
     // Stylish, simple sans-serif stack (falls back to system UI)
     const weight = '300'; // thinner look kept
-    const family = "Inter, 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif";
+    const family = (opts && opts.fontFamily) || "Inter, 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif";
 
     // Candidate font size (start large, then shrink to fit)
     let fontSize = Math.max(12, Math.floor(size * 1.15), Math.floor(Math.min(usableW, usableH) / 2));
