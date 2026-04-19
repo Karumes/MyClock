@@ -58,30 +58,30 @@ const fontFamilies = {
 };
 
 const clockModules = {
-  0: { globalName: "renderClock1", src: "clocks/clock1/digital.js" },
-  1: { globalName: "renderClock2", src: "clocks/clock2/analog.js" },
-  2: { globalName: "renderClock3", src: "clocks/clock3/clock3.js" },
-  3: { globalName: "renderClock4", src: "clocks/clock4/clock4.js" },
-  4: { globalName: "renderClock5", src: "clocks/clock5/binary.js" },
-  5: { globalName: "renderClock6", src: "clocks/clock6/clock6.js" },
-  6: { globalName: "renderClock7", src: "clocks/clock7/clock7.js" },
-  7: { globalName: "renderClock8", src: "clocks/clock8/clock8.js" },
+  0: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
+  1: { globalName: "renderClock6", src: "clocks/clock2/clock6.js" },
+  2: { globalName: "renderClock8", src: "clocks/clock3/clock8.js" },
+  3: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
+  4: { globalName: "renderClock2", src: "clocks/clock5/analog.js" },
+  5: { globalName: "renderClock3", src: "clocks/clock6/clock3.js" },
+  6: { globalName: "renderClock4", src: "clocks/clock7/clock4.js" },
+  7: { globalName: "renderClock7", src: "clocks/clock8/clock7.js" },
 };
 
 const styleCapabilities = {
-  0: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, showBackground: true },
-  1: { showColor: true, colorLabel: "Accent Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+  0: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+  1: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
   2: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-  3: { showColor: true, colorLabel: "Hand Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
-  4: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-  5: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-  6: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+  3: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, showBackground: true },
+  4: { showColor: true, colorLabel: "Accent Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+  5: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+  6: { showColor: true, colorLabel: "Hand Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
   7: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
 };
 
 function defaultProfile() {
   return {
-    color: "#ffffff",
+    color: "#00bcd4",
     bgMode: "solid",
     bgColor: "#bcd4e6",
     bgGrad: ["#d9e8f5", "#98c1d9", "radial"],
@@ -90,7 +90,7 @@ function defaultProfile() {
     fontGrad: ["#fff700", "#00e5ff", "vertical"],
     fontFamily: "rounded",
     clock6Speed: 1,
-    flipBackColor: "#1e293b",
+    flipBackColor: "#64748b",
   };
 }
 
@@ -220,7 +220,8 @@ function getClockOptions(profile) {
 
 function getClockSize(styleIndex, size, width, height) {
   const scaled = size * 1.8;
-  if (styleIndex === 1) {
+  // In the reordered sequence, index 4 maps to the analog renderer (original Clock 2).
+  if (styleIndex === 4) {
     return Math.min(Math.floor(Math.min(width, height) * 0.52), Math.round(scaled));
   }
   return scaled;

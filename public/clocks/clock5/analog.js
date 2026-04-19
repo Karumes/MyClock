@@ -80,10 +80,15 @@
     // second (red)
     drawStick(secAng,  secLen,  secTh,  '#e53935');
 
-    // white center circle
-    ctx.fillStyle = '#ffffff';
+    // center cap follows selected clock color
+    ctx.fillStyle = handColor;
     ctx.beginPath();
     ctx.arc(cx, cy, Math.max(4, Math.round(r * 0.04)), 0, Math.PI*2);
     ctx.fill();
+
+    // add a subtle ring so the center cap stays visible on light themes
+    ctx.lineWidth = Math.max(1, Math.round(r * 0.01));
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+    ctx.stroke();
   };
 })();

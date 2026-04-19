@@ -1,7 +1,7 @@
 (function (global) {
-  const COLS = 40;
-  const ROWS = 24;
-  const MASK_CELL_PX = 16;
+  const COLS = 56;
+  const ROWS = 34;
+  const MASK_CELL_PX = 14;
   const CELL_STATE = Array.from({ length: COLS * ROWS }, () => ({
     front: false,
     anim: null,
@@ -79,22 +79,22 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(scaleX, 1);
-    ctx.shadowColor = mixColor(faceColor, "#000000", 0.35);
-    ctx.shadowBlur = radius * 0.75;
+    ctx.shadowColor = mixColor(faceColor, "#000000", 0.18);
+    ctx.shadowBlur = radius * 0.35;
 
     const faceGradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.35, radius * 0.12, 0, 0, radius);
-    faceGradient.addColorStop(0, shade(faceColor, 0.4));
-    faceGradient.addColorStop(0.68, faceColor);
-    faceGradient.addColorStop(1, shade(faceColor, -0.25));
+    faceGradient.addColorStop(0, shade(faceColor, 0.22));
+    faceGradient.addColorStop(0.72, faceColor);
+    faceGradient.addColorStop(1, shade(faceColor, -0.12));
 
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fillStyle = faceGradient;
     ctx.fill();
 
-    const gloss = ctx.createRadialGradient(-radius * 0.35, -radius * 0.45, radius * 0.08, -radius * 0.2, -radius * 0.3, radius * 1.1);
-    gloss.addColorStop(0, "rgba(255,255,255,0.36)");
-    gloss.addColorStop(0.5, "rgba(255,255,255,0.08)");
+    const gloss = ctx.createRadialGradient(-radius * 0.34, -radius * 0.42, radius * 0.12, -radius * 0.12, -radius * 0.18, radius * 0.9);
+    gloss.addColorStop(0, "rgba(255,255,255,0.20)");
+    gloss.addColorStop(0.45, "rgba(255,255,255,0.05)");
     gloss.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = gloss;
     ctx.beginPath();
@@ -103,7 +103,7 @@
 
     ctx.shadowBlur = 0;
     ctx.lineWidth = Math.max(1.5, radius * 0.1);
-    ctx.strokeStyle = mixColor(faceColor, "#000000", 0.2);
+    ctx.strokeStyle = mixColor(faceColor, "#000000", 0.12);
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.stroke();
@@ -117,7 +117,7 @@
     const text = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
     const family = options.fontFamily || '"Avenir Next Rounded", "Nunito", sans-serif';
     const frontColor = typeof paint === "string" ? paint : "#ffffff";
-    const backColor = options.flipBackColor || "#1e293b";
+    const backColor = options.flipBackColor || "#64748b";
     const targetMask = buildMask(text, family);
     const timeNow = now.getTime();
     const animDuration = 460;
@@ -140,9 +140,9 @@
       }
     }
 
-    const stepX = w / (COLS + 2);
-    const stepY = h / (ROWS + 2);
-    const radius = Math.min(stepX, stepY) * 0.34;
+    const stepX = w / (COLS + 1);
+    const stepY = h / (ROWS + 1);
+    const radius = Math.min(stepX, stepY) * 0.44;
     const offsetX = (w - stepX * (COLS - 1)) / 2;
     const offsetY = (h - stepY * (ROWS - 1)) / 2;
 
