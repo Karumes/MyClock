@@ -79,9 +79,9 @@ const styleCapabilities = {
   7: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
 };
 
-function defaultProfile() {
+function defaultProfile(styleIndex = 0) {
   return {
-    color: "#ffffff",
+    color: styleIndex === 0 ? "#2196f3" : "#ffffff",
     bgMode: "solid",
     bgColor: "#bcd4e6",
     bgGrad: ["#d9e8f5", "#98c1d9", "radial"],
@@ -97,7 +97,7 @@ function defaultProfile() {
 function createInitialState(styleIndex = 0) {
   return {
     styleIndex,
-    profiles: clockStyles.map(() => defaultProfile()),
+    profiles: clockStyles.map((_, index) => defaultProfile(index)),
   };
 }
 
