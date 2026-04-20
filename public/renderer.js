@@ -28,7 +28,58 @@ const fontGradC2 = document.getElementById("font-grad-c2");
 const fontGradPattern = document.getElementById("font-grad-pattern");
 const applyBtn = document.getElementById("apply-btn");
 
-const clockStyles = ["Clock 1", "Clock 2", "Clock 3", "Clock 4", "Clock 5", "Clock 6", "Clock 7", "Clock 8"];
+const STYLE_CONFIG = [
+  {
+    name: "Clock 1",
+    module: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    drawSize: 100,
+  },
+  {
+    name: "Clock 2",
+    module: { globalName: "renderClock6", src: "clocks/clock2/rolling.js" },
+    capabilities: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    drawSize: 300,
+  },
+  {
+    name: "Clock 3",
+    module: { globalName: "renderClock8", src: "clocks/clock3/panel.js" },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    drawSize: 100,
+  },
+  {
+    name: "Clock 4",
+    module: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, showBackground: true },
+    drawSize: 100,
+  },
+  {
+    name: "Clock 5",
+    module: { globalName: "renderClock2", src: "clocks/clock5/analog.js" },
+    capabilities: { showColor: true, colorLabel: "Accent Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    drawSize: 300,
+  },
+  {
+    name: "Clock 6",
+    module: { globalName: "renderClock3", src: "clocks/clock6/flip.js" },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    drawSize: 300,
+  },
+  {
+    name: "Clock 7",
+    module: { globalName: "renderClock4", src: "clocks/clock7/minimal-analog.js" },
+    capabilities: { showColor: true, colorLabel: "Hand Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    drawSize: 300,
+  },
+  {
+    name: "Clock 8",
+    module: { globalName: "renderClock7", src: "clocks/clock8/grid.js" },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    drawSize: 100,
+  },
+];
+
+const clockStyles = STYLE_CONFIG.map((style) => style.name);
 const palette = [
   "#ffffff", "#e2e8f0", "#cbd5e1", "#94a3b8", "#64748b",
   "#1e293b", "#0f172a", "#2196f3", "#03a9f4", "#00bcd4",
@@ -54,27 +105,12 @@ const fontFamilies = {
   serif: '"Cormorant Garamond", "Georgia", serif',
 };
 
-const clockModules = {
-  0: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
-  1: { globalName: "renderClock6", src: "clocks/clock2/rolling.js" },
-  2: { globalName: "renderClock8", src: "clocks/clock3/panel.js" },
-  3: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
-  4: { globalName: "renderClock2", src: "clocks/clock5/analog.js" },
-  5: { globalName: "renderClock3", src: "clocks/clock6/flip.js" },
-  6: { globalName: "renderClock4", src: "clocks/clock7/minimal-analog.js" },
-  7: { globalName: "renderClock7", src: "clocks/clock8/grid.js" },
-};
+const clockModules = Object.fromEntries(STYLE_CONFIG.map((style, index) => [index, style.module]));
+const styleCapabilities = Object.fromEntries(STYLE_CONFIG.map((style, index) => [index, style.capabilities]));
 
-const styleCapabilities = {
-  0: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-  1: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-  2: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-  3: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, showBackground: true },
-  4: { showColor: true, colorLabel: "Accent Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
-  5: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-  6: { showColor: true, colorLabel: "Hand Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
-  7: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
-};
+function getDrawSize(styleIndex) {
+  return STYLE_CONFIG[styleIndex]?.drawSize ?? 100;
+}
 
 function defaultProfile(styleIndex = 0) {
   return {
@@ -235,8 +271,7 @@ function renderClockTo(targetCtx, styleIndex, profile, now) {
     return;
   }
   const paint = getFontPaint(targetCtx, profile, canvas.width, canvas.height);
-  const drawSize = [1, 4, 5, 6].includes(styleIndex) ? 300 : 100;
-  renderer(targetCtx, canvas.width, canvas.height, paint, drawSize, now, getClockOptions(profile));
+  renderer(targetCtx, canvas.width, canvas.height, paint, getDrawSize(styleIndex), now, getClockOptions(profile));
 }
 
 function renderCurrentFrame() {
