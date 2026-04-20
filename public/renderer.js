@@ -32,19 +32,19 @@ const STYLE_CONFIG = [
   {
     name: "Clock 1",
     module: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 100,
   },
   {
     name: "Clock 2",
     module: { globalName: "renderClock6", src: "clocks/clock2/rolling.js" },
-    capabilities: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 300,
   },
   {
     name: "Clock 3",
     module: { globalName: "renderClock8", src: "clocks/clock3/panel.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 100,
   },
   {
@@ -579,6 +579,8 @@ function initEvents() {
   });
 
   fontFamilySelect.addEventListener("change", () => {
+    const caps = styleCapabilities[editingState.styleIndex] || styleCapabilities[0];
+    if (!caps.showFontFamily) return;
     currentEditingProfile().fontFamily = fontFamilySelect.value;
     renderCurrentFrame();
   });
