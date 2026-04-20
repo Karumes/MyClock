@@ -60,7 +60,7 @@ const fontFamilies = {
 const clockModules = {
   0: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
   1: { globalName: "renderClock6", src: "clocks/clock2/rolling.js" },
-  2: { globalName: "renderClock8", src: "clocks/clock3/clock8.js" },
+  2: { globalName: "renderClock8", src: "clocks/clock3/panel.js" },
   3: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
   4: { globalName: "renderClock2", src: "clocks/clock5/analog.js" },
   5: { globalName: "renderClock3", src: "clocks/clock6/flip.js" },
