@@ -21,8 +21,8 @@
     }
 
     // determine user color
-    // Default to #ff4081, but honor explicit selections (including white)
-    let selectedColor = '#ff4081';
+    // Default to blue, but honor explicit selections (including white)
+    let selectedColor = '#2196f3';
     if (typeof paint === 'string' && paint.trim().length) {
       selectedColor = paint; // use as-is (white allowed)
     } else if (window && window.editingSettings && window.editingSettings.color) {

@@ -81,7 +81,7 @@ const styleCapabilities = {
 
 function defaultProfile() {
   return {
-    color: "#00bcd4",
+    color: "#ffffff",
     bgMode: "solid",
     bgColor: "#bcd4e6",
     bgGrad: ["#d9e8f5", "#98c1d9", "radial"],
