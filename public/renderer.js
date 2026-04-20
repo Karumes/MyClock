@@ -26,9 +26,6 @@ const fontGradientControls = document.getElementById("font-gradient-controls");
 const fontGradC1 = document.getElementById("font-grad-c1");
 const fontGradC2 = document.getElementById("font-grad-c2");
 const fontGradPattern = document.getElementById("font-grad-pattern");
-const sizeMinusBtn = document.getElementById("size-minus");
-const sizePlusBtn = document.getElementById("size-plus");
-const sizeLabel = document.getElementById("size-label");
 const applyBtn = document.getElementById("apply-btn");
 
 const clockStyles = ["Clock 1", "Clock 2", "Clock 3", "Clock 4", "Clock 5", "Clock 6", "Clock 7", "Clock 8"];
@@ -85,7 +82,6 @@ function defaultProfile(styleIndex = 0) {
     bgMode: "solid",
     bgColor: "#bcd4e6",
     bgGrad: ["#d9e8f5", "#98c1d9", "radial"],
-    size: 100,
     fontMode: "solid",
     fontGrad: ["#fff700", "#00e5ff", "vertical"],
     fontFamily: "rounded",
@@ -218,15 +214,6 @@ function getClockOptions(profile) {
   };
 }
 
-function getClockSize(styleIndex, size, width, height) {
-  const scaled = size * 1.8;
-  // In the reordered sequence, index 4 maps to the analog renderer (original Clock 2).
-  if (styleIndex === 4) {
-    return Math.min(Math.floor(Math.min(width, height) * 0.52), Math.round(scaled));
-  }
-  return scaled;
-}
-
 function ensureClockScript(styleIndex) {
   const module = clockModules[styleIndex];
   if (!module || typeof window[module.globalName] === "function" || loadedScripts.has(styleIndex)) return;
@@ -248,8 +235,7 @@ function renderClockTo(targetCtx, styleIndex, profile, now) {
     return;
   }
   const paint = getFontPaint(targetCtx, profile, canvas.width, canvas.height);
-  const drawSize = getClockSize(styleIndex, profile.size, canvas.width, canvas.height);
-  renderer(targetCtx, canvas.width, canvas.height, paint, drawSize, now, getClockOptions(profile));
+  renderer(targetCtx, canvas.width, canvas.height, paint, 100, now, getClockOptions(profile));
 }
 
 function renderCurrentFrame() {
@@ -308,7 +294,6 @@ function updateVisibleControls() {
 function updateLabels() {
   const profile = currentEditingProfile();
   styleLabel.textContent = clockStyles[editingState.styleIndex];
-  sizeLabel.textContent = profile.size;
   fontFamilySelect.value = profile.fontFamily;
   bgCustomColorInput.value = profile.bgColor;
   clock1BackCustomColorInput.value = profile.flipBackColor;
@@ -512,20 +497,6 @@ function initEvents() {
 
   stylePrevBtn.addEventListener("click", () => switchEditingStyle(-1));
   styleNextBtn.addEventListener("click", () => switchEditingStyle(1));
-
-  sizeMinusBtn.addEventListener("click", () => {
-    const profile = currentEditingProfile();
-    profile.size = Math.max(40, profile.size - 10);
-    updateLabels();
-    renderCurrentFrame();
-  });
-
-  sizePlusBtn.addEventListener("click", () => {
-    const profile = currentEditingProfile();
-    profile.size = Math.min(220, profile.size + 10);
-    updateLabels();
-    renderCurrentFrame();
-  });
 
   fontHalfSwatchBtn.addEventListener("click", () => {
     const profile = currentEditingProfile();
