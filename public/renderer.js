@@ -235,7 +235,8 @@ function renderClockTo(targetCtx, styleIndex, profile, now) {
     return;
   }
   const paint = getFontPaint(targetCtx, profile, canvas.width, canvas.height);
-  renderer(targetCtx, canvas.width, canvas.height, paint, 100, now, getClockOptions(profile));
+  const drawSize = [1, 4, 5, 6].includes(styleIndex) ? 300 : 100;
+  renderer(targetCtx, canvas.width, canvas.height, paint, drawSize, now, getClockOptions(profile));
 }
 
 function renderCurrentFrame() {
