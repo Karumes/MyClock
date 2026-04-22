@@ -21,8 +21,20 @@
     ctx.fill();
   }
 
-  function drawPlate(ctx, x, y, width, height) {
-    roundRectFill(ctx, x, y, width, height, Math.floor(width * 0.08), "rgba(63, 61, 61, 0.4)");
+  function drawPlate(ctx, x, y, width, height, panelColor) {
+    roundRectFill(ctx, x, y, width, height, Math.floor(width * 0.08), panelColor);
+  }
+
+  function drawPanelMidline(ctx, x, y, width, height, panelColor) {
+    // Draw after all card faces so this line stays on the front-most layer.
+    ctx.save();
+    ctx.strokeStyle = panelColor;
+    ctx.lineWidth = Math.max(2, Math.floor(height * 0.018));
+    ctx.beginPath();
+    ctx.moveTo(x + 1, y + height / 2);
+    ctx.lineTo(x + width - 1, y + height / 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function renderPairBitmap(width, height, pairText, color, family) {
@@ -34,25 +46,21 @@
 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
+    ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
 
-    const metrics = ctx.measureText(pairText);
-    const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.72;
-    const descent = metrics.actualBoundingBoxDescent || fontSize * 0.28;
-    const centerY = (height + ascent - descent) / 2;
-
-    ctx.fillText(pairText, width / 2, centerY);
+    // render text centered exactly in the panel bitmap
+    ctx.fillText(pairText, width / 2, height / 2);
     return canvas;
   }
 
-  function drawPairTileStatic(ctx, x, y, width, height, pairText, color, family) {
-    drawPlate(ctx, x, y, width, height);
+  function drawPairTileStatic(ctx, x, y, width, height, pairText, color, family, panelColor) {
+    drawPlate(ctx, x, y, width, height, panelColor);
     ctx.drawImage(renderPairBitmap(width, height, pairText, color, family), x, y);
   }
 
-  function drawPairTileAnimated(ctx, x, y, width, height, fromPair, toPair, color, progress, family) {
-    drawPlate(ctx, x, y, width, height);
+  function drawPairTileAnimated(ctx, x, y, width, height, fromPair, toPair, color, progress, family, panelColor) {
+    drawPlate(ctx, x, y, width, height, panelColor);
 
     const fromBmp = renderPairBitmap(width, height, fromPair, color, family);
     const toBmp = renderPairBitmap(width, height, toPair, color, family);
@@ -113,6 +121,9 @@
     const pairs = [hh, mm];
     const family = (opts && opts.fontFamily) || '"Roboto Condensed", "Segoe UI", sans-serif';
     const color = typeof paint === "string" ? paint : "#ffffff";
+    const panelColor = (opts && typeof opts.flipBackColor === "string" && opts.flipBackColor.trim())
+      ? opts.flipBackColor
+      : "rgba(63, 61, 61, 0.4)";
     const ts = now.getTime();
 
     if (!state.shown) {
@@ -146,14 +157,15 @@
       const anim = state.anims[i];
       if (anim) {
         const progress = Math.min(1, (ts - anim.start) / state.dur);
-        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, color, progress, family);
+        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, color, progress, family, panelColor);
         if (progress >= 1) {
           state.shown[i] = anim.to;
           state.anims[i] = null;
         }
       } else {
-        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], color, family);
+        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], color, family, panelColor);
       }
+      drawPanelMidline(ctx, x, startY, tileWidth, tileHeight, panelColor);
     }
   };
 })();

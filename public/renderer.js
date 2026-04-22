@@ -10,6 +10,7 @@ const fontColorGroup = document.getElementById("font-color-group");
 const fontColorLabel = document.getElementById("font-color-label");
 const colorOptionsDiv = document.getElementById("color-options");
 const clock1BackGroup = document.getElementById("clock1-back-group");
+const clock1BackLabel = clock1BackGroup ? clock1BackGroup.querySelector("label") : null;
 const clock1BackColorOptionsDiv = document.getElementById("clock1-back-color-options");
 const clock1BackCustomColorInput = document.getElementById("clock1-back-custom-color");
 const bgColorOptionsDiv = document.getElementById("bg-color-options");
@@ -50,7 +51,7 @@ const STYLE_CONFIG = [
   {
     name: "Clock 4",
     module: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, backColorLabel: "Reverse Side Color:", showBackground: true },
     drawSize: 100,
   },
   {
@@ -62,7 +63,7 @@ const STYLE_CONFIG = [
   {
     name: "Clock 6",
     module: { globalName: "renderClock3", src: "clocks/clock6/flip.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: true, backColorLabel: "Flipping Card Color:", showBackground: true },
     drawSize: 300,
   },
   {
@@ -324,6 +325,9 @@ function updateVisibleControls() {
   fontColorLabel.textContent = caps.colorLabel;
   fontFamilyGroup.classList.toggle("hidden", !caps.showFontFamily);
   clock1BackGroup.classList.toggle("hidden", !caps.showBackColor);
+  if (clock1BackLabel) {
+    clock1BackLabel.textContent = caps.backColorLabel || "Reverse Side Color:";
+  }
   fontGradientControls.classList.toggle("hidden", !(caps.showFontGradient && currentEditingProfile().fontMode === "gradient"));
 }
 

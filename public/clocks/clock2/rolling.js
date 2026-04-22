@@ -79,7 +79,7 @@
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = `700 ${Math.floor(fontSize * 0.55)}px ${family}`;
+    ctx.font = `700 ${Math.floor(fontSize * 0.68)}px ${family}`;
     ctx.fillText(":", x, y);
     ctx.restore();
   }
@@ -102,8 +102,8 @@
     const digitWidth = Math.min(120, Math.floor(w / 9.5));
     const digitHeight = Math.max(96, Math.floor(size * 0.95));
     const fontSize = Math.max(46, Math.floor(size * 0.74));
-    const pairInnerGap = Math.max(8, Math.floor(digitWidth * 0.12));
-    const pairOuterGap = Math.max(24, Math.floor(digitWidth * 0.28));
+    const pairInnerGap = Math.max(10, Math.floor(digitWidth * 0.16));
+    const pairOuterGap = Math.max(28, Math.floor(digitWidth * 0.34));
     const totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
     const startX = (w - totalWidth) / 2 + digitWidth / 2;
     const centerY = h / 2;

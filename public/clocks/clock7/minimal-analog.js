@@ -54,8 +54,8 @@
       ctx.restore();
     }
 
-    drawHand(hourAngle, radius * 0.34, Math.max(7, radius * 0.065));
-    drawHand(minuteAngle, radius * 0.5, Math.max(6, radius * 0.052));
+    drawHand(hourAngle, radius * 0.44, Math.max(7, radius * 0.065));
+    drawHand(minuteAngle, radius * 0.62, Math.max(6, radius * 0.052));
 
     ctx.fillStyle = handColor;
     ctx.beginPath();
