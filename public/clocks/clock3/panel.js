@@ -83,11 +83,12 @@
       const x0 = Math.floor(i * panelW);
       const xCenter = Math.floor(x0 + panelW / 2);
       let yCenter = Math.floor(panelH / 2);
-      // apply precomputed group shifts: hours down, minutes up
-      if (i < 2) {
-        yCenter += vShiftMag + hourOffsetDown;   // hours lower
+      // Per-digit shifts:
+      // 1st: down, 2nd: up, 3rd: down, 4th: up
+      if (i === 0 || i === 2) {
+        yCenter += vShiftMag + hourOffsetDown;
       } else {
-        yCenter -= vShiftMag + minOffsetUp;      // minutes higher
+        yCenter -= vShiftMag + minOffsetUp;
       }
       // move the whole numbers lower
       yCenter += globalPushDown;
