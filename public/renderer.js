@@ -23,6 +23,7 @@ const bgGradPattern = document.getElementById("bg-grad-pattern");
 const fontFamilyGroup = document.getElementById("font-family-group");
 const fontFamilySelect = document.getElementById("font-family-select");
 const fontHalfSwatchBtn = document.getElementById("font-half-swatch");
+const fontCustomColorInput = document.getElementById("font-custom-color");
 const fontGradientControls = document.getElementById("font-gradient-controls");
 const fontGradC1 = document.getElementById("font-grad-c1");
 const fontGradC2 = document.getElementById("font-grad-c2");
@@ -33,19 +34,19 @@ const STYLE_CONFIG = [
   {
     name: "Clock 1",
     module: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 100,
   },
   {
     name: "Clock 2",
     module: { globalName: "renderClock6", src: "clocks/clock2/rolling.js" },
-    capabilities: { showColor: true, colorLabel: "Digit Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Digit Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 300,
   },
   {
     name: "Clock 3",
     module: { globalName: "renderClock8", src: "clocks/clock3/panel.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 100,
   },
   {
@@ -57,25 +58,25 @@ const STYLE_CONFIG = [
   {
     name: "Clock 5",
     module: { globalName: "renderClock2", src: "clocks/clock5/analog.js" },
-    capabilities: { showColor: true, colorLabel: "Accent Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Accent Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 300,
   },
   {
     name: "Clock 6",
     module: { globalName: "renderClock3", src: "clocks/clock6/flip.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: true, backColorLabel: "Flipping Card Color:", showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: true, showBackColor: true, backColorLabel: "Flipping Card Color:", showBackground: true },
     drawSize: 300,
   },
   {
     name: "Clock 7",
     module: { globalName: "renderClock4", src: "clocks/clock7/minimal-analog.js" },
-    capabilities: { showColor: true, colorLabel: "Hand Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Hand Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 300,
   },
   {
     name: "Clock 8",
     module: { globalName: "renderClock7", src: "clocks/clock8/grid.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: true, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: true, showBackColor: false, showBackground: true },
     drawSize: 100,
   },
 ];
@@ -335,6 +336,7 @@ function updateLabels() {
   const profile = currentEditingProfile();
   styleLabel.textContent = clockStyles[editingState.styleIndex];
   fontFamilySelect.value = profile.fontFamily;
+  fontCustomColorInput.value = profile.color;
   bgCustomColorInput.value = profile.bgColor;
   clock1BackCustomColorInput.value = profile.flipBackColor;
   updateVisibleControls();
@@ -345,6 +347,7 @@ function renderFontOptions() {
   renderPalette(colorOptionsDiv, palette, profile.fontMode === "solid" ? profile.color : "", (color) => {
     profile.fontMode = "solid";
     profile.color = color;
+    fontCustomColorInput.value = color;
     syncGradientInputs();
     renderFontOptions();
     renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
@@ -559,6 +562,16 @@ function initEvents() {
   [fontGradC1, fontGradC2, fontGradPattern].forEach((input) => {
     input.addEventListener("input", updateFontGradient);
     input.addEventListener("change", updateFontGradient);
+  });
+
+  fontCustomColorInput.addEventListener("input", () => {
+    const profile = currentEditingProfile();
+    profile.fontMode = "solid";
+    profile.color = fontCustomColorInput.value;
+    renderFontOptions();
+    renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, false);
+    syncGradientInputs();
+    renderCurrentFrame();
   });
 
   [bgGradC1, bgGradC2, bgGradPattern].forEach((input) => {

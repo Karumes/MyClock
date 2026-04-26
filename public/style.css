@@ -172,7 +172,8 @@ canvas {
 }
 
 .gradient-controls input[type="color"],
-#bg-custom-color {
+#bg-custom-color,
+#font-custom-color {
   width: 40px;
   height: 40px;
   padding: 0;
@@ -186,19 +187,22 @@ canvas {
 }
 
 .gradient-controls input[type="color"]:focus,
-#bg-custom-color:focus {
+#bg-custom-color:focus,
+#font-custom-color:focus {
   outline: none;
   box-shadow: 0 0 10px 3px rgba(255, 255, 255, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.95) inset;
   animation: flame-pulse-white 1.2s infinite ease-in-out;
 }
 
 .gradient-controls input[type="color"]::-webkit-color-swatch-wrapper,
-#bg-custom-color::-webkit-color-swatch-wrapper {
+#bg-custom-color::-webkit-color-swatch-wrapper,
+#font-custom-color::-webkit-color-swatch-wrapper {
   padding: 0;
 }
 
 .gradient-controls input[type="color"]::-webkit-color-swatch,
-#bg-custom-color::-webkit-color-swatch {
+#bg-custom-color::-webkit-color-swatch,
+#font-custom-color::-webkit-color-swatch {
   border: none;
   border-radius: 50%;
 }
