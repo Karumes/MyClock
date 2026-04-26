@@ -34,7 +34,7 @@ const STYLE_CONFIG = [
   {
     name: "Clock 1",
     module: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 100,
   },
   {
@@ -245,6 +245,9 @@ function getClockOptions(profile) {
     bg: profile.bgMode === "gradient" ? profile.bgGrad[0] : profile.bgColor,
     bgMode: profile.bgMode,
     bgGrad: profile.bgGrad,
+    color: profile.color,
+    fontMode: profile.fontMode,
+    fontGrad: profile.fontGrad,
     fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
     clock6Speed: profile.clock6Speed,
     flipBackColor: profile.flipBackColor,

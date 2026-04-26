@@ -214,9 +214,16 @@ canvas {
   100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0), 0 0 0 1px rgba(255, 255, 255, 0.95) inset; }
 }
 
+#apply-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}
+
 #back-btn {
   display: block;
-  margin: 24px auto 0;
+  width: 100%;
+  margin: 18px auto 0;
   background: #2196f3;
   color: #fff;
   border: none;

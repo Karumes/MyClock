@@ -37,6 +37,57 @@
     ctx.restore();
   }
 
+  function parseHexColor(hex) {
+    if (typeof hex !== "string") return null;
+    const value = hex.trim();
+    const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value);
+    if (!match) return null;
+    const raw = match[1];
+    const full = raw.length === 3 ? raw.split("").map((ch) => ch + ch).join("") : raw;
+    return {
+      r: parseInt(full.slice(0, 2), 16),
+      g: parseInt(full.slice(2, 4), 16),
+      b: parseInt(full.slice(4, 6), 16),
+    };
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function sampleFontGradientColor(x, y, w, h, opts, fallback) {
+    if (!opts || opts.fontMode !== "gradient" || !Array.isArray(opts.fontGrad)) {
+      return fallback;
+    }
+
+    const c1 = parseHexColor(opts.fontGrad[0]);
+    const c2 = parseHexColor(opts.fontGrad[1]);
+    if (!c1 || !c2) return fallback;
+
+    const pattern = opts.fontGrad[2] || "vertical";
+    let t = 0;
+    if (pattern === "horizontal") {
+      t = x / Math.max(1, w);
+    } else if (pattern === "diag-tlbr") {
+      t = (x + y) / Math.max(1, w + h);
+    } else if (pattern === "diag-bltr") {
+      t = (x + (h - y)) / Math.max(1, w + h);
+    } else if (pattern === "radial") {
+      const cx = w / 2;
+      const cy = h / 2;
+      const dist = Math.hypot(x - cx, y - cy);
+      t = dist / Math.max(1, Math.max(w, h) * 0.7);
+    } else {
+      t = y / Math.max(1, h);
+    }
+
+    t = Math.max(0, Math.min(1, t));
+    const r = Math.round(lerp(c1.r, c2.r, t));
+    const g = Math.round(lerp(c1.g, c2.g, t));
+    const b = Math.round(lerp(c1.b, c2.b, t));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
   function renderPairBitmap(width, height, pairText, color, family) {
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -50,7 +101,7 @@
     ctx.font = `700 ${fontSize}px ${family}`;
 
     // render text centered exactly in the panel bitmap
-    ctx.fillText(pairText, width / 2, height / 2);
+    ctx.fillText(pairText, width / 2, height / 2 + Math.floor(height * 0.04));
     return canvas;
   }
 
@@ -120,7 +171,13 @@
     const mm = String(now.getMinutes()).padStart(2, "0");
     const pairs = [hh, mm];
     const family = (opts && opts.fontFamily) || '"Roboto Condensed", "Segoe UI", sans-serif';
-    const color = typeof paint === "string" ? paint : "#ffffff";
+    let baseColor = "#ffffff";
+    try {
+      ctx.fillStyle = paint;
+      baseColor = paint;
+    } catch (_) {
+      baseColor = "#ffffff";
+    }
     const panelColor = (opts && typeof opts.flipBackColor === "string" && opts.flipBackColor.trim())
       ? opts.flipBackColor
       : "rgba(63, 61, 61, 0.4)";
@@ -145,6 +202,7 @@
 
     const startX = Math.round((w - totalWidth) / 2);
     const startY = Math.round((h - tileHeight) / 2);
+    const colorAt = (x, y) => sampleFontGradientColor(x, y, w, h, opts, baseColor);
 
     for (let i = 0; i < pairs.length; i += 1) {
       if (state.shown[i] !== pairs[i] && !state.anims[i]) {
@@ -154,16 +212,17 @@
 
     for (let i = 0; i < pairs.length; i += 1) {
       const x = startX + i * (tileWidth + gap);
+      const tileColor = colorAt(x + tileWidth / 2, startY + tileHeight / 2);
       const anim = state.anims[i];
       if (anim) {
         const progress = Math.min(1, (ts - anim.start) / state.dur);
-        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, color, progress, family, panelColor);
+        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, tileColor, progress, family, panelColor);
         if (progress >= 1) {
           state.shown[i] = anim.to;
           state.anims[i] = null;
         }
       } else {
-        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], color, family, panelColor);
+        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], tileColor, family, panelColor);
       }
       drawPanelMidline(ctx, x, startY, tileWidth, tileHeight, panelColor);
     }

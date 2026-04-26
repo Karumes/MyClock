@@ -21,7 +21,13 @@
     const hours = (now.getHours() % 12) + minutes / 60;
     const hourAngle = (hours / 12) * Math.PI * 2 - Math.PI / 2;
     const minuteAngle = (minutes / 60) * Math.PI * 2 - Math.PI / 2;
-    const handColor = typeof paint === "string" ? paint : "#2348ff";
+    let handColor = "#2348ff";
+    try {
+      ctx.strokeStyle = paint;
+      handColor = paint;
+    } catch (_) {
+      handColor = "#2348ff";
+    }
 
     ctx.save();
     ctx.shadowColor = "rgba(255,255,255,0.42)";
@@ -32,7 +38,7 @@
     ctx.fill();
 
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.strokeStyle = handColor;
     ctx.lineWidth = Math.max(3, radius * 0.03);
     ctx.beginPath();
     ctx.arc(cx, cy, radius * 0.98, 0, Math.PI * 2);
