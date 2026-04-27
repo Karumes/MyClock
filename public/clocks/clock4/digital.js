@@ -10,10 +10,6 @@
     return Math.max(min, Math.min(max, value));
   }
 
-  function mod(value, base) {
-    return ((value % base) + base) % base;
-  }
-
   function easeOutCubic(t) {
     return 1 - Math.pow(1 - clamp(t, 0, 1), 3);
   }
@@ -93,15 +89,8 @@
     stripCtx.fillStyle = stripGradient;
     stripCtx.fill();
 
-    stripCtx.save();
-    drawRoundedRect(stripCtx, 1, 1, width - 2, stripCanvas.height - 2, Math.max(0, stripRadius - 1));
-    stripCtx.strokeStyle = "rgba(255,255,255,0.26)";
-    stripCtx.lineWidth = 2;
-    stripCtx.stroke();
-    stripCtx.restore();
-
     stripCtx.fillStyle = fontColor;
-    stripCtx.font = `600 ${Math.floor(rowHeight * 0.42)}px ${family}`;
+    stripCtx.font = `600 ${Math.floor(rowHeight * 0.56)}px ${family}`;
     stripCtx.textAlign = "center";
     stripCtx.textBaseline = "middle";
 
@@ -143,16 +132,19 @@
     const stripY = centerY - (padding + rowHeight / 2) - displayValue * rowHeight;
     drawRaisedStrip(ctx, stripCanvas, x, stripY);
 
+    const progress = anim ? easeOutCubic((nowMs - anim.startedAt) / anim.duration) : 0;
     return {
       rowHeight,
       stripCanvas,
       stripY,
       displayValue,
-      visibleDigit: clamp(Math.round(displayValue), 0, max),
+      visibleDigit: anim && anim.wrap ? max : clamp(Math.round(displayValue), 0, max),
+      circleOffsetY: anim && anim.wrap ? progress * max * rowHeight : 0,
     };
   }
 
-  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, fontColor, rowHeight) {
+  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, fontColor, rowHeight, offsetY) {
+    const circleY = cy + (offsetY || 0);
     ctx.save();
     ctx.shadowColor = "rgba(255,255,255,0.88)";
     ctx.shadowBlur = 14;
@@ -160,7 +152,7 @@
     ctx.shadowOffsetY = -5;
     ctx.fillStyle = circleFill;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(cx, circleY, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -171,26 +163,33 @@
     ctx.shadowOffsetY = 8;
     ctx.fillStyle = circleFill;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(cx, circleY, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     ctx.save();
-    const circleGradient = ctx.createRadialGradient(cx - radius * 0.24, cy - radius * 0.28, radius * 0.18, cx, cy, radius);
+    const circleGradient = ctx.createRadialGradient(
+      cx - radius * 0.24,
+      circleY - radius * 0.28,
+      radius * 0.18,
+      cx,
+      circleY,
+      radius,
+    );
     circleGradient.addColorStop(0, mixColor(circleFill, "#ffffff", 0.22));
     circleGradient.addColorStop(1, mixColor(circleFill, "#000000", 0.04));
     ctx.fillStyle = circleGradient;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(cx, circleY, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = fontColor;
-    ctx.font = `700 ${Math.floor(rowHeight * 1.02)}px ${family}`;
+    ctx.font = `700 ${Math.floor(rowHeight * 1.08)}px ${family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(String(visibleDigit), cx, cy + 1);
+    ctx.fillText(String(visibleDigit), cx, circleY + 1);
     ctx.restore();
   }
 
@@ -206,18 +205,17 @@
     for (let i = 0; i < 6; i += 1) {
       const nextValue = nextDigits[i];
       const maxValue = DIGIT_MAX[i];
-      if (!state.anim[i] && Math.round(state.value[i]) === maxValue && nextValue === 0) {
-        state.value[i] = 0;
-        state.anim[i] = null;
-        continue;
-      }
       if (!state.anim[i] && state.value[i] !== nextValue) {
-        const delta = nextValue - state.value[i];
+        const currentValue = Math.round(state.value[i]);
+        const wrap = currentValue === maxValue && nextValue === 0;
+        const delta = wrap ? -maxValue : nextValue - state.value[i];
         state.anim[i] = {
           from: state.value[i],
           delta,
           startedAt: nowMs,
-          duration: 520,
+          duration: wrap ? 460 : 520,
+          wrap,
+          to: nextValue,
         };
       }
 
@@ -226,7 +224,7 @@
         const t = clamp((nowMs - anim.startedAt) / anim.duration, 0, 1);
         state.value[i] = anim.from + anim.delta * easeOutCubic(t);
         if (t >= 1) {
-          state.value[i] = nextDigits[i];
+          state.value[i] = anim.to;
           state.anim[i] = null;
         }
       } else {
@@ -299,6 +297,7 @@
         family,
         fontColor,
         reel.rowHeight,
+        reel.circleOffsetY,
       );
     }
   };
