@@ -54,14 +54,16 @@
 
   function getReelMetrics(w, h, size, stripIndex) {
     const maxValue = DIGIT_MAX[stripIndex];
+    const edgeInset = 4;
+    const minPadding = 8;
     const pairInnerGap = Math.max(30, Math.floor(Math.min(w, h) * 0.038));
     const pairOuterGap = Math.max(62, Math.floor(Math.min(w, h) * 0.072));
-    const cardWidth = Math.max(62, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.82)));
-    const circleRadius = Math.max(44, Math.floor(cardWidth * 0.48));
+    const cardWidth = Math.max(54, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.68)));
+    const circleRadius = Math.max(44, Math.floor(cardWidth * 0.62));
     const maxRowByHeight = Math.floor((h * 0.8) / (maxValue + 1.45));
-    const maxRowByCircle = Math.floor((circleRadius - 4) / 0.68);
+    const maxRowByCircle = Math.floor((circleRadius - edgeInset - minPadding) * 2);
     const rowHeight = Math.max(24, Math.min(maxRowByHeight, maxRowByCircle));
-    const padding = Math.max(10, Math.min(Math.floor(rowHeight * 0.22), circleRadius - Math.floor(rowHeight / 2) - 3));
+    const padding = Math.max(minPadding, circleRadius - Math.floor(rowHeight / 2) - edgeInset);
 
     return {
       pairInnerGap,
