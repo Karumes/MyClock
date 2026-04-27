@@ -73,7 +73,7 @@
     };
   }
 
-  function buildStrip(width, rowHeight, stripIndex, family, bgColor, fontColor, padding) {
+  function buildStrip(width, rowHeight, stripIndex, family, bgColor, cardDigitColor, padding) {
     const max = DIGIT_MAX[stripIndex];
     const cycle = max + 1;
     const stripCanvas = document.createElement("canvas");
@@ -89,8 +89,8 @@
     stripCtx.fillStyle = stripGradient;
     stripCtx.fill();
 
-    stripCtx.fillStyle = fontColor;
-    stripCtx.font = `600 ${Math.floor(rowHeight * 0.56)}px ${family}`;
+    stripCtx.fillStyle = cardDigitColor;
+    stripCtx.font = `600 ${Math.floor(rowHeight * 0.78)}px ${family}`;
     stripCtx.textAlign = "center";
     stripCtx.textBaseline = "middle";
 
@@ -122,13 +122,13 @@
     ctx.drawImage(image, x, y);
   }
 
-  function drawReel(ctx, x, centerY, width, stripIndex, family, nowMs, bgColor, fontColor, rowHeight, padding) {
+  function drawReel(ctx, x, centerY, width, stripIndex, family, nowMs, bgColor, cardDigitColor, rowHeight, padding) {
     const max = DIGIT_MAX[stripIndex];
     const anim = state.anim[stripIndex];
     const displayValue = anim
       ? anim.from + anim.delta * easeOutCubic((nowMs - anim.startedAt) / anim.duration)
       : state.value[stripIndex];
-    const stripCanvas = buildStrip(Math.ceil(width), rowHeight, stripIndex, family, bgColor, fontColor, padding);
+    const stripCanvas = buildStrip(Math.ceil(width), rowHeight, stripIndex, family, bgColor, cardDigitColor, padding);
     const stripY = centerY - (padding + rowHeight / 2) - displayValue * rowHeight;
     drawRaisedStrip(ctx, stripCanvas, x, stripY);
 
@@ -143,7 +143,7 @@
     };
   }
 
-  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, fontColor, rowHeight, offsetY) {
+  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, circleDigitColor, rowHeight, offsetY) {
     const circleY = cy + (offsetY || 0);
     ctx.save();
     ctx.shadowColor = "rgba(255,255,255,0.88)";
@@ -185,7 +185,7 @@
     ctx.restore();
 
     ctx.save();
-    ctx.fillStyle = fontColor;
+    ctx.fillStyle = circleDigitColor;
     ctx.font = `700 ${Math.floor(rowHeight * 1.08)}px ${family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -238,7 +238,8 @@
     options = options || {};
 
     const bgColor = (options.bg && typeof options.bg === "string") ? options.bg : "#aeb8cc";
-    const fontColor = paintToColor(ctx, paint);
+    const cardDigitColor = paintToColor(ctx, paint);
+    const circleDigitColor = options.circleDigitColor || cardDigitColor;
     const family = options.fontFamily || '"Segoe UI", sans-serif';
     const nowMs = now.getTime();
 
@@ -283,7 +284,7 @@
         family,
         nowMs,
         cardFill,
-        fontColor,
+        cardDigitColor,
         metrics.rowHeight,
         metrics.padding,
       );
@@ -295,7 +296,7 @@
         circleFill,
         reel.visibleDigit,
         family,
-        fontColor,
+        circleDigitColor,
         reel.rowHeight,
         reel.circleOffsetY,
       );

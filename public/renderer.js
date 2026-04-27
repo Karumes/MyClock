@@ -9,6 +9,10 @@ const styleLabel = document.getElementById("clock-style-label");
 const fontColorGroup = document.getElementById("font-color-group");
 const fontColorLabel = document.getElementById("font-color-label");
 const colorOptionsDiv = document.getElementById("color-options");
+const clock4CircleColorGroup = document.getElementById("clock4-circle-color-group");
+const clock4CircleColorLabel = document.getElementById("clock4-circle-color-label");
+const clock4CircleColorOptionsDiv = document.getElementById("clock4-circle-color-options");
+const clock4CircleCustomColorInput = document.getElementById("clock4-circle-custom-color");
 const clock1BackGroup = document.getElementById("clock1-back-group");
 const clock1BackLabel = clock1BackGroup ? clock1BackGroup.querySelector("label") : null;
 const clock1BackColorOptionsDiv = document.getElementById("clock1-back-color-options");
@@ -52,7 +56,16 @@ const STYLE_CONFIG = [
   {
     name: "Clock 4",
     module: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
+    capabilities: {
+      showColor: true,
+      colorLabel: "Card Digit Color:",
+      showFontGradient: false,
+      showFontFamily: false,
+      showBackColor: false,
+      showBackground: true,
+      showClock4CircleColor: true,
+      clock4CircleColorLabel: "Center Digit Color:",
+    },
     drawSize: 100,
   },
   {
@@ -125,6 +138,7 @@ function defaultProfile(styleIndex = 0) {
     fontFamily: "rounded",
     clock6Speed: 1,
     flipBackColor: "#64748b",
+    clock4CircleColor: "#2563eb",
   };
 }
 
@@ -251,6 +265,7 @@ function getClockOptions(profile) {
     fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
     clock6Speed: profile.clock6Speed,
     flipBackColor: profile.flipBackColor,
+    circleDigitColor: profile.clock4CircleColor,
     suppressBg: true,
   };
 }
@@ -327,6 +342,12 @@ function updateVisibleControls() {
   const caps = styleCapabilities[editingState.styleIndex] || styleCapabilities[0];
   fontColorGroup.classList.toggle("hidden", !caps.showColor);
   fontColorLabel.textContent = caps.colorLabel;
+  if (clock4CircleColorGroup) {
+    clock4CircleColorGroup.classList.toggle("hidden", !caps.showClock4CircleColor);
+    if (caps.showClock4CircleColor) {
+      clock4CircleColorLabel.textContent = caps.clock4CircleColorLabel || "Center Digit Color:";
+    }
+  }
   fontFamilyGroup.classList.toggle("hidden", !caps.showFontFamily);
   fontGradientControls.classList.toggle("hidden", !(caps.showFontGradient && currentEditingProfile().fontMode === "gradient"));
 }
@@ -336,6 +357,9 @@ function updateLabels() {
   styleLabel.textContent = clockStyles[editingState.styleIndex];
   fontFamilySelect.value = profile.fontFamily;
   fontCustomColorInput.value = profile.color;
+  if (clock4CircleCustomColorInput) {
+    clock4CircleCustomColorInput.value = profile.clock4CircleColor;
+  }
   bgCustomColorInput.value = profile.bgColor;
   updateVisibleControls();
 }
@@ -366,6 +390,19 @@ function renderBackgroundOptions() {
   });
 }
 
+function renderClock4CircleOptions() {
+  if (!clock4CircleColorOptionsDiv) return;
+  const profile = currentEditingProfile();
+  renderPalette(clock4CircleColorOptionsDiv, palette, profile.clock4CircleColor, (color) => {
+    profile.clock4CircleColor = color;
+    if (clock4CircleCustomColorInput) {
+      clock4CircleCustomColorInput.value = color;
+    }
+    renderClock4CircleOptions();
+    renderCurrentFrame();
+  });
+}
+
 function syncGradientInputs() {
   const profile = currentEditingProfile();
   fontGradC1.value = profile.fontGrad[0];
@@ -387,6 +424,7 @@ function renderAllControls() {
   syncGradientInputs();
   syncBackgroundGradientInputs();
   renderFontOptions();
+  renderClock4CircleOptions();
   renderBackgroundOptions();
   const profile = currentEditingProfile();
   renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
@@ -560,6 +598,15 @@ function initEvents() {
     syncGradientInputs();
     renderCurrentFrame();
   });
+
+  if (clock4CircleCustomColorInput) {
+    clock4CircleCustomColorInput.addEventListener("input", () => {
+      const profile = currentEditingProfile();
+      profile.clock4CircleColor = clock4CircleCustomColorInput.value;
+      renderClock4CircleOptions();
+      renderCurrentFrame();
+    });
+  }
 
   [bgGradC1, bgGradC2, bgGradPattern].forEach((input) => {
     input.addEventListener("input", updateBackgroundGradient);
