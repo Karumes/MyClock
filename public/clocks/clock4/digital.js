@@ -55,15 +55,17 @@
   function getReelMetrics(w, h, size, stripIndex) {
     const maxValue = DIGIT_MAX[stripIndex];
     const edgeInset = 4;
-    const minPadding = 8;
+    const minEdgePadding = 4;
     const pairInnerGap = Math.max(30, Math.floor(Math.min(w, h) * 0.038));
     const pairOuterGap = Math.max(62, Math.floor(Math.min(w, h) * 0.072));
     const cardWidth = Math.max(54, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.68)));
     const circleRadius = Math.max(44, Math.floor(cardWidth * 0.62));
-    const maxRowByHeight = Math.floor((h * 0.8) / (maxValue + 1.45));
-    const maxRowByCircle = Math.floor((circleRadius - edgeInset - minPadding) * 2);
-    const rowHeight = Math.max(24, Math.min(maxRowByHeight, maxRowByCircle));
-    const padding = Math.max(minPadding, circleRadius - Math.floor(rowHeight / 2) - edgeInset);
+    const maxRowByHeight = Math.floor((h * 0.82) / (maxValue + 1.15));
+    const maxRowByCircle = Math.floor((circleRadius - edgeInset - minEdgePadding) * 1.9);
+    const rowHeight = Math.max(30, Math.min(maxRowByHeight, maxRowByCircle));
+    const maxEdgePadding = Math.max(minEdgePadding, circleRadius - Math.floor(rowHeight / 2) - edgeInset);
+    const topPadding = Math.min(maxEdgePadding, Math.max(minEdgePadding, Math.floor(rowHeight * 0.12)));
+    const bottomPadding = Math.min(maxEdgePadding, Math.max(minEdgePadding, Math.floor(rowHeight * 0.12)));
 
     return {
       pairInnerGap,
@@ -71,16 +73,17 @@
       cardWidth,
       circleRadius,
       rowHeight,
-      padding,
+      topPadding,
+      bottomPadding,
     };
   }
 
-  function buildStrip(width, rowHeight, stripIndex, family, bgColor, cardDigitColor, padding) {
+  function buildStrip(width, rowHeight, stripIndex, family, bgColor, cardDigitColor, topPadding, bottomPadding) {
     const max = DIGIT_MAX[stripIndex];
     const cycle = max + 1;
     const stripCanvas = document.createElement("canvas");
     stripCanvas.width = width;
-    stripCanvas.height = Math.ceil(rowHeight * cycle + padding * 2);
+    stripCanvas.height = Math.ceil(rowHeight * cycle + topPadding + bottomPadding);
     const stripCtx = stripCanvas.getContext("2d");
 
     const stripRadius = Math.floor(Math.min(width, stripCanvas.height) * 0.2);
@@ -97,7 +100,7 @@
     stripCtx.textBaseline = "middle";
 
     for (let digit = 0; digit <= max; digit += 1) {
-      const rowCenterY = padding + digit * rowHeight + rowHeight / 2;
+      const rowCenterY = topPadding + digit * rowHeight + rowHeight / 2;
       stripCtx.fillText(String(digit), width / 2, rowCenterY);
     }
 
@@ -124,14 +127,23 @@
     ctx.drawImage(image, x, y);
   }
 
-  function drawReel(ctx, x, centerY, width, stripIndex, family, nowMs, bgColor, cardDigitColor, rowHeight, padding) {
+  function drawReel(ctx, x, centerY, width, stripIndex, family, nowMs, bgColor, cardDigitColor, rowHeight, topPadding, bottomPadding) {
     const max = DIGIT_MAX[stripIndex];
     const anim = state.anim[stripIndex];
     const displayValue = anim
       ? anim.from + anim.delta * easeOutCubic((nowMs - anim.startedAt) / anim.duration)
       : state.value[stripIndex];
-    const stripCanvas = buildStrip(Math.ceil(width), rowHeight, stripIndex, family, bgColor, cardDigitColor, padding);
-    const stripY = centerY - (padding + rowHeight / 2) - displayValue * rowHeight;
+    const stripCanvas = buildStrip(
+      Math.ceil(width),
+      rowHeight,
+      stripIndex,
+      family,
+      bgColor,
+      cardDigitColor,
+      topPadding,
+      bottomPadding,
+    );
+    const stripY = centerY - (topPadding + rowHeight / 2) - displayValue * rowHeight;
     drawRaisedStrip(ctx, stripCanvas, x, stripY);
 
     const progress = anim ? easeOutCubic((nowMs - anim.startedAt) / anim.duration) : 0;
@@ -288,7 +300,8 @@
         cardFill,
         cardDigitColor,
         metrics.rowHeight,
-        metrics.padding,
+        metrics.topPadding,
+        metrics.bottomPadding,
       );
       drawCircleWindow(
         ctx,
