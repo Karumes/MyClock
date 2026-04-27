@@ -54,14 +54,14 @@
 
   function getReelMetrics(w, h, size, stripIndex) {
     const maxValue = DIGIT_MAX[stripIndex];
-    const pairInnerGap = Math.max(28, Math.floor(Math.min(w, h) * 0.036));
-    const pairOuterGap = Math.max(58, Math.floor(Math.min(w, h) * 0.07));
-    const cardWidth = Math.max(50, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.34)));
-    const circleRadius = Math.max(32, Math.floor(cardWidth * 0.37));
-    const maxRowByHeight = Math.floor((h * 0.76) / (maxValue + 1.65));
-    const maxRowByCircle = Math.floor((circleRadius - 4) / 0.76);
-    const rowHeight = Math.max(20, Math.min(maxRowByHeight, maxRowByCircle));
-    const padding = Math.max(10, Math.min(Math.floor(rowHeight * 0.26), circleRadius - Math.floor(rowHeight / 2) - 3));
+    const pairInnerGap = Math.max(30, Math.floor(Math.min(w, h) * 0.038));
+    const pairOuterGap = Math.max(62, Math.floor(Math.min(w, h) * 0.072));
+    const cardWidth = Math.max(62, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.82)));
+    const circleRadius = Math.max(44, Math.floor(cardWidth * 0.48));
+    const maxRowByHeight = Math.floor((h * 0.8) / (maxValue + 1.45));
+    const maxRowByCircle = Math.floor((circleRadius - 4) / 0.68);
+    const rowHeight = Math.max(24, Math.min(maxRowByHeight, maxRowByCircle));
+    const padding = Math.max(10, Math.min(Math.floor(rowHeight * 0.22), circleRadius - Math.floor(rowHeight / 2) - 3));
 
     return {
       pairInnerGap,
@@ -90,7 +90,7 @@
     stripCtx.fill();
 
     stripCtx.fillStyle = cardDigitColor;
-    stripCtx.font = `600 ${Math.floor(rowHeight * 0.78)}px ${family}`;
+    stripCtx.font = `600 ${Math.floor(rowHeight * 0.9)}px ${family}`;
     stripCtx.textAlign = "center";
     stripCtx.textBaseline = "middle";
 
@@ -186,7 +186,7 @@
 
     ctx.save();
     ctx.fillStyle = circleDigitColor;
-    ctx.font = `700 ${Math.floor(rowHeight * 1.08)}px ${family}`;
+    ctx.font = `700 ${Math.floor(rowHeight * 0.98)}px ${family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(String(visibleDigit), cx, circleY + 1);
