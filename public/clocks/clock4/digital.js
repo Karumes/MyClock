@@ -1,16 +1,25 @@
 (function (global) {
-  const COLS = 56;
-  const ROWS = 34;
-  const MASK_CELL_PX = 14;
-  const CELL_STATE = Array.from({ length: COLS * ROWS }, () => ({
-    front: false,
-    anim: null,
-  }));
+  const DIGIT_MAX = [2, 9, 5, 9, 5, 9];
+  const state = {
+    value: [0, 0, 0, 0, 0, 0],
+    anim: [null, null, null, null, null, null],
+    initialized: false,
+  };
 
-  function colorToRgb(color) {
-    if (typeof color !== "string" || !color.startsWith("#")) {
-      return { r: 255, g: 255, b: 255 };
-    }
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function mod(value, base) {
+    return ((value % base) + base) % base;
+  }
+
+  function easeOutCubic(t) {
+    return 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+  }
+
+  function parseHexColor(color) {
+    if (typeof color !== "string" || !color.startsWith("#")) return { r: 59, g: 95, b: 191 };
     const value = color.slice(1);
     const full = value.length === 3 ? value.split("").map((ch) => ch + ch).join("") : value;
     return {
@@ -20,150 +29,168 @@
     };
   }
 
-  function mix(a, b, t) {
-    return Math.round(a + (b - a) * t);
-  }
-
   function mixColor(a, b, t) {
-    const ca = colorToRgb(a);
-    const cb = colorToRgb(b);
-    return `rgb(${mix(ca.r, cb.r, t)}, ${mix(ca.g, cb.g, t)}, ${mix(ca.b, cb.b, t)})`;
+    const ca = parseHexColor(a);
+    const cb = parseHexColor(b);
+    const mix = (x, y) => Math.round(x + (y - x) * t);
+    return `rgb(${mix(ca.r, cb.r)}, ${mix(ca.g, cb.g)}, ${mix(ca.b, cb.b)})`;
   }
 
-  function buildMask(text, family) {
-    const maskCanvas = document.createElement("canvas");
-    maskCanvas.width = COLS * MASK_CELL_PX;
-    maskCanvas.height = ROWS * MASK_CELL_PX;
-    const maskCtx = maskCanvas.getContext("2d");
-    maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-    maskCtx.fillStyle = "#000";
-    maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
-    maskCtx.fillStyle = "#fff";
-    maskCtx.textAlign = "center";
-    maskCtx.textBaseline = "middle";
-
-    let fontSize = Math.floor(maskCanvas.height * 0.58);
-    maskCtx.font = `800 ${fontSize}px ${family}`;
-    while (maskCtx.measureText(text).width > maskCanvas.width * 0.92 && fontSize > 20) {
-      fontSize -= 2;
-      maskCtx.font = `800 ${fontSize}px ${family}`;
+  function paintToColor(ctx, paint) {
+    try {
+      ctx.fillStyle = paint;
+      return paint;
+    } catch (_) {
+      return "#3b5fbf";
     }
-    maskCtx.fillText(text, maskCanvas.width / 2, maskCanvas.height / 2);
-
-    const imageData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
-    const mask = [];
-    for (let row = 0; row < ROWS; row += 1) {
-      for (let col = 0; col < COLS; col += 1) {
-        const sampleX = Math.floor((col + 0.5) * (maskCanvas.width / COLS));
-        const sampleY = Math.floor((row + 0.5) * (maskCanvas.height / ROWS));
-        const base = (sampleY * maskCanvas.width + sampleX) * 4;
-        const r = imageData[base];
-        const g = imageData[base + 1];
-        const b = imageData[base + 2];
-        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        mask.push(luminance > 120);
-      }
-    }
-    return mask;
   }
 
-  function shade(color, amount) {
-    return amount >= 0 ? mixColor(color, "#ffffff", amount) : mixColor(color, "#000000", -amount);
+  function drawRoundedRect(ctx, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
   }
 
-  function drawSphere(ctx, x, y, radius, visibleColor, hiddenColor, progress) {
-    const angle = progress * Math.PI;
-    const faceColor = progress < 0.5 ? visibleColor : hiddenColor;
-    const scaleX = Math.max(0.15, Math.abs(Math.cos(angle)));
+  function drawCard(ctx, x, y, width, height, bgColor) {
+    const radius = Math.floor(Math.min(width, height) * 0.12);
+    drawRoundedRect(ctx, x, y, width, height, radius);
+
+    const gradient = ctx.createLinearGradient(x, y, x, y + height);
+    gradient.addColorStop(0, mixColor(bgColor, "#ffffff", 0.22));
+    gradient.addColorStop(1, mixColor(bgColor, "#000000", 0.02));
+    ctx.fillStyle = gradient;
+    ctx.fill();
+  }
+
+  function drawReel(ctx, x, y, width, height, stripIndex, family, nowMs) {
+    const max = DIGIT_MAX[stripIndex];
+    const anim = state.anim[stripIndex];
+    const displayValue = anim
+      ? anim.from + anim.delta * easeOutCubic((nowMs - anim.startedAt) / anim.duration)
+      : state.value[stripIndex];
+
+    const rowHeight = height / (max * 2 + 1);
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
 
     ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scaleX, 1);
-    ctx.shadowColor = mixColor(faceColor, "#000000", 0.18);
-    ctx.shadowBlur = radius * 0.35;
+    drawRoundedRect(ctx, x, y, width, height, Math.floor(Math.min(width, height) * 0.12));
+    ctx.clip();
 
-    const faceGradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.35, radius * 0.12, 0, 0, radius);
-    faceGradient.addColorStop(0, shade(faceColor, 0.22));
-    faceGradient.addColorStop(0.72, faceColor);
-    faceGradient.addColorStop(1, shade(faceColor, -0.12));
+    // Show all digits 0 to max
+    for (let digit = 0; digit <= max; digit += 1) {
+      const itemCenterY = centerY + (digit - displayValue) * rowHeight;
 
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    ctx.fillStyle = faceGradient;
-    ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      ctx.font = `600 ${Math.floor(rowHeight * 0.72)}px ${family}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(digit), centerX, itemCenterY);
+    }
 
-    const gloss = ctx.createRadialGradient(-radius * 0.34, -radius * 0.42, radius * 0.12, -radius * 0.12, -radius * 0.18, radius * 0.9);
-    gloss.addColorStop(0, "rgba(255,255,255,0.20)");
-    gloss.addColorStop(0.45, "rgba(255,255,255,0.05)");
-    gloss.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = gloss;
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = Math.max(1.5, radius * 0.1);
-    ctx.strokeStyle = mixColor(faceColor, "#000000", 0.12);
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    ctx.stroke();
     ctx.restore();
+  }
+
+  function updateState(nextDigits, nowMs) {
+    if (!state.initialized) {
+      for (let i = 0; i < 6; i += 1) {
+        state.value[i] = nextDigits[i];
+      }
+      state.initialized = true;
+      return;
+    }
+
+    for (let i = 0; i < 6; i += 1) {
+      const nextValue = nextDigits[i];
+      if (!state.anim[i] && state.value[i] !== nextValue) {
+        const delta = nextValue - state.value[i];
+        state.anim[i] = {
+          from: state.value[i],
+          delta,
+          startedAt: nowMs,
+          duration: 520,
+        };
+      }
+
+      const anim = state.anim[i];
+      if (anim) {
+        const t = clamp((nowMs - anim.startedAt) / anim.duration, 0, 1);
+        state.value[i] = anim.from + anim.delta * easeOutCubic(t);
+        if (t >= 1) {
+          state.value[i] = nextDigits[i];
+          state.anim[i] = null;
+        }
+      } else {
+        state.value[i] = nextValue;
+      }
+    }
   }
 
   global.renderClock1 = function renderClock1(ctx, w, h, paint, size, now, options) {
     now = now || new Date();
     options = options || {};
 
-    const text = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-    const family = options.fontFamily || '"Avenir Next Rounded", "Nunito", sans-serif';
-    const frontColor = typeof paint === "string" ? paint : "#ffffff";
-    const backColor = options.flipBackColor || "#64748b";
-    const targetMask = buildMask(text, family);
-    const timeNow = now.getTime();
-    const animDuration = 460;
+    const bgColor = (options.bg && typeof options.bg === "string") ? options.bg : "#aeb8cc";
+    const fontColor = paintToColor(ctx, paint);
+    const family = options.fontFamily || '"Segoe UI", sans-serif';
+    const nowMs = now.getTime();
 
-    for (let i = 0; i < CELL_STATE.length; i += 1) {
-      const cell = CELL_STATE[i];
-      if (cell.anim) {
-        const progress = Math.min(1, (timeNow - cell.anim.startedAt) / animDuration);
-        if (progress >= 1) {
-          cell.front = cell.anim.to;
-          cell.anim = null;
-        }
-      }
-      if (!cell.anim && cell.front !== targetMask[i]) {
-        cell.anim = {
-          from: cell.front,
-          to: targetMask[i],
-          startedAt: timeNow,
-        };
-      }
-    }
+    const nextDigits = [
+      Math.floor(now.getHours() / 10),
+      now.getHours() % 10,
+      Math.floor(now.getMinutes() / 10),
+      now.getMinutes() % 10,
+      Math.floor(now.getSeconds() / 10),
+      now.getSeconds() % 10,
+    ];
 
-    const stepX = w / (COLS + 1);
-    const stepY = h / (ROWS + 1);
-    const radius = Math.min(stepX, stepY) * 0.44;
-    const offsetX = (w - stepX * (COLS - 1)) / 2;
-    const offsetY = (h - stepY * (ROWS - 1)) / 2;
+    updateState(nextDigits, nowMs);
 
-    for (let row = 0; row < ROWS; row += 1) {
-      for (let col = 0; col < COLS; col += 1) {
-        const index = row * COLS + col;
-        const cell = CELL_STATE[index];
-        const x = offsetX + col * stepX;
-        const y = offsetY + row * stepY;
+    ctx.clearRect(0, 0, w, h);
+    const background = ctx.createLinearGradient(0, 0, 0, h);
+    background.addColorStop(0, bgColor);
+    background.addColorStop(1, mixColor(bgColor, "#000000", 0.08));
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, w, h);
 
-        if (cell.anim) {
-          const progress = Math.min(1, (timeNow - cell.anim.startedAt) / animDuration);
-          const fromVisible = cell.anim.from ? frontColor : backColor;
-          const toVisible = cell.anim.to ? frontColor : backColor;
-          drawSphere(ctx, x, y, radius, fromVisible, toVisible, progress);
-        } else {
-          const visible = cell.front ? frontColor : backColor;
-          const hidden = cell.front ? backColor : frontColor;
-          drawSphere(ctx, x, y, radius, visible, hidden, 0);
-        }
-      }
+    const gap = Math.max(12, Math.floor(Math.min(w, h) * 0.022));
+    const cardWidth = Math.max(72, Math.floor(Math.min(w / 10.5, size * 0.46)));
+    const rowHeight = Math.max(38, Math.floor(Math.min(w, h) * 0.068));
+    const totalWidth = cardWidth * 6 + gap * 5;
+    const startX = Math.round((w - totalWidth) / 2);
+    const circleFill = "#d9dfe8";
+    const cardFill = "#d9dfe8";
+
+    for (let i = 0; i < 6; i += 1) {
+      const reelRows = DIGIT_MAX[i] * 2 + 1;
+      const cardHeight = rowHeight * reelRows + Math.floor(rowHeight * 0.5);
+      const startY = Math.round((h - cardHeight) / 2);
+      const circleRadius = Math.max(48, Math.floor(Math.min(cardWidth, cardHeight) * 0.40));
+      const x = startX + i * (cardWidth + gap);
+      drawCard(ctx, x, startY, cardWidth, cardHeight, cardFill);
+      drawReel(ctx, x, startY, cardWidth, cardHeight, i, family, nowMs);
+
+      ctx.save();
+      ctx.shadowColor = "rgba(255,255,255,0.45)";
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = circleFill;
+      ctx.beginPath();
+      ctx.arc(x + cardWidth / 2, startY + cardHeight / 2, circleRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = fontColor;
+      ctx.font = `600 ${Math.floor(rowHeight * 1.1)}px ${family}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(nextDigits[i]), x + cardWidth / 2, startY + cardHeight / 2 + 1);
+      ctx.restore();
     }
   };
 })(this);

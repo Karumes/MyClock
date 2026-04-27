@@ -52,7 +52,7 @@ const STYLE_CONFIG = [
   {
     name: "Clock 4",
     module: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: true, backColorLabel: "Reverse Side Color:", showBackground: true },
+    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
     drawSize: 100,
   },
   {
@@ -328,10 +328,6 @@ function updateVisibleControls() {
   fontColorGroup.classList.toggle("hidden", !caps.showColor);
   fontColorLabel.textContent = caps.colorLabel;
   fontFamilyGroup.classList.toggle("hidden", !caps.showFontFamily);
-  clock1BackGroup.classList.toggle("hidden", !caps.showBackColor);
-  if (clock1BackLabel) {
-    clock1BackLabel.textContent = caps.backColorLabel || "Reverse Side Color:";
-  }
   fontGradientControls.classList.toggle("hidden", !(caps.showFontGradient && currentEditingProfile().fontMode === "gradient"));
 }
 
@@ -341,7 +337,6 @@ function updateLabels() {
   fontFamilySelect.value = profile.fontFamily;
   fontCustomColorInput.value = profile.color;
   bgCustomColorInput.value = profile.bgColor;
-  clock1BackCustomColorInput.value = profile.flipBackColor;
   updateVisibleControls();
 }
 
@@ -354,16 +349,6 @@ function renderFontOptions() {
     syncGradientInputs();
     renderFontOptions();
     renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
-    renderCurrentFrame();
-  });
-}
-
-function renderClock1BackOptions() {
-  const profile = currentEditingProfile();
-  renderPalette(clock1BackColorOptionsDiv, palette, profile.flipBackColor, (color) => {
-    profile.flipBackColor = color;
-    clock1BackCustomColorInput.value = color;
-    renderClock1BackOptions();
     renderCurrentFrame();
   });
 }
@@ -403,7 +388,6 @@ function renderAllControls() {
   syncBackgroundGradientInputs();
   renderFontOptions();
   renderBackgroundOptions();
-  renderClock1BackOptions();
   const profile = currentEditingProfile();
   renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
   renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, profile.bgMode === "gradient");
@@ -589,12 +573,6 @@ function initEvents() {
     renderBackgroundOptions();
     renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, false);
     syncBackgroundGradientInputs();
-    renderCurrentFrame();
-  });
-
-  clock1BackCustomColorInput.addEventListener("input", () => {
-    currentEditingProfile().flipBackColor = clock1BackCustomColorInput.value;
-    renderClock1BackOptions();
     renderCurrentFrame();
   });
 
