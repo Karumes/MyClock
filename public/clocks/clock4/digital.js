@@ -56,12 +56,12 @@
     ctx.closePath();
   }
 
-  function buildStrip(width, rowHeight, stripIndex, family, bgColor, fontColor) {
+  function buildStrip(width, rowHeight, stripIndex, family, bgColor, fontColor, padding) {
     const max = DIGIT_MAX[stripIndex];
     const cycle = max + 1;
     const stripCanvas = document.createElement("canvas");
     stripCanvas.width = width;
-    stripCanvas.height = Math.ceil(rowHeight * cycle);
+    stripCanvas.height = Math.ceil(rowHeight * cycle + padding * 2);
     const stripCtx = stripCanvas.getContext("2d");
 
     const stripRadius = Math.floor(Math.min(width, stripCanvas.height) * 0.06);
@@ -73,33 +73,47 @@
     stripCtx.fill();
 
     stripCtx.fillStyle = fontColor;
-    stripCtx.font = `600 ${Math.floor(rowHeight * 0.56)}px ${family}`;
+    stripCtx.font = `600 ${Math.floor(rowHeight * 0.48)}px ${family}`;
     stripCtx.textAlign = "center";
     stripCtx.textBaseline = "middle";
 
     for (let digit = 0; digit <= max; digit += 1) {
-      const rowCenterY = digit * rowHeight + rowHeight / 2;
+      const rowCenterY = padding + digit * rowHeight + rowHeight / 2;
       stripCtx.fillText(String(digit), width / 2, rowCenterY);
     }
 
     return stripCanvas;
   }
 
-  function drawReel(ctx, x, y, width, height, stripIndex, family, nowMs, bgColor, fontColor) {
+  function drawRaisedStrip(ctx, image, x, y) {
+    ctx.save();
+    ctx.shadowColor = "rgba(255,255,255,0.88)";
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetX = -5;
+    ctx.shadowOffsetY = -5;
+    ctx.drawImage(image, x, y);
+    ctx.restore();
+
+    ctx.save();
+    ctx.shadowColor = "rgba(41,53,72,0.22)";
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetX = 8;
+    ctx.shadowOffsetY = 8;
+    ctx.drawImage(image, x, y);
+    ctx.restore();
+
+    ctx.drawImage(image, x, y);
+  }
+
+  function drawReel(ctx, x, centerY, width, stripIndex, family, nowMs, bgColor, fontColor, rowHeight, padding) {
     const max = DIGIT_MAX[stripIndex];
     const anim = state.anim[stripIndex];
     const displayValue = anim
       ? anim.from + anim.delta * easeOutCubic((nowMs - anim.startedAt) / anim.duration)
       : state.value[stripIndex];
-    const rowHeight = height / (max + 1);
-    const stripCanvas = buildStrip(Math.ceil(width), rowHeight, stripIndex, family, bgColor, fontColor);
-    const stripY = y + height / 2 - rowHeight / 2 - displayValue * rowHeight;
-
-    ctx.save();
-    drawRoundedRect(ctx, x, y, width, height, Math.floor(Math.min(width, height) * 0.12));
-    ctx.clip();
-    ctx.drawImage(stripCanvas, x, stripY);
-    ctx.restore();
+    const stripCanvas = buildStrip(Math.ceil(width), rowHeight, stripIndex, family, bgColor, fontColor, padding);
+    const stripY = centerY - (padding + rowHeight / 2) - displayValue * rowHeight;
+    drawRaisedStrip(ctx, stripCanvas, x, stripY);
 
     return {
       rowHeight,
@@ -110,10 +124,12 @@
     };
   }
 
-  function drawCircleWindow(ctx, cx, cy, radius, circleFill, stripCanvas, stripX, stripY, visibleDigit, family, fontColor, rowHeight) {
+  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, fontColor, rowHeight) {
     ctx.save();
-    ctx.shadowColor = "rgba(255,255,255,0.45)";
-    ctx.shadowBlur = 12;
+    ctx.shadowColor = "rgba(255,255,255,0.88)";
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetX = -5;
+    ctx.shadowOffsetY = -5;
     ctx.fillStyle = circleFill;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -121,15 +137,29 @@
     ctx.restore();
 
     ctx.save();
+    ctx.shadowColor = "rgba(41,53,72,0.24)";
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetX = 8;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = circleFill;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(stripCanvas, stripX, stripY);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    const circleGradient = ctx.createRadialGradient(cx - radius * 0.24, cy - radius * 0.28, radius * 0.18, cx, cy, radius);
+    circleGradient.addColorStop(0, mixColor(circleFill, "#ffffff", 0.22));
+    circleGradient.addColorStop(1, mixColor(circleFill, "#000000", 0.04));
+    ctx.fillStyle = circleGradient;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = fontColor;
-    ctx.font = `700 ${Math.floor(rowHeight * 0.78)}px ${family}`;
+    ctx.font = `700 ${Math.floor(rowHeight * 1.02)}px ${family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(String(visibleDigit), cx, cy + 1);
@@ -147,6 +177,12 @@
 
     for (let i = 0; i < 6; i += 1) {
       const nextValue = nextDigits[i];
+      const maxValue = DIGIT_MAX[i];
+      if (!state.anim[i] && Math.round(state.value[i]) === maxValue && nextValue === 0) {
+        state.value[i] = 0;
+        state.anim[i] = null;
+        continue;
+      }
       if (!state.anim[i] && state.value[i] !== nextValue) {
         const delta = nextValue - state.value[i];
         state.anim[i] = {
@@ -198,30 +234,34 @@
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, w, h);
 
-    const gap = Math.max(12, Math.floor(Math.min(w, h) * 0.022));
+    const pairInnerGap = Math.max(8, Math.floor(Math.min(w, h) * 0.012));
+    const pairOuterGap = Math.max(22, Math.floor(Math.min(w, h) * 0.03));
     const cardWidth = Math.max(72, Math.floor(Math.min(w / 10.5, size * 0.46)));
-    const rowHeight = Math.max(38, Math.floor(Math.min(w, h) * 0.068));
-    const totalWidth = cardWidth * 6 + gap * 5;
+    const baseRowHeight = Math.max(30, Math.floor(Math.min(w, h) * 0.055));
+    const totalWidth = cardWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
     const circleFill = "#d9dfe8";
     const cardFill = "#d9dfe8";
+    const centerY = Math.round(h / 2);
 
     for (let i = 0; i < 6; i += 1) {
       const reelRows = DIGIT_MAX[i] + 1;
-      const cardHeight = rowHeight * reelRows;
-      const startY = Math.round((h - cardHeight) / 2);
-      const circleRadius = Math.max(48, Math.floor(Math.min(cardWidth, cardHeight) * 0.40));
-      const x = startX + i * (cardWidth + gap);
-      const reel = drawReel(ctx, x, startY, cardWidth, cardHeight, i, family, nowMs, cardFill, fontColor);
+      const rowHeight = Math.min(baseRowHeight, Math.floor((h * 0.76) / (reelRows + 0.6)));
+      const padding = Math.max(16, Math.floor(rowHeight * 0.5));
+      const cardHeight = rowHeight * reelRows + padding * 2;
+      const circleRadius = Math.max(48, Math.floor(Math.min(cardWidth, cardHeight) * 0.34));
+      const groupIndex = Math.floor(i / 2);
+      const inGroupIndex = i % 2;
+      const x = startX
+        + groupIndex * (cardWidth * 2 + pairInnerGap + pairOuterGap)
+        + inGroupIndex * (cardWidth + pairInnerGap);
+      const reel = drawReel(ctx, x, centerY, cardWidth, i, family, nowMs, cardFill, fontColor, rowHeight, padding);
       drawCircleWindow(
         ctx,
         x + cardWidth / 2,
-        startY + cardHeight / 2,
+        centerY,
         circleRadius,
         circleFill,
-        reel.stripCanvas,
-        x,
-        reel.stripY,
         reel.visibleDigit,
         family,
         fontColor,
