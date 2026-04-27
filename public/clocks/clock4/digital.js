@@ -56,6 +56,27 @@
     ctx.closePath();
   }
 
+  function getReelMetrics(w, h, size, stripIndex) {
+    const maxValue = DIGIT_MAX[stripIndex];
+    const pairInnerGap = Math.max(28, Math.floor(Math.min(w, h) * 0.036));
+    const pairOuterGap = Math.max(58, Math.floor(Math.min(w, h) * 0.07));
+    const cardWidth = Math.max(50, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.34)));
+    const circleRadius = Math.max(32, Math.floor(cardWidth * 0.37));
+    const maxRowByHeight = Math.floor((h * 0.76) / (maxValue + 1.65));
+    const maxRowByCircle = Math.floor((circleRadius - 4) / 0.76);
+    const rowHeight = Math.max(20, Math.min(maxRowByHeight, maxRowByCircle));
+    const padding = Math.max(10, Math.min(Math.floor(rowHeight * 0.26), circleRadius - Math.floor(rowHeight / 2) - 3));
+
+    return {
+      pairInnerGap,
+      pairOuterGap,
+      cardWidth,
+      circleRadius,
+      rowHeight,
+      padding,
+    };
+  }
+
   function buildStrip(width, rowHeight, stripIndex, family, bgColor, fontColor, padding) {
     const max = DIGIT_MAX[stripIndex];
     const cycle = max + 1;
@@ -64,16 +85,23 @@
     stripCanvas.height = Math.ceil(rowHeight * cycle + padding * 2);
     const stripCtx = stripCanvas.getContext("2d");
 
-    const stripRadius = Math.floor(Math.min(width, stripCanvas.height) * 0.06);
+    const stripRadius = Math.floor(Math.min(width, stripCanvas.height) * 0.2);
     drawRoundedRect(stripCtx, 0, 0, width, stripCanvas.height, stripRadius);
     const stripGradient = stripCtx.createLinearGradient(0, 0, 0, stripCanvas.height);
-    stripGradient.addColorStop(0, mixColor(bgColor, "#ffffff", 0.14));
-    stripGradient.addColorStop(1, mixColor(bgColor, "#000000", 0.05));
+    stripGradient.addColorStop(0, mixColor(bgColor, "#ffffff", 0.18));
+    stripGradient.addColorStop(1, mixColor(bgColor, "#000000", 0.06));
     stripCtx.fillStyle = stripGradient;
     stripCtx.fill();
 
+    stripCtx.save();
+    drawRoundedRect(stripCtx, 1, 1, width - 2, stripCanvas.height - 2, Math.max(0, stripRadius - 1));
+    stripCtx.strokeStyle = "rgba(255,255,255,0.26)";
+    stripCtx.lineWidth = 2;
+    stripCtx.stroke();
+    stripCtx.restore();
+
     stripCtx.fillStyle = fontColor;
-    stripCtx.font = `600 ${Math.floor(rowHeight * 0.48)}px ${family}`;
+    stripCtx.font = `600 ${Math.floor(rowHeight * 0.42)}px ${family}`;
     stripCtx.textAlign = "center";
     stripCtx.textBaseline = "middle";
 
@@ -234,33 +262,38 @@
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, w, h);
 
-    const pairInnerGap = Math.max(8, Math.floor(Math.min(w, h) * 0.012));
-    const pairOuterGap = Math.max(22, Math.floor(Math.min(w, h) * 0.03));
-    const cardWidth = Math.max(72, Math.floor(Math.min(w / 10.5, size * 0.46)));
-    const baseRowHeight = Math.max(30, Math.floor(Math.min(w, h) * 0.055));
-    const totalWidth = cardWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
+    const layoutMetrics = getReelMetrics(w, h, size, 1);
+    const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairInnerGap * 3 + layoutMetrics.pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
     const circleFill = "#d9dfe8";
     const cardFill = "#d9dfe8";
     const centerY = Math.round(h / 2);
 
     for (let i = 0; i < 6; i += 1) {
-      const reelRows = DIGIT_MAX[i] + 1;
-      const rowHeight = Math.min(baseRowHeight, Math.floor((h * 0.76) / (reelRows + 0.6)));
-      const padding = Math.max(16, Math.floor(rowHeight * 0.5));
-      const cardHeight = rowHeight * reelRows + padding * 2;
-      const circleRadius = Math.max(48, Math.floor(Math.min(cardWidth, cardHeight) * 0.34));
+      const metrics = getReelMetrics(w, h, size, i);
       const groupIndex = Math.floor(i / 2);
       const inGroupIndex = i % 2;
       const x = startX
-        + groupIndex * (cardWidth * 2 + pairInnerGap + pairOuterGap)
-        + inGroupIndex * (cardWidth + pairInnerGap);
-      const reel = drawReel(ctx, x, centerY, cardWidth, i, family, nowMs, cardFill, fontColor, rowHeight, padding);
+        + groupIndex * (metrics.cardWidth * 2 + metrics.pairInnerGap + metrics.pairOuterGap)
+        + inGroupIndex * (metrics.cardWidth + metrics.pairInnerGap);
+      const reel = drawReel(
+        ctx,
+        x,
+        centerY,
+        metrics.cardWidth,
+        i,
+        family,
+        nowMs,
+        cardFill,
+        fontColor,
+        metrics.rowHeight,
+        metrics.padding,
+      );
       drawCircleWindow(
         ctx,
-        x + cardWidth / 2,
+        x + metrics.cardWidth / 2,
         centerY,
-        circleRadius,
+        metrics.circleRadius,
         circleFill,
         reel.visibleDigit,
         family,
