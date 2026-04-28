@@ -14,6 +14,10 @@
     return 1 - Math.pow(1 - clamp(t, 0, 1), 3);
   }
 
+  function easeInOutSine(t) {
+    return -(Math.cos(Math.PI * clamp(t, 0, 1)) - 1) / 2;
+  }
+
   function parseHexColor(color) {
     if (typeof color !== "string" || !color.startsWith("#")) return { r: 59, g: 95, b: 191 };
     const value = color.slice(1);
@@ -55,17 +59,18 @@
   function getReelMetrics(w, h, size, stripIndex) {
     const maxValue = DIGIT_MAX[stripIndex];
     const edgeInset = 4;
-    const minEdgePadding = 4;
+    const minEdgePadding = 2;
     const pairInnerGap = Math.max(30, Math.floor(Math.min(w, h) * 0.038));
     const pairOuterGap = Math.max(62, Math.floor(Math.min(w, h) * 0.072));
     const cardWidth = Math.max(54, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.68)));
-    const circleRadius = Math.max(44, Math.floor(cardWidth * 0.62));
+    const circleRadius = Math.max(48, Math.floor(cardWidth * 0.68));
     const maxRowByHeight = Math.floor((h * 0.82) / (maxValue + 0.5));
     const maxRowByCircle = Math.floor((circleRadius - edgeInset - minEdgePadding) * 2.4);
     const rowHeight = Math.max(35, Math.min(maxRowByHeight, maxRowByCircle));
-    const maxEdgePadding = Math.max(minEdgePadding, circleRadius - Math.floor(rowHeight / 2) - edgeInset);
-    const topPadding = Math.min(maxEdgePadding, Math.max(minEdgePadding, Math.floor(rowHeight * 0.12)));
-    const bottomPadding = Math.min(maxEdgePadding, Math.max(minEdgePadding, Math.floor(rowHeight * 0.12)));
+    const maxVisibleEdge = Math.max(0, circleRadius - Math.floor(rowHeight / 2) - edgeInset);
+    const desiredEdgePadding = Math.max(minEdgePadding, Math.floor(rowHeight * 0.03));
+    const topPadding = Math.min(maxVisibleEdge, desiredEdgePadding);
+    const bottomPadding = Math.min(maxVisibleEdge, desiredEdgePadding);
 
     return {
       pairInnerGap,
@@ -96,7 +101,7 @@
 
     stripCtx.fillStyle = cardDigitColor;
     const fontSize = digitFontSize || Math.floor(rowHeight * 0.9);
-    stripCtx.font = `600 ${fontSize}px ${family}`;
+    stripCtx.font = `400 ${fontSize}px ${family}`;
     stripCtx.textAlign = "center";
     stripCtx.textBaseline = "middle";
 
@@ -154,13 +159,16 @@
       stripCanvas,
       stripY,
       displayValue,
+      progress,
       visibleDigit: anim && anim.wrap ? max : clamp(Math.round(displayValue), 0, max),
       circleOffsetY: anim && anim.wrap ? progress * max * rowHeight : 0,
     };
   }
 
-  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, circleDigitColor, circleFontSize, offsetY) {
+  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, circleDigitColor, circleFontSize, offsetY, scale) {
     const circleY = cy + (offsetY || 0);
+    const actualScale = scale || 1;
+    const scaledRadius = radius * actualScale;
     ctx.save();
     ctx.shadowColor = "rgba(255,255,255,0.88)";
     ctx.shadowBlur = 14;
@@ -168,7 +176,7 @@
     ctx.shadowOffsetY = -5;
     ctx.fillStyle = circleFill;
     ctx.beginPath();
-    ctx.arc(cx, circleY, radius, 0, Math.PI * 2);
+    ctx.arc(cx, circleY, scaledRadius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -179,30 +187,30 @@
     ctx.shadowOffsetY = 8;
     ctx.fillStyle = circleFill;
     ctx.beginPath();
-    ctx.arc(cx, circleY, radius, 0, Math.PI * 2);
+    ctx.arc(cx, circleY, scaledRadius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     ctx.save();
     const circleGradient = ctx.createRadialGradient(
-      cx - radius * 0.24,
-      circleY - radius * 0.28,
-      radius * 0.18,
+      cx - scaledRadius * 0.24,
+      circleY - scaledRadius * 0.28,
+      scaledRadius * 0.18,
       cx,
       circleY,
-      radius,
+      scaledRadius,
     );
     circleGradient.addColorStop(0, mixColor(circleFill, "#ffffff", 0.22));
     circleGradient.addColorStop(1, mixColor(circleFill, "#000000", 0.04));
     ctx.fillStyle = circleGradient;
     ctx.beginPath();
-    ctx.arc(cx, circleY, radius, 0, Math.PI * 2);
+    ctx.arc(cx, circleY, scaledRadius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = circleDigitColor;
-    const cFont = circleFontSize || Math.floor(radius * 0.98);
+    const cFont = circleFontSize || Math.floor(scaledRadius * 0.98);
     ctx.font = `700 ${cFont}px ${family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -281,8 +289,8 @@
     const layoutMetrics = getReelMetrics(w, h, size, 1);
     // compute base fixed font sizes so digits remain consistent across cards
     const baseMetrics = getReelMetrics(w, h, size, 0);
-    const fixedCardDigitSize = Math.max(12, Math.min(Math.floor(baseMetrics.cardWidth * 0.58), Math.floor(baseMetrics.rowHeight * 0.95)));
-    const fixedCircleDigitSize = Math.max(12, Math.floor(baseMetrics.circleRadius * 0.85));
+    const fixedCardDigitSize = Math.max(12, Math.min(Math.floor(baseMetrics.cardWidth * 0.64), Math.floor(baseMetrics.rowHeight * 0.98)));
+    const fixedCircleDigitSize = Math.max(12, Math.floor(baseMetrics.circleRadius * 0.92));
     const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairInnerGap * 3 + layoutMetrics.pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
     const circleFill = "#d9dfe8";
@@ -311,6 +319,9 @@
         metrics.topPadding,
         metrics.bottomPadding,
       );
+      const circleScale = state.anim[i]
+        ? 1 - 0.14 * Math.sin(Math.PI * easeInOutSine(reel.progress))
+        : 1;
       drawCircleWindow(
         ctx,
         x + metrics.cardWidth / 2,
@@ -322,6 +333,7 @@
         circleDigitColor,
         fixedCircleDigitSize,
         reel.circleOffsetY,
+        circleScale,
       );
     }
   };
