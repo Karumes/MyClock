@@ -60,9 +60,9 @@
     const pairOuterGap = Math.max(62, Math.floor(Math.min(w, h) * 0.072));
     const cardWidth = Math.max(54, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.68)));
     const circleRadius = Math.max(44, Math.floor(cardWidth * 0.62));
-    const maxRowByHeight = Math.floor((h * 0.82) / (maxValue + 1.15));
-    const maxRowByCircle = Math.floor((circleRadius - edgeInset - minEdgePadding) * 1.9);
-    const rowHeight = Math.max(30, Math.min(maxRowByHeight, maxRowByCircle));
+    const maxRowByHeight = Math.floor((h * 0.82) / (maxValue + 0.5));
+    const maxRowByCircle = Math.floor((circleRadius - edgeInset - minEdgePadding) * 2.4);
+    const rowHeight = Math.max(35, Math.min(maxRowByHeight, maxRowByCircle));
     const maxEdgePadding = Math.max(minEdgePadding, circleRadius - Math.floor(rowHeight / 2) - edgeInset);
     const topPadding = Math.min(maxEdgePadding, Math.max(minEdgePadding, Math.floor(rowHeight * 0.12)));
     const bottomPadding = Math.min(maxEdgePadding, Math.max(minEdgePadding, Math.floor(rowHeight * 0.12)));
@@ -78,7 +78,7 @@
     };
   }
 
-  function buildStrip(width, rowHeight, stripIndex, family, bgColor, cardDigitColor, topPadding, bottomPadding) {
+  function buildStrip(width, rowHeight, stripIndex, family, bgColor, cardDigitColor, topPadding, bottomPadding, digitFontSize) {
     const max = DIGIT_MAX[stripIndex];
     const cycle = max + 1;
     const stripCanvas = document.createElement("canvas");
@@ -95,7 +95,8 @@
     stripCtx.fill();
 
     stripCtx.fillStyle = cardDigitColor;
-    stripCtx.font = `600 ${Math.floor(rowHeight * 0.9)}px ${family}`;
+    const fontSize = digitFontSize || Math.floor(rowHeight * 0.9);
+    stripCtx.font = `600 ${fontSize}px ${family}`;
     stripCtx.textAlign = "center";
     stripCtx.textBaseline = "middle";
 
@@ -127,7 +128,7 @@
     ctx.drawImage(image, x, y);
   }
 
-  function drawReel(ctx, x, centerY, width, stripIndex, family, nowMs, bgColor, cardDigitColor, rowHeight, topPadding, bottomPadding) {
+  function drawReel(ctx, x, centerY, width, stripIndex, family, digitFontSize, nowMs, bgColor, cardDigitColor, rowHeight, topPadding, bottomPadding) {
     const max = DIGIT_MAX[stripIndex];
     const anim = state.anim[stripIndex];
     const displayValue = anim
@@ -142,6 +143,7 @@
       cardDigitColor,
       topPadding,
       bottomPadding,
+      digitFontSize,
     );
     const stripY = centerY - (topPadding + rowHeight / 2) - displayValue * rowHeight;
     drawRaisedStrip(ctx, stripCanvas, x, stripY);
@@ -157,7 +159,7 @@
     };
   }
 
-  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, circleDigitColor, rowHeight, offsetY) {
+  function drawCircleWindow(ctx, cx, cy, radius, circleFill, visibleDigit, family, circleDigitColor, circleFontSize, offsetY) {
     const circleY = cy + (offsetY || 0);
     ctx.save();
     ctx.shadowColor = "rgba(255,255,255,0.88)";
@@ -200,7 +202,8 @@
 
     ctx.save();
     ctx.fillStyle = circleDigitColor;
-    ctx.font = `700 ${Math.floor(rowHeight * 0.98)}px ${family}`;
+    const cFont = circleFontSize || Math.floor(radius * 0.98);
+    ctx.font = `700 ${cFont}px ${family}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(String(visibleDigit), cx, circleY + 1);
@@ -276,6 +279,10 @@
     ctx.fillRect(0, 0, w, h);
 
     const layoutMetrics = getReelMetrics(w, h, size, 1);
+    // compute base fixed font sizes so digits remain consistent across cards
+    const baseMetrics = getReelMetrics(w, h, size, 0);
+    const fixedCardDigitSize = Math.max(12, Math.min(Math.floor(baseMetrics.cardWidth * 0.58), Math.floor(baseMetrics.rowHeight * 0.95)));
+    const fixedCircleDigitSize = Math.max(12, Math.floor(baseMetrics.circleRadius * 0.85));
     const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairInnerGap * 3 + layoutMetrics.pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
     const circleFill = "#d9dfe8";
@@ -296,6 +303,7 @@
         metrics.cardWidth,
         i,
         family,
+        fixedCardDigitSize,
         nowMs,
         cardFill,
         cardDigitColor,
@@ -312,7 +320,7 @@
         reel.visibleDigit,
         family,
         circleDigitColor,
-        reel.rowHeight,
+        fixedCircleDigitSize,
         reel.circleOffsetY,
       );
     }
