@@ -115,7 +115,7 @@
 
   function drawRaisedStrip(ctx, image, x, y) {
     ctx.save();
-    ctx.shadowColor = "rgba(255,255,255,0.88)";
+    ctx.shadowColor = "rgba(41,53,72,0.22)";
     ctx.shadowBlur = 12;
     ctx.shadowOffsetX = -5;
     ctx.shadowOffsetY = -5;
@@ -170,7 +170,7 @@
     const actualScale = scale || 1;
     const scaledRadius = radius * actualScale;
     ctx.save();
-    ctx.shadowColor = "rgba(255,255,255,0.88)";
+    ctx.shadowColor = "rgba(41,53,72,0.22S)";
     ctx.shadowBlur = 14;
     ctx.shadowOffsetX = -5;
     ctx.shadowOffsetY = -5;

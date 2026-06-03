@@ -3,90 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MyClock</title>
+  <title>Karumes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="ui-bar">
-    <button id="settings-btn" type="button" title="Settings" aria-label="Open settings">&#9881;</button>
-    <div id="settings-panel" class="hidden">
-      <div class="settings-group">
-        <label for="clock-style-label">Clock Style:</label>
-        <button id="clock-style-prev" type="button" aria-label="Previous clock style">&#9664;</button>
-        <span id="clock-style-label">Clock 1</span>
-        <button id="clock-style-next" type="button" aria-label="Next clock style">&#9654;</button>
-      </div>
+  <canvas id="auroraCanvas" aria-hidden="true"></canvas>
 
-      <div id="font-color-group" class="settings-group">
-        <label id="font-color-label">Font Color:</label>
-        <div id="color-options"></div>
-        <div id="font-special-swatches">
-          <div class="font-special-row">
-            <button id="font-half-swatch" type="button" title="Edit gradient font color" aria-label="Edit gradient font color"></button>
-            <input type="color" id="font-custom-color" aria-label="Custom font color" />
+  <main id="platform" class="platform-shell">
+    <header class="topbar">
+      <button id="brand-btn" class="brand-mark" type="button" aria-label="Karumes home">Karumes</button>
+      <nav class="mode-tabs" aria-label="Karumes sections">
+        <button class="tab active" type="button" data-section="library">Library</button>
+        <button class="tab" type="button" data-section="create">Create</button>
+      </nav>
+    </header>
+
+    <section id="library-section" class="section active">
+      <div class="hero-copy">
+        <p>Clock selection platform</p>
+      </div>
+      <div id="clock-grid" class="clock-grid" aria-label="Clock previews"></div>
+    </section>
+
+    <section id="create-section" class="section create-section">
+      <div class="create-workbench">
+        <div class="code-pane">
+          <div class="pane-bar">
+            <span>create.clock</span>
+            <button id="run-create" type="button" aria-label="Run create preview">Run</button>
           </div>
-          <div id="font-gradient-controls" class="gradient-controls hidden">
-            <input type="color" id="font-grad-c1" aria-label="Gradient color 1" />
-            <input type="color" id="font-grad-c2" aria-label="Gradient color 2" />
-            <select id="font-grad-pattern" aria-label="Gradient direction">
-              <option value="vertical">Vertical</option>
-              <option value="horizontal">Horizontal</option>
-              <option value="diag-tlbr">Diagonal TL-BR</option>
-              <option value="diag-bltr">Diagonal BL-TR</option>
-              <option value="radial">Radial</option>
-            </select>
-          </div>
+          <textarea id="create-code" spellcheck="false"></textarea>
+        </div>
+        <div class="create-preview-wrap">
+          <div id="create-preview" class="create-preview"></div>
         </div>
       </div>
+    </section>
+  </main>
 
-      <div id="clock4-circle-color-group" class="settings-group hidden">
-        <label id="clock4-circle-color-label">Center Digit Color:</label>
-        <div id="clock4-circle-color-options"></div>
-        <div id="clock4-circle-special-swatches">
-          <div class="font-special-row">
-            <input type="color" id="clock4-circle-custom-color" aria-label="Custom center digit color" />
-          </div>
-        </div>
-      </div>
-
-      <div id="background-group" class="settings-group">
-        <label>Background Color:</label>
-        <div id="bg-color-options"></div>
-        <div id="bg-special-swatches">
-          <div class="font-special-row">
-            <button id="bg-half-swatch" type="button" title="Edit gradient background" aria-label="Edit gradient background"></button>
-            <input type="color" id="bg-custom-color" aria-label="Custom background color" />
-          </div>
-          <div id="bg-gradient-controls" class="gradient-controls hidden">
-            <input type="color" id="bg-grad-c1" aria-label="Background gradient color 1" />
-            <input type="color" id="bg-grad-c2" aria-label="Background gradient color 2" />
-            <select id="bg-grad-pattern" aria-label="Background gradient direction">
-              <option value="vertical">Vertical</option>
-              <option value="horizontal">Horizontal</option>
-              <option value="diag-tlbr">Diagonal TL-BR</option>
-              <option value="diag-bltr">Diagonal BL-TR</option>
-              <option value="radial">Radial</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div id="font-family-group" class="settings-group">
-        <label for="font-family-select">Font:</label>
-        <select id="font-family-select">
-          <option value="rounded">Rounded</option>
-          <option value="modern">Modern</option>
-          <option value="mono">Monospace</option>
-          <option value="condensed">Condensed</option>
-          <option value="serif">Serif</option>
-        </select>
-      </div>
-
-      <button id="apply-btn" type="button">Confirm Change</button>
+  <section id="saver" class="saver hidden" aria-label="Selected clock">
+    <canvas id="clockCanvas"></canvas>
+    <div class="saver-actions">
+      <button id="home-btn" type="button" aria-label="Back to Karumes">&times;</button>
+      <button id="settings-btn" type="button" aria-label="Customize clock">Settings</button>
     </div>
-  </div>
+  </section>
 
-  <canvas id="clockCanvas"></canvas>
+  <aside id="settings-panel" class="settings-panel hidden" aria-label="Clock settings">
+    <div class="settings-head">
+      <span id="settings-title">Clock</span>
+      <button id="close-settings" type="button" aria-label="Close settings">Close</button>
+    </div>
+
+    <div class="settings-grid">
+      <label>Background <input id="bg-custom-color" type="color" /></label>
+      <label>Digits <input id="font-custom-color" type="color" /></label>
+      <label>Colon <input id="colon-custom-color" type="color" /></label>
+      <label>Card <input id="card-custom-color" type="color" /></label>
+    </div>
+
+    <div class="settings-row">
+      <span>Font</span>
+      <select id="font-family-select">
+        <option value="rounded">Rounded</option>
+        <option value="modern">Modern</option>
+        <option value="mono">Monospace</option>
+        <option value="condensed">Condensed</option>
+        <option value="serif">Serif</option>
+      </select>
+    </div>
+
+    <div class="settings-row">
+      <span>Image in digits</span>
+      <input id="digit-image-input" type="file" accept="image/*" />
+    </div>
+
+    <div class="settings-row">
+      <span>Image scale</span>
+      <input id="image-scale" type="range" min="0.5" max="2.5" step="0.05" />
+    </div>
+
+    <div class="settings-actions">
+      <button id="clear-image" type="button">Clear Image</button>
+      <button id="apply-btn" type="button">Launch</button>
+    </div>
+  </aside>
+
+  <script src="clocks/clock1/binary.js"></script>
+  <script src="clocks/clock2/rolling.js"></script>
+  <script src="clocks/clock3/panel.js"></script>
+  <script src="clocks/clock4/digital.js"></script>
+  <script src="clocks/clock5/analog.js"></script>
+  <script src="clocks/clock6/flip.js"></script>
+  <script src="clocks/clock7/minimal-analog.js"></script>
+  <script src="clocks/clock8/grid.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

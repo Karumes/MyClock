@@ -21,15 +21,16 @@
     ctx.fill();
   }
 
-  function drawPlate(ctx, x, y, width, height, panelColor) {
+  function drawPlate(ctx, x, y, width, height, panelColor, glassOnly) {
+    if (glassOnly) return;
     roundRectFill(ctx, x, y, width, height, Math.floor(width * 0.08), panelColor);
   }
 
-  function drawPanelMidline(ctx, x, y, width, height, panelColor) {
+  function drawPanelMidline(ctx, x, y, width, height, panelColor, glassOnly) {
     // Draw after all card faces so this line stays on the front-most layer.
     ctx.save();
-    ctx.strokeStyle = panelColor;
-    ctx.lineWidth = Math.max(2, Math.floor(height * 0.018));
+    ctx.strokeStyle = glassOnly ? "rgb(0, 0, 0)" : panelColor;
+    ctx.lineWidth = glassOnly ? Math.max(1, Math.floor(height * 0.009)) : Math.max(2, Math.floor(height * 0.018));
     ctx.beginPath();
     ctx.moveTo(x + 1, y + height / 2);
     ctx.lineTo(x + width - 1, y + height / 2);
@@ -88,7 +89,7 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  function renderPairBitmap(width, height, pairText, color, family) {
+  function renderPairBitmap(width, height, pairText, color, family, glassOnly) {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
@@ -99,22 +100,26 @@
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
+    if (glassOnly) {
+      ctx.shadowColor = "rgb(0, 0, 0)";
+      ctx.shadowBlur = Math.max(10, Math.floor(height * 0.08));
+    }
 
     // render text centered exactly in the panel bitmap
     ctx.fillText(pairText, width / 2, height / 2 + Math.floor(height * 0.04));
     return canvas;
   }
 
-  function drawPairTileStatic(ctx, x, y, width, height, pairText, color, family, panelColor) {
-    drawPlate(ctx, x, y, width, height, panelColor);
-    ctx.drawImage(renderPairBitmap(width, height, pairText, color, family), x, y);
+  function drawPairTileStatic(ctx, x, y, width, height, pairText, color, family, panelColor, glassOnly) {
+    drawPlate(ctx, x, y, width, height, panelColor, glassOnly);
+    ctx.drawImage(renderPairBitmap(width, height, pairText, color, family, glassOnly), x, y);
   }
 
-  function drawPairTileAnimated(ctx, x, y, width, height, fromPair, toPair, color, progress, family, panelColor) {
-    drawPlate(ctx, x, y, width, height, panelColor);
+  function drawPairTileAnimated(ctx, x, y, width, height, fromPair, toPair, color, progress, family, panelColor, glassOnly) {
+    drawPlate(ctx, x, y, width, height, panelColor, glassOnly);
 
-    const fromBmp = renderPairBitmap(width, height, fromPair, color, family);
-    const toBmp = renderPairBitmap(width, height, toPair, color, family);
+    const fromBmp = renderPairBitmap(width, height, fromPair, color, family, glassOnly);
+    const toBmp = renderPairBitmap(width, height, toPair, color, family, glassOnly);
     const t = Math.max(0, Math.min(1, progress));
     const topProgress = easeInOutSine(Math.min(1, t * 2));
     const bottomProgress = easeInOutSine(Math.max(0, (t - 0.5) * 2));
@@ -181,6 +186,7 @@
     const panelColor = (opts && typeof opts.flipBackColor === "string" && opts.flipBackColor.trim())
       ? opts.flipBackColor
       : "rgba(63, 61, 61, 0.4)";
+    const glassOnly = Boolean(opts && opts.glassOnly);
     const ts = now.getTime();
 
     if (!state.shown) {
@@ -216,15 +222,15 @@
       const anim = state.anims[i];
       if (anim) {
         const progress = Math.min(1, (ts - anim.start) / state.dur);
-        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, tileColor, progress, family, panelColor);
+        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, tileColor, progress, family, panelColor, glassOnly);
         if (progress >= 1) {
           state.shown[i] = anim.to;
           state.anims[i] = null;
         }
       } else {
-        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], tileColor, family, panelColor);
+        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], tileColor, family, panelColor, glassOnly);
       }
-      drawPanelMidline(ctx, x, startY, tileWidth, tileHeight, panelColor);
+      drawPanelMidline(ctx, x, startY, tileWidth, tileHeight, panelColor, glassOnly);
     }
   };
 })();

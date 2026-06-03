@@ -1,651 +1,547 @@
-const canvas = document.getElementById("clockCanvas");
-const ctx = canvas.getContext("2d");
-
-const settingsBtn = document.getElementById("settings-btn");
-const settingsPanel = document.getElementById("settings-panel");
-const stylePrevBtn = document.getElementById("clock-style-prev");
-const styleNextBtn = document.getElementById("clock-style-next");
-const styleLabel = document.getElementById("clock-style-label");
-const fontColorGroup = document.getElementById("font-color-group");
-const fontColorLabel = document.getElementById("font-color-label");
-const colorOptionsDiv = document.getElementById("color-options");
-const clock4CircleColorGroup = document.getElementById("clock4-circle-color-group");
-const clock4CircleColorLabel = document.getElementById("clock4-circle-color-label");
-const clock4CircleColorOptionsDiv = document.getElementById("clock4-circle-color-options");
-const clock4CircleCustomColorInput = document.getElementById("clock4-circle-custom-color");
-const clock1BackGroup = document.getElementById("clock1-back-group");
-const clock1BackLabel = clock1BackGroup ? clock1BackGroup.querySelector("label") : null;
-const clock1BackColorOptionsDiv = document.getElementById("clock1-back-color-options");
-const clock1BackCustomColorInput = document.getElementById("clock1-back-custom-color");
-const bgColorOptionsDiv = document.getElementById("bg-color-options");
-const bgCustomColorInput = document.getElementById("bg-custom-color");
-const bgHalfSwatchBtn = document.getElementById("bg-half-swatch");
-const bgGradientControls = document.getElementById("bg-gradient-controls");
-const bgGradC1 = document.getElementById("bg-grad-c1");
-const bgGradC2 = document.getElementById("bg-grad-c2");
-const bgGradPattern = document.getElementById("bg-grad-pattern");
-const fontFamilyGroup = document.getElementById("font-family-group");
-const fontFamilySelect = document.getElementById("font-family-select");
-const fontHalfSwatchBtn = document.getElementById("font-half-swatch");
-const fontCustomColorInput = document.getElementById("font-custom-color");
-const fontGradientControls = document.getElementById("font-gradient-controls");
-const fontGradC1 = document.getElementById("font-grad-c1");
-const fontGradC2 = document.getElementById("font-grad-c2");
-const fontGradPattern = document.getElementById("font-grad-pattern");
-const applyBtn = document.getElementById("apply-btn");
-
-const STYLE_CONFIG = [
-  {
-    name: "Clock 1",
-    module: { globalName: "renderClock5", src: "clocks/clock1/binary.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: false, showFontFamily: false, showBackColor: false, showBackground: true },
-    drawSize: 100,
-  },
-  {
-    name: "Clock 2",
-    module: { globalName: "renderClock6", src: "clocks/clock2/rolling.js" },
-    capabilities: { showColor: true, colorLabel: "Digit Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
-    drawSize: 300,
-  },
-  {
-    name: "Clock 3",
-    module: { globalName: "renderClock8", src: "clocks/clock3/panel.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
-    drawSize: 100,
-  },
-  {
-    name: "Clock 4",
-    module: { globalName: "renderClock1", src: "clocks/clock4/digital.js" },
-    capabilities: {
-      showColor: true,
-      colorLabel: "Card Digit Color:",
-      showFontGradient: false,
-      showFontFamily: false,
-      showBackColor: false,
-      showBackground: true,
-      showClock4CircleColor: true,
-      clock4CircleColorLabel: "Center Digit Color:",
-    },
-    drawSize: 100,
-  },
-  {
-    name: "Clock 5",
-    module: { globalName: "renderClock2", src: "clocks/clock5/analog.js" },
-    capabilities: { showColor: true, colorLabel: "Accent Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
-    drawSize: 300,
-  },
-  {
-    name: "Clock 6",
-    module: { globalName: "renderClock3", src: "clocks/clock6/flip.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: true, showBackColor: true, backColorLabel: "Flipping Card Color:", showBackground: true },
-    drawSize: 300,
-  },
-  {
-    name: "Clock 7",
-    module: { globalName: "renderClock4", src: "clocks/clock7/minimal-analog.js" },
-    capabilities: { showColor: true, colorLabel: "Hand Color:", showFontGradient: true, showFontFamily: false, showBackColor: false, showBackground: true },
-    drawSize: 300,
-  },
-  {
-    name: "Clock 8",
-    module: { globalName: "renderClock7", src: "clocks/clock8/grid.js" },
-    capabilities: { showColor: true, colorLabel: "Font Color:", showFontGradient: true, showFontFamily: true, showBackColor: false, showBackground: true },
-    drawSize: 100,
-  },
-];
-
-const clockStyles = STYLE_CONFIG.map((style) => style.name);
-const palette = [
-  "#ffffff", "#e2e8f0", "#cbd5e1", "#94a3b8", "#64748b",
-  "#1e293b", "#0f172a", "#2196f3", "#03a9f4", "#00bcd4",
-  "#00e5ff", "#00ff88", "#4caf50", "#8bc34a", "#cddc39",
-  "#ffd600", "#ff9800", "#ff7043", "#ff5252", "#e91e63",
-  "#ff4081", "#c2185b", "#8e24aa", "#7c4dff", "#304ffe",
-  "#795548", "#8d6e63", "#607d8b", "#69f0ae", "#b388ff",
-];
-
-const backgroundPalette = [
-  "#ffffff", "#f4f1de", "#d9e8f5", "#bcd4e6", "#98c1d9",
-  "#6c95b5", "#264653", "#2d3142", "#1b2336", "#101728",
-  "#050816", "#0d3b66", "#144552", "#2a9d8f", "#588157",
-  "#7f5539", "#9c6644", "#5f0f40", "#9a031e", "#3a86ff",
-  "#8338ec", "#fb5607", "#ff006e", "#ffbe0b", "#adb5bd",
-];
-
 const fontFamilies = {
-  rounded: '"Avenir Next Rounded", "Nunito", "M PLUS Rounded 1c", "Segoe UI", sans-serif',
+  rounded: '"Arial Rounded MT Bold", "M PLUS Rounded 1c", "Nunito", "Avenir Next Rounded", "Segoe UI Rounded", "Segoe UI", sans-serif',
   modern: '"SF Pro Display", "Inter", "Segoe UI", sans-serif',
-  mono: '"JetBrains Mono", "SFMono-Regular", "Cascadia Code", monospace',
+  mono: '"Cascadia Code", "JetBrains Mono", "SFMono-Regular", monospace',
   condensed: '"Roboto Condensed", "Oswald", "Arial Narrow", sans-serif',
   serif: '"Cormorant Garamond", "Georgia", serif',
 };
 
-const clockModules = Object.fromEntries(STYLE_CONFIG.map((style, index) => [index, style.module]));
-const styleCapabilities = Object.fromEntries(STYLE_CONFIG.map((style, index) => [index, style.capabilities]));
+const clocks = [
+  { name: "Binary", renderer: "renderClock5", size: 120 },
+  { name: "Rolling", renderer: "renderClock6", size: 310 },
+  { name: "Lumen", renderer: "renderClock8", size: 120 },
+  { name: "Reel", renderer: "renderClock1", size: 120 },
+  { name: "Orbit", renderer: "renderClock2", size: 320 },
+  { name: "Flip", renderer: "renderClock3", size: 310 },
+  { name: "Halo", renderer: "renderClock4", size: 320 },
+  { name: "Grid", renderer: "renderClock7", size: 130 },
+];
 
-function getDrawSize(styleIndex) {
-  return STYLE_CONFIG[styleIndex]?.drawSize ?? 100;
+const defaultAccents = ["#69f7ff", "#ffffff", "#f7fbff", "#dbe8ff", "#89ffbf", "#ffffff", "#ff4fd8", "#f8fbff"];
+
+const state = {
+  section: "library",
+  selected: 0,
+  profiles: clocks.map((clock, index) => ({
+    bgColor: "#000000",
+    color: defaultAccents[index],
+    colonColor: index === 1 ? "#69f7ff" : "#ffffff",
+    cardColor: "rgba(255,255,255,0.055)",
+    fontFamily: index === 1 ? "mono" : index === 5 ? "condensed" : "rounded",
+    imageScale: 1,
+    image: null,
+    imageUrl: "",
+  })),
+};
+
+const platform = document.getElementById("platform");
+const librarySection = document.getElementById("library-section");
+const createSection = document.getElementById("create-section");
+const clockGrid = document.getElementById("clock-grid");
+const saver = document.getElementById("saver");
+const mainCanvas = document.getElementById("clockCanvas");
+const mainCtx = mainCanvas.getContext("2d");
+const settingsPanel = document.getElementById("settings-panel");
+const settingsTitle = document.getElementById("settings-title");
+const bgInput = document.getElementById("bg-custom-color");
+const fontInput = document.getElementById("font-custom-color");
+const colonInput = document.getElementById("colon-custom-color");
+const cardInput = document.getElementById("card-custom-color");
+const fontSelect = document.getElementById("font-family-select");
+const imageInput = document.getElementById("digit-image-input");
+const imageScale = document.getElementById("image-scale");
+const createCode = document.getElementById("create-code");
+const createPreview = document.getElementById("create-preview");
+
+const previewCanvases = [];
+const revealObserver = "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add("revealed");
+      });
+    }, { threshold: 0.16 })
+  : null;
+
+let digitPatternCache = new WeakMap();
+let createCleanup = null;
+const renderErrors = new Set();
+
+function hexToRgba(hex, alpha) {
+  if (typeof hex !== "string" || !hex.startsWith("#")) return hex;
+  const raw = hex.slice(1);
+  const full = raw.length === 3 ? raw.split("").map((ch) => ch + ch).join("") : raw;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function defaultProfile(styleIndex = 0) {
-  return {
-    color: styleIndex === 0 ? "#2196f3" : "#ffffff",
-    bgMode: "solid",
-    bgColor: "#bcd4e6",
-    bgGrad: ["#d9e8f5", "#98c1d9", "radial"],
-    fontMode: "solid",
-    fontGrad: ["#fff700", "#00e5ff", "vertical"],
-    fontFamily: "rounded",
-    clock6Speed: 1,
-    flipBackColor: "#64748b",
-    clock4CircleColor: "#2563eb",
-  };
-}
-
-function createInitialState(styleIndex = 0) {
-  return {
-    styleIndex,
-    profiles: clockStyles.map((_, index) => defaultProfile(index)),
-  };
-}
-
-let editingState = createInitialState();
-let appliedState = createInitialState();
-let hideSettingsBtnTimeout = null;
-
-const offscreenCanvas = document.createElement("canvas");
-const offscreenCtx = offscreenCanvas.getContext("2d");
-const clockLayerCanvas = document.createElement("canvas");
-const clockLayerCtx = clockLayerCanvas.getContext("2d");
-const loadedScripts = new Map();
-
-function cloneProfile(profile) {
-  return {
-    ...profile,
-    bgGrad: [...profile.bgGrad],
-    fontGrad: [...profile.fontGrad],
-  };
-}
-
-function cloneState(state) {
-  return {
-    styleIndex: state.styleIndex,
-    profiles: state.profiles.map(cloneProfile),
-  };
-}
-
-appliedState = cloneState(editingState);
-
-function currentEditingProfile() {
-  return editingState.profiles[editingState.styleIndex];
-}
-
-function currentAppliedProfile() {
-  return appliedState.profiles[appliedState.styleIndex];
-}
-
-function syncGlobalSettings() {
-  window.editingSettings = currentEditingProfile();
-  window.appliedSettings = currentAppliedProfile();
-  window.editingState = editingState;
-  window.appliedState = appliedState;
-}
-
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  offscreenCanvas.width = canvas.width;
-  offscreenCanvas.height = canvas.height;
-  clockLayerCanvas.width = canvas.width;
-  clockLayerCanvas.height = canvas.height;
-}
-
-function isSettingsOpen() {
-  return !settingsPanel.classList.contains("hidden");
-}
-
-function makeGradient(targetCtx, width, height, c1, c2, pattern) {
-  if (!pattern || pattern === "vertical") {
-    const gradient = targetCtx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, c1);
-    gradient.addColorStop(1, c2);
-    return gradient;
+function solidPaint(ctx, profile, w, h) {
+  if (!profile.image) return profile.color;
+  let cache = digitPatternCache.get(profile.image);
+  const scale = Number(profile.imageScale) || 1;
+  if (!cache || cache.scale !== scale) {
+    const tile = document.createElement("canvas");
+    const base = Math.max(220, Math.floor(Math.min(w, h) * 0.48 * scale));
+    tile.width = base;
+    tile.height = base;
+    const tctx = tile.getContext("2d");
+    tctx.fillStyle = "#000";
+    tctx.fillRect(0, 0, base, base);
+    const ratio = Math.max(base / profile.image.width, base / profile.image.height);
+    const iw = profile.image.width * ratio;
+    const ih = profile.image.height * ratio;
+    tctx.drawImage(profile.image, (base - iw) / 2, (base - ih) / 2, iw, ih);
+    cache = { scale, tile };
+    digitPatternCache.set(profile.image, cache);
   }
-  if (pattern === "horizontal") {
-    const gradient = targetCtx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, c1);
-    gradient.addColorStop(1, c2);
-    return gradient;
-  }
-  if (pattern === "diag-tlbr") {
-    const gradient = targetCtx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, c1);
-    gradient.addColorStop(1, c2);
-    return gradient;
-  }
-  if (pattern === "diag-bltr") {
-    const gradient = targetCtx.createLinearGradient(0, height, width, 0);
-    gradient.addColorStop(0, c1);
-    gradient.addColorStop(1, c2);
-    return gradient;
-  }
-  const radial = targetCtx.createRadialGradient(width / 2, height / 2, 1, width / 2, height / 2, Math.max(width, height) * 0.7);
-  radial.addColorStop(0, c1);
-  radial.addColorStop(1, c2);
-  return radial;
+  return ctx.createPattern(cache.tile, "repeat") || profile.color;
 }
 
-function fillBackground(targetCtx, profile, width, height) {
-  targetCtx.clearRect(0, 0, width, height);
-  if (profile.bgMode === "gradient") {
-    const [c1, c2, pattern] = profile.bgGrad;
-    targetCtx.fillStyle = makeGradient(targetCtx, width, height, c1, c2, pattern);
-  } else {
-    targetCtx.fillStyle = profile.bgColor;
+function resizeCanvasToDisplaySize(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(2, Math.floor(rect.width * window.devicePixelRatio));
+  const height = Math.max(2, Math.floor(rect.height * window.devicePixelRatio));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
   }
-  targetCtx.fillRect(0, 0, width, height);
 }
 
-function getFontPaint(targetCtx, profile, width, height) {
-  if (profile.fontMode === "gradient") {
-    const [c1, c2, pattern] = profile.fontGrad;
-    return makeGradient(targetCtx, width, height, c1, c2, pattern);
-  }
-  return profile.color;
+function fillPureBlack(ctx, w, h, color) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = color || "#000000";
+  ctx.fillRect(0, 0, w, h);
 }
 
-function getClockOptions(profile) {
-  return {
-    bg: profile.bgMode === "gradient" ? profile.bgGrad[0] : profile.bgColor,
-    bgMode: profile.bgMode,
-    bgGrad: profile.bgGrad,
-    color: profile.color,
-    fontMode: profile.fontMode,
-    fontGrad: profile.fontGrad,
-    fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
-    clock6Speed: profile.clock6Speed,
-    flipBackColor: profile.flipBackColor,
-    circleDigitColor: profile.clock4CircleColor,
+function drawLumenReflection(ctx, source, w, h) {
+  const reflectionHeight = h * 0.48;
+  const reflectionY = h * 0.54;
+  const tmp = document.createElement("canvas");
+  tmp.width = w;
+  tmp.height = h;
+  const tctx = tmp.getContext("2d");
+
+  tctx.save();
+  tctx.translate(w / 2, reflectionY + reflectionHeight / 2);
+  tctx.scale(1.18, -0.62);
+  tctx.filter = `blur(${Math.max(10, Math.floor(h * 0.035))}px)`;
+  tctx.globalAlpha = 0.72;
+  tctx.drawImage(source, -w / 2, -h * 0.32, w, h);
+  tctx.restore();
+
+  const mask = tctx.createLinearGradient(0, reflectionY, 0, h);
+  mask.addColorStop(0, "rgba(255,255,255,0.78)");
+  mask.addColorStop(0.46, "rgba(255,255,255,0.22)");
+  mask.addColorStop(1, "rgba(255,255,255,0)");
+  tctx.globalCompositeOperation = "destination-in";
+  tctx.fillStyle = mask;
+  tctx.fillRect(0, reflectionY, w, h - reflectionY);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.drawImage(tmp, 0, 0);
+  ctx.restore();
+}
+
+function drawClockFallback(ctx, w, h, clockName) {
+  ctx.save();
+  fillPureBlack(ctx, w, h, "#000000");
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `700 ${Math.max(18, Math.floor(Math.min(w, h) * 0.055))}px ${fontFamilies.modern}`;
+  ctx.fillText(clockName || "Clock", w / 2, h / 2);
+  ctx.restore();
+}
+
+function renderClock(ctx, canvas, index, now) {
+  const clock = clocks[index];
+  const profile = state.profiles[index];
+  const w = canvas.width;
+  const h = canvas.height;
+  fillPureBlack(ctx, w, h, profile.bgColor);
+
+  const layer = document.createElement("canvas");
+  layer.width = w;
+  layer.height = h;
+  const lctx = layer.getContext("2d");
+  const renderer = window[clock.renderer];
+  const paint = solidPaint(lctx, profile, w, h);
+  const sizeRatio = index === 1 ? 0.5 : 0.42;
+  const size = Math.min(clock.size * window.devicePixelRatio, Math.min(w, h) * sizeRatio);
+  const options = {
     suppressBg: true,
+    bg: profile.bgColor,
+    color: profile.color,
+    colonColor: profile.colonColor,
+    circleDigitColor: profile.colonColor,
+    flipBackColor: index === 5 ? "rgba(255,255,255,0)" : profile.cardColor,
+    cardColor: profile.cardColor,
+    fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
+    clock6Speed: 0.72,
+    glassOnly: index === 5,
+    fontMode: "solid",
   };
-}
 
-function ensureClockScript(styleIndex) {
-  const module = clockModules[styleIndex];
-  if (!module || typeof window[module.globalName] === "function" || loadedScripts.has(styleIndex)) return;
-  const script = document.createElement("script");
-  script.src = module.src;
-  loadedScripts.set(styleIndex, script);
-  script.addEventListener("load", renderCurrentFrame);
-  script.addEventListener("error", () => loadedScripts.delete(styleIndex));
-  document.body.appendChild(script);
-}
-
-function renderClockTo(targetCtx, styleIndex, profile, now) {
-  const module = clockModules[styleIndex];
-  if (!module) return;
-  targetCtx.clearRect(0, 0, canvas.width, canvas.height);
-  const renderer = window[module.globalName];
-  if (typeof renderer !== "function") {
-    ensureClockScript(styleIndex);
-    return;
-  }
-  const paint = getFontPaint(targetCtx, profile, canvas.width, canvas.height);
-  renderer(targetCtx, canvas.width, canvas.height, paint, getDrawSize(styleIndex), now, getClockOptions(profile));
-}
-
-function renderCurrentFrame() {
-  const state = isSettingsOpen() ? editingState : appliedState;
-  const profile = state.profiles[state.styleIndex];
-  fillBackground(offscreenCtx, profile, canvas.width, canvas.height);
-  renderClockTo(clockLayerCtx, state.styleIndex, profile, new Date());
-  offscreenCtx.drawImage(clockLayerCanvas, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(offscreenCanvas, 0, 0);
-}
-
-function renderHalfSwatch(button, grad, selected) {
-  const previewCanvas = document.createElement("canvas");
-  previewCanvas.width = 40;
-  previewCanvas.height = 40;
-  const previewCtx = previewCanvas.getContext("2d");
-  previewCtx.beginPath();
-  previewCtx.moveTo(20, 20);
-  previewCtx.arc(20, 20, 18, Math.PI / 2, Math.PI * 1.5);
-  previewCtx.closePath();
-  previewCtx.fillStyle = grad[0];
-  previewCtx.fill();
-  previewCtx.beginPath();
-  previewCtx.moveTo(20, 20);
-  previewCtx.arc(20, 20, 18, Math.PI * 1.5, Math.PI / 2);
-  previewCtx.closePath();
-  previewCtx.fillStyle = grad[1];
-  previewCtx.fill();
-  button.style.backgroundImage = `url(${previewCanvas.toDataURL()})`;
-  button.classList.toggle("selected", selected);
-}
-
-function renderPalette(container, colors, selectedColor, onClick) {
-  container.innerHTML = "";
-  colors.forEach((color) => {
-    const swatch = document.createElement("button");
-    swatch.type = "button";
-    swatch.className = "color-circle";
-    swatch.style.background = color;
-    swatch.classList.toggle("selected", selectedColor === color);
-    swatch.addEventListener("click", () => onClick(color));
-    container.appendChild(swatch);
-  });
-}
-
-function updateVisibleControls() {
-  const caps = styleCapabilities[editingState.styleIndex] || styleCapabilities[0];
-  fontColorGroup.classList.toggle("hidden", !caps.showColor);
-  fontColorLabel.textContent = caps.colorLabel;
-  if (clock4CircleColorGroup) {
-    clock4CircleColorGroup.classList.toggle("hidden", !caps.showClock4CircleColor);
-    if (caps.showClock4CircleColor) {
-      clock4CircleColorLabel.textContent = caps.clock4CircleColorLabel || "Center Digit Color:";
+  if (typeof renderer === "function") {
+    try {
+      renderer(lctx, w, h, paint, size, now, options);
+    } catch (error) {
+      if (!renderErrors.has(clock.renderer)) {
+        console.error(`Failed to render ${clock.name}`, error);
+        renderErrors.add(clock.renderer);
+      }
+      drawClockFallback(lctx, w, h, clock.name);
     }
-  }
-  fontFamilyGroup.classList.toggle("hidden", !caps.showFontFamily);
-  fontGradientControls.classList.toggle("hidden", !(caps.showFontGradient && currentEditingProfile().fontMode === "gradient"));
-}
-
-function updateLabels() {
-  const profile = currentEditingProfile();
-  styleLabel.textContent = clockStyles[editingState.styleIndex];
-  fontFamilySelect.value = profile.fontFamily;
-  fontCustomColorInput.value = profile.color;
-  if (clock4CircleCustomColorInput) {
-    clock4CircleCustomColorInput.value = profile.clock4CircleColor;
-  }
-  bgCustomColorInput.value = profile.bgColor;
-  updateVisibleControls();
-}
-
-function renderFontOptions() {
-  const profile = currentEditingProfile();
-  renderPalette(colorOptionsDiv, palette, profile.fontMode === "solid" ? profile.color : "", (color) => {
-    profile.fontMode = "solid";
-    profile.color = color;
-    fontCustomColorInput.value = color;
-    syncGradientInputs();
-    renderFontOptions();
-    renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
-    renderCurrentFrame();
-  });
-}
-
-function renderBackgroundOptions() {
-  const profile = currentEditingProfile();
-  renderPalette(bgColorOptionsDiv, backgroundPalette, profile.bgMode === "solid" ? profile.bgColor : "", (color) => {
-    profile.bgMode = "solid";
-    profile.bgColor = color;
-    bgCustomColorInput.value = color;
-    syncBackgroundGradientInputs();
-    renderBackgroundOptions();
-    renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, profile.bgMode === "gradient");
-    renderCurrentFrame();
-  });
-}
-
-function renderClock4CircleOptions() {
-  if (!clock4CircleColorOptionsDiv) return;
-  const profile = currentEditingProfile();
-  renderPalette(clock4CircleColorOptionsDiv, palette, profile.clock4CircleColor, (color) => {
-    profile.clock4CircleColor = color;
-    if (clock4CircleCustomColorInput) {
-      clock4CircleCustomColorInput.value = color;
+  } else {
+    if (!renderErrors.has(clock.renderer)) {
+      console.error(`Missing renderer: ${clock.renderer}`);
+      renderErrors.add(clock.renderer);
     }
-    renderClock4CircleOptions();
-    renderCurrentFrame();
+    drawClockFallback(lctx, w, h, clock.name);
+  }
+
+  ctx.drawImage(layer, 0, 0);
+  if (index === 2) drawLumenReflection(ctx, layer, w, h);
+}
+
+function createClockCard(clock, index) {
+  const card = document.createElement("button");
+  card.className = "clock-card";
+  card.type = "button";
+  card.setAttribute("aria-label", `${clock.name} clock`);
+  card.addEventListener("click", () => launchClock(index));
+
+  const canvas = document.createElement("canvas");
+  const shine = document.createElement("span");
+  shine.className = "card-shine";
+
+  card.append(canvas, shine);
+  clockGrid.appendChild(card);
+  previewCanvases[index] = canvas;
+  if (revealObserver) revealObserver.observe(card);
+  else requestAnimationFrame(() => card.classList.add("revealed"));
+}
+
+function buildGrid() {
+  clocks.forEach(createClockCard);
+}
+
+function setSection(section) {
+  state.section = section;
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.section === section);
   });
+  librarySection.classList.toggle("active", section === "library");
+  createSection.classList.toggle("active", section === "create");
+  if (section === "create") runCreate();
 }
 
-function syncGradientInputs() {
-  const profile = currentEditingProfile();
-  fontGradC1.value = profile.fontGrad[0];
-  fontGradC2.value = profile.fontGrad[1];
-  fontGradPattern.value = profile.fontGrad[2];
-  updateVisibleControls();
+function launchClock(index) {
+  state.selected = index;
+  platform.classList.add("hidden");
+  saver.classList.remove("hidden");
+  closeSettings();
+  resizeMainCanvas();
+  renderMain(new Date());
 }
 
-function syncBackgroundGradientInputs() {
-  const profile = currentEditingProfile();
-  bgGradC1.value = profile.bgGrad[0];
-  bgGradC2.value = profile.bgGrad[1];
-  bgGradPattern.value = profile.bgGrad[2];
-  bgGradientControls.classList.toggle("hidden", profile.bgMode !== "gradient");
-}
-
-function renderAllControls() {
-  updateLabels();
-  syncGradientInputs();
-  syncBackgroundGradientInputs();
-  renderFontOptions();
-  renderClock4CircleOptions();
-  renderBackgroundOptions();
-  const profile = currentEditingProfile();
-  renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, profile.fontMode === "gradient");
-  renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, profile.bgMode === "gradient");
-}
-
-function showSettingsButton() {
-  settingsBtn.style.opacity = "1";
-  settingsBtn.style.pointerEvents = "auto";
-}
-
-function hideSettingsButton() {
-  settingsBtn.style.opacity = "0";
-  settingsBtn.style.pointerEvents = "none";
-}
-
-function hideSettingsBtnAfterDelay() {
-  clearTimeout(hideSettingsBtnTimeout);
-  hideSettingsBtnTimeout = setTimeout(() => {
-    if (!isSettingsOpen()) hideSettingsButton();
-    hideSettingsBtnTimeout = null;
-  }, 10000);
-}
-
-function openSettingsPanel() {
-  clearTimeout(hideSettingsBtnTimeout);
-  settingsPanel.classList.remove("hidden");
-  showSettingsButton();
-  renderCurrentFrame();
-}
-
-function closeSettingsPanel() {
+function returnHome() {
+  saver.classList.add("hidden");
   settingsPanel.classList.add("hidden");
-  showSettingsButton();
-  hideSettingsBtnAfterDelay();
-  renderCurrentFrame();
+  platform.classList.remove("hidden");
 }
 
-function hasUnsavedChanges() {
-  return JSON.stringify(editingState) !== JSON.stringify(appliedState);
+function openSettings() {
+  const profile = state.profiles[state.selected];
+  settingsTitle.textContent = clocks[state.selected].name;
+  bgInput.value = profile.bgColor;
+  fontInput.value = profile.color;
+  colonInput.value = profile.colonColor;
+  cardInput.value = profile.cardColor.startsWith("#") ? profile.cardColor : "#0b1118";
+  fontSelect.value = profile.fontFamily;
+  imageScale.value = profile.imageScale;
+  settingsPanel.classList.remove("hidden");
 }
 
-function discardChanges() {
-  editingState = cloneState(appliedState);
-  syncGlobalSettings();
-  renderAllControls();
+function closeSettings() {
+  settingsPanel.classList.add("hidden");
 }
 
-function showWarning() {
-  if (document.getElementById("warning-div")) return;
-  const warning = document.createElement("div");
-  warning.id = "warning-div";
-  warning.innerHTML = `
-    <p>Discard changes and go back?</p>
-    <button id="discard-btn" type="button">Discard</button>
-    <button id="stay-btn" type="button">Stay</button>
-  `;
-  settingsPanel.appendChild(warning);
-  warning.querySelector("#discard-btn").addEventListener("click", () => {
-    discardChanges();
-    warning.remove();
-    closeSettingsPanel();
-  });
-  warning.querySelector("#stay-btn").addEventListener("click", () => warning.remove());
+function updateProfileFromControls() {
+  const profile = state.profiles[state.selected];
+  profile.bgColor = bgInput.value;
+  profile.color = fontInput.value;
+  profile.colonColor = colonInput.value;
+  profile.cardColor = hexToRgba(cardInput.value, 0.12);
+  profile.fontFamily = fontSelect.value;
+  profile.imageScale = Number(imageScale.value);
 }
 
-function createBackButton() {
-  const button = document.createElement("button");
-  button.id = "back-btn";
-  button.type = "button";
-  button.textContent = "Back to Time";
-  settingsPanel.appendChild(button);
-  button.addEventListener("click", () => {
-    if (hasUnsavedChanges()) {
-      showWarning();
-      return;
+function handleImageUpload(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const profile = state.profiles[state.selected];
+      profile.image = img;
+      profile.imageUrl = reader.result;
+      digitPatternCache = new WeakMap();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resizeMainCanvas() {
+  mainCanvas.width = Math.floor(window.innerWidth * window.devicePixelRatio);
+  mainCanvas.height = Math.floor(window.innerHeight * window.devicePixelRatio);
+}
+
+function renderPreviews(now) {
+  previewCanvases.forEach((canvas, index) => {
+    resizeCanvasToDisplaySize(canvas);
+    const ctx = canvas.getContext("2d");
+    if (index === 3) {
+      renderScaledScreenPreview(ctx, canvas, index, now);
+    } else {
+      renderClock(ctx, canvas, index, now);
     }
-    closeSettingsPanel();
   });
 }
 
-function applyChanges() {
-  appliedState = cloneState(editingState);
-  syncGlobalSettings();
-  closeSettingsPanel();
+function renderScaledScreenPreview(ctx, canvas, index, now) {
+  const screenW = Math.max(2, mainCanvas.width || Math.floor(window.innerWidth * window.devicePixelRatio));
+  const screenH = Math.max(2, mainCanvas.height || Math.floor(window.innerHeight * window.devicePixelRatio));
+  const offscreen = document.createElement("canvas");
+  offscreen.width = screenW;
+  offscreen.height = screenH;
+  renderClock(offscreen.getContext("2d"), offscreen, index, now);
+
+  fillPureBlack(ctx, canvas.width, canvas.height, state.profiles[index].bgColor);
+  const scale = Math.min(canvas.width / screenW, canvas.height / screenH);
+  const drawW = Math.floor(screenW * scale);
+  const drawH = Math.floor(screenH * scale);
+  const x = Math.floor((canvas.width - drawW) / 2);
+  const y = Math.floor((canvas.height - drawH) / 2);
+  ctx.drawImage(offscreen, x, y, drawW, drawH);
 }
 
-function updateFontGradient() {
-  const profile = currentEditingProfile();
-  profile.fontMode = "gradient";
-  profile.fontGrad = [fontGradC1.value, fontGradC2.value, fontGradPattern.value];
-  renderFontOptions();
-  renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, true);
-  renderCurrentFrame();
-}
-
-function updateBackgroundGradient() {
-  const profile = currentEditingProfile();
-  profile.bgMode = "gradient";
-  profile.bgGrad = [bgGradC1.value, bgGradC2.value, bgGradPattern.value];
-  renderBackgroundOptions();
-  renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, true);
-  syncBackgroundGradientInputs();
-  renderCurrentFrame();
-}
-
-function switchEditingStyle(direction) {
-  editingState.styleIndex = (editingState.styleIndex + direction + clockStyles.length) % clockStyles.length;
-  syncGlobalSettings();
-  ensureClockScript(editingState.styleIndex);
-  renderAllControls();
-  renderCurrentFrame();
-}
-
-function initEvents() {
-  window.addEventListener("resize", () => {
-    resizeCanvas();
-    renderCurrentFrame();
-  });
-
-  canvas.addEventListener("click", () => {
-    if (isSettingsOpen()) return;
-    if (settingsBtn.style.opacity === "1") {
-      hideSettingsButton();
-      clearTimeout(hideSettingsBtnTimeout);
-      hideSettingsBtnTimeout = null;
-      return;
-    }
-    showSettingsButton();
-    hideSettingsBtnAfterDelay();
-  });
-
-  settingsPanel.addEventListener("click", (event) => event.stopPropagation());
-  settingsBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    openSettingsPanel();
-  });
-
-  stylePrevBtn.addEventListener("click", () => switchEditingStyle(-1));
-  styleNextBtn.addEventListener("click", () => switchEditingStyle(1));
-
-  fontHalfSwatchBtn.addEventListener("click", () => {
-    const profile = currentEditingProfile();
-    profile.fontMode = "gradient";
-    syncGradientInputs();
-    renderFontOptions();
-    renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, true);
-    renderCurrentFrame();
-  });
-
-  bgHalfSwatchBtn.addEventListener("click", () => {
-    const profile = currentEditingProfile();
-    profile.bgMode = "gradient";
-    syncBackgroundGradientInputs();
-    renderBackgroundOptions();
-    renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, true);
-    renderCurrentFrame();
-  });
-
-  [fontGradC1, fontGradC2, fontGradPattern].forEach((input) => {
-    input.addEventListener("input", updateFontGradient);
-    input.addEventListener("change", updateFontGradient);
-  });
-
-  fontCustomColorInput.addEventListener("input", () => {
-    const profile = currentEditingProfile();
-    profile.fontMode = "solid";
-    profile.color = fontCustomColorInput.value;
-    renderFontOptions();
-    renderHalfSwatch(fontHalfSwatchBtn, profile.fontGrad, false);
-    syncGradientInputs();
-    renderCurrentFrame();
-  });
-
-  if (clock4CircleCustomColorInput) {
-    clock4CircleCustomColorInput.addEventListener("input", () => {
-      const profile = currentEditingProfile();
-      profile.clock4CircleColor = clock4CircleCustomColorInput.value;
-      renderClock4CircleOptions();
-      renderCurrentFrame();
-    });
-  }
-
-  [bgGradC1, bgGradC2, bgGradPattern].forEach((input) => {
-    input.addEventListener("input", updateBackgroundGradient);
-    input.addEventListener("change", updateBackgroundGradient);
-  });
-
-  bgCustomColorInput.addEventListener("input", () => {
-    const profile = currentEditingProfile();
-    profile.bgMode = "solid";
-    profile.bgColor = bgCustomColorInput.value;
-    renderBackgroundOptions();
-    renderHalfSwatch(bgHalfSwatchBtn, profile.bgGrad, false);
-    syncBackgroundGradientInputs();
-    renderCurrentFrame();
-  });
-
-  fontFamilySelect.addEventListener("change", () => {
-    const caps = styleCapabilities[editingState.styleIndex] || styleCapabilities[0];
-    if (!caps.showFontFamily) return;
-    currentEditingProfile().fontFamily = fontFamilySelect.value;
-    renderCurrentFrame();
-  });
-
-  applyBtn.addEventListener("click", applyChanges);
+function renderMain(now) {
+  if (saver.classList.contains("hidden")) return;
+  renderClock(mainCtx, mainCanvas, state.selected, now);
 }
 
 function loop() {
-  renderCurrentFrame();
+  const now = new Date();
+  renderPreviews(now);
+  renderMain(now);
   requestAnimationFrame(loop);
 }
 
+function defaultCreateCode() {
+  return `const style = document.createElement("style");
+style.textContent = \`
+.custom-clock {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 32%, rgba(105,247,255,.2), transparent 32%), #000;
+  color: white;
+  overflow: hidden;
+}
+.custom-time {
+  font: 800 clamp(44px, 18vw, 210px)/1 "SF Pro Display", system-ui;
+  letter-spacing: 0;
+  background: linear-gradient(110deg, #fff, #69f7ff 42%, #ff4fd8);
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 28px rgba(105,247,255,.34));
+}
+\`;
+
+root.appendChild(style);
+const shell = document.createElement("div");
+shell.className = "custom-clock";
+const time = document.createElement("div");
+time.className = "custom-time";
+shell.appendChild(time);
+root.appendChild(shell);
+
+render = (now) => {
+  time.textContent = now.toLocaleTimeString("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+};`;
+}
+
+function runCreate() {
+  createPreview.innerHTML = "";
+  if (typeof createCleanup === "function") createCleanup();
+  createCleanup = null;
+
+  let render = () => {};
+  try {
+    const fn = new Function("root", "now", "render", `${createCode.value}\nreturn { render, cleanup: typeof cleanup === "function" ? cleanup : null };`);
+    const result = fn(createPreview, new Date(), render);
+    render = result.render || render;
+    createCleanup = result.cleanup;
+  } catch (error) {
+    createPreview.innerHTML = `<div class="custom-error">${String(error.message || error)}</div>`;
+    return;
+  }
+
+  function tick() {
+    if (!createSection.classList.contains("active")) return;
+    try {
+      render(new Date());
+    } catch (error) {
+      createPreview.innerHTML = `<div class="custom-error">${String(error.message || error)}</div>`;
+      return;
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function initThreeBackdrop() {
+  const canvas = document.getElementById("auroraCanvas");
+  if (!window.THREE || !canvas) return;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 140);
+  camera.position.z = 18;
+
+  const galaxy = new THREE.Group();
+  scene.add(galaxy);
+
+  const starCount = 900;
+  const positions = new Float32Array(starCount * 3);
+  const colors = new Float32Array(starCount * 3);
+  const palette = [
+    new THREE.Color(0xb9f6ff),
+    new THREE.Color(0xffffff),
+    new THREE.Color(0xff8de8),
+    new THREE.Color(0x8dffcf),
+    new THREE.Color(0x98a8ff),
+  ];
+
+  for (let i = 0; i < starCount; i += 1) {
+    const i3 = i * 3;
+    const radius = Math.pow(Math.random(), 0.54) * 22;
+    const arm = (i % 4) * (Math.PI / 2);
+    const spin = radius * 0.32;
+    const angle = arm + spin + (Math.random() - 0.5) * 0.78;
+    const height = (Math.random() - 0.5) * Math.max(0.8, radius * 0.16);
+
+    positions[i3] = Math.cos(angle) * radius;
+    positions[i3 + 1] = height;
+    positions[i3 + 2] = Math.sin(angle) * radius - 8;
+
+    const color = palette[Math.floor(Math.random() * palette.length)];
+    const dim = 0.52 + Math.random() * 0.48;
+    colors[i3] = color.r * dim;
+    colors[i3 + 1] = color.g * dim;
+    colors[i3 + 2] = color.b * dim;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+  const stars = new THREE.Points(
+    geometry,
+    new THREE.PointsMaterial({
+      size: 0.045,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  galaxy.add(stars);
+
+  const coreGeometry = new THREE.SphereGeometry(1.7, 40, 24);
+  const coreMaterial = new THREE.MeshBasicMaterial({
+    color: 0x69f7ff,
+    transparent: true,
+    opacity: 0.1,
+    blending: THREE.AdditiveBlending,
+  });
+  const core = new THREE.Mesh(coreGeometry, coreMaterial);
+  core.scale.set(1.7, 0.28, 1.7);
+  galaxy.add(core);
+
+  function resize() {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  }
+
+  function animate(time) {
+    galaxy.rotation.x = -0.22 + Math.sin(time * 0.00008) * 0.04;
+    galaxy.rotation.y = time * 0.000055;
+    stars.material.opacity = 0.72 + Math.sin(time * 0.00045) * 0.12;
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  resize();
+  window.addEventListener("resize", resize);
+  requestAnimationFrame(animate);
+}
+
+function initEvents() {
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => setSection(tab.dataset.section));
+  });
+  document.getElementById("brand-btn").addEventListener("click", () => setSection("library"));
+  document.getElementById("home-btn").addEventListener("click", returnHome);
+  document.getElementById("settings-btn").addEventListener("click", openSettings);
+  document.getElementById("close-settings").addEventListener("click", closeSettings);
+  document.getElementById("apply-btn").addEventListener("click", closeSettings);
+  document.getElementById("run-create").addEventListener("click", runCreate);
+  document.getElementById("clear-image").addEventListener("click", () => {
+    const profile = state.profiles[state.selected];
+    profile.image = null;
+    profile.imageUrl = "";
+    imageInput.value = "";
+    digitPatternCache = new WeakMap();
+  });
+
+  [bgInput, fontInput, colonInput, cardInput, fontSelect, imageScale].forEach((input) => {
+    input.addEventListener("input", updateProfileFromControls);
+    input.addEventListener("change", updateProfileFromControls);
+  });
+
+  imageInput.addEventListener("change", () => handleImageUpload(imageInput.files[0]));
+  createCode.addEventListener("input", () => {
+    clearTimeout(createCode.runTimer);
+    createCode.runTimer = setTimeout(runCreate, 260);
+  });
+
+  window.addEventListener("resize", resizeMainCanvas);
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
+  });
+}
+
 function init() {
-  resizeCanvas();
-  syncGlobalSettings();
-  renderAllControls();
-  createBackButton();
+  createCode.value = defaultCreateCode();
+  buildGrid();
   initEvents();
-  ensureClockScript(appliedState.styleIndex);
-  loop();
+  resizeMainCanvas();
+  initThreeBackdrop();
+  setSection("library");
+  requestAnimationFrame(loop);
 }
 
 init();
