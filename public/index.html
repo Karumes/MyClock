@@ -3,90 +3,168 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MyClock</title>
+  <title>Karumes - Premium Clock Platform</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <div id="ui-bar">
-    <button id="settings-btn" type="button" title="Settings" aria-label="Open settings">&#9881;</button>
-    <div id="settings-panel" class="hidden">
-      <div class="settings-group">
-        <label for="clock-style-label">Clock Style:</label>
-        <button id="clock-style-prev" type="button" aria-label="Previous clock style">&#9664;</button>
-        <span id="clock-style-label">Clock 1</span>
-        <button id="clock-style-next" type="button" aria-label="Next clock style">&#9654;</button>
+  <!-- Three.js Background -->
+  <canvas id="three-bg"></canvas>
+  
+  <!-- Karumes Platform Dashboard -->
+  <div id="platform-dashboard">
+    <header class="platform-header">
+      <div class="logo-container">
+        <div class="logo-glow"></div>
+        <h1 class="logo">Karumes</h1>
+        <span class="logo-tagline">Premium Clock Experience</span>
       </div>
+      <nav class="platform-nav">
+        <button class="nav-btn active" data-view="clocks">Clocks</button>
+        <button class="nav-btn" data-view="create">Create</button>
+      </nav>
+    </header>
 
-      <div id="font-color-group" class="settings-group">
-        <label id="font-color-label">Font Color:</label>
-        <div id="color-options"></div>
-        <div id="font-special-swatches">
-          <div class="font-special-row">
-            <button id="font-half-swatch" type="button" title="Edit gradient font color" aria-label="Edit gradient font color"></button>
-            <input type="color" id="font-custom-color" aria-label="Custom font color" />
+    <!-- Clocks Grid View -->
+    <main id="clocks-view" class="platform-main">
+      <div class="clock-grid" id="clock-grid">
+        <!-- Clock cards will be dynamically generated -->
+      </div>
+    </main>
+
+    <!-- Create Mode View -->
+    <main id="create-view" class="platform-main hidden">
+      <div class="create-container">
+        <div class="code-editor-panel">
+          <div class="editor-header">
+            <span class="editor-title">Custom Clock Editor</span>
+            <div class="editor-tabs">
+              <button class="tab-btn active" data-lang="js">JavaScript</button>
+              <button class="tab-btn" data-lang="css">CSS</button>
+            </div>
           </div>
-          <div id="font-gradient-controls" class="gradient-controls hidden">
-            <input type="color" id="font-grad-c1" aria-label="Gradient color 1" />
-            <input type="color" id="font-grad-c2" aria-label="Gradient color 2" />
-            <select id="font-grad-pattern" aria-label="Gradient direction">
-              <option value="vertical">Vertical</option>
-              <option value="horizontal">Horizontal</option>
-              <option value="diag-tlbr">Diagonal TL-BR</option>
-              <option value="diag-bltr">Diagonal BL-TR</option>
-              <option value="radial">Radial</option>
-            </select>
+          <textarea id="code-editor" spellcheck="false">// Create your custom clock
+function renderCustomClock(ctx, w, h, now) {
+  ctx.clearRect(0, 0, w, h);
+  
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+  // Set font style
+  ctx.fillStyle = '#00ff88';
+  ctx.font = 'bold 120px Inter';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // Draw time
+  ctx.fillText(`${hours}:${minutes}:${seconds}`, w/2, h/2);
+  
+  // Add glow effect
+  ctx.shadowColor = '#00ff88';
+  ctx.shadowBlur = 30;
+}</textarea>
+        </div>
+        <div class="preview-panel">
+          <div class="preview-header">
+            <span class="preview-title">Live Preview</span>
+            <button id="run-code-btn" class="run-btn">
+              <span class="run-icon">▶</span> Run
+            </button>
+          </div>
+          <div class="preview-container">
+            <canvas id="create-preview-canvas"></canvas>
           </div>
         </div>
       </div>
+    </main>
+  </div>
 
-      <div id="clock4-circle-color-group" class="settings-group hidden">
-        <label id="clock4-circle-color-label">Center Digit Color:</label>
-        <div id="clock4-circle-color-options"></div>
-        <div id="clock4-circle-special-swatches">
-          <div class="font-special-row">
-            <input type="color" id="clock4-circle-custom-color" aria-label="Custom center digit color" />
+  <!-- Clock Settings Modal -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content glass-panel">
+      <div class="modal-header">
+        <h2 class="modal-title">Clock Settings</h2>
+        <button id="close-modal-btn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <label class="settings-label">Font Color</label>
+          <div id="font-color-options" class="color-grid"></div>
+          <div class="custom-color-row">
+            <input type="color" id="font-custom-color" class="color-picker" value="#ffffff" />
+            <span class="color-label">Custom</span>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <label class="settings-label">Background Color</label>
+          <div id="bg-color-options" class="color-grid"></div>
+          <div class="custom-color-row">
+            <input type="color" id="bg-custom-color" class="color-picker" value="#000000" />
+            <span class="color-label">Custom</span>
+          </div>
+        </div>
+
+        <div id="card-color-section" class="settings-section hidden">
+          <label class="settings-label">Card Color</label>
+          <div id="card-color-options" class="color-grid"></div>
+          <div class="custom-color-row">
+            <input type="color" id="card-custom-color" class="color-picker" value="#1a1a2e" />
+            <span class="color-label">Custom</span>
+          </div>
+        </div>
+
+        <div id="colon-color-section" class="settings-section hidden">
+          <label class="settings-label">Colon Color</label>
+          <div id="colon-color-options" class="color-grid"></div>
+          <div class="custom-color-row">
+            <input type="color" id="colon-custom-color" class="color-picker" value="#ffffff" />
+            <span class="color-label">Custom</span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <label class="settings-label">Image Overlay (Optional)</label>
+          <div class="image-upload-container">
+            <input type="file" id="image-upload" accept="image/*" class="hidden" />
+            <button id="upload-btn" class="upload-btn">
+              <span class="upload-icon">📷</span> Upload Image
+            </button>
+            <div id="image-preview-container" class="hidden">
+              <img id="uploaded-image-preview" alt="Preview" />
+              <button id="remove-image-btn" class="remove-btn">&times;</button>
+            </div>
+          </div>
+          <div id="image-controls" class="image-controls hidden">
+            <label class="slider-label">Size</label>
+            <input type="range" id="image-size" min="10" max="200" value="100" class="slider" />
+            <label class="slider-label">Position X</label>
+            <input type="range" id="image-x" min="0" max="100" value="50" class="slider" />
+            <label class="slider-label">Position Y</label>
+            <input type="range" id="image-y" min="0" max="100" value="50" class="slider" />
           </div>
         </div>
       </div>
-
-      <div id="background-group" class="settings-group">
-        <label>Background Color:</label>
-        <div id="bg-color-options"></div>
-        <div id="bg-special-swatches">
-          <div class="font-special-row">
-            <button id="bg-half-swatch" type="button" title="Edit gradient background" aria-label="Edit gradient background"></button>
-            <input type="color" id="bg-custom-color" aria-label="Custom background color" />
-          </div>
-          <div id="bg-gradient-controls" class="gradient-controls hidden">
-            <input type="color" id="bg-grad-c1" aria-label="Background gradient color 1" />
-            <input type="color" id="bg-grad-c2" aria-label="Background gradient color 2" />
-            <select id="bg-grad-pattern" aria-label="Background gradient direction">
-              <option value="vertical">Vertical</option>
-              <option value="horizontal">Horizontal</option>
-              <option value="diag-tlbr">Diagonal TL-BR</option>
-              <option value="diag-bltr">Diagonal BL-TR</option>
-              <option value="radial">Radial</option>
-            </select>
-          </div>
-        </div>
+      <div class="modal-footer">
+        <button id="cancel-settings-btn" class="btn btn-secondary">Cancel</button>
+        <button id="apply-settings-btn" class="btn btn-primary">Launch Clock</button>
       </div>
-
-      <div id="font-family-group" class="settings-group">
-        <label for="font-family-select">Font:</label>
-        <select id="font-family-select">
-          <option value="rounded">Rounded</option>
-          <option value="modern">Modern</option>
-          <option value="mono">Monospace</option>
-          <option value="condensed">Condensed</option>
-          <option value="serif">Serif</option>
-        </select>
-      </div>
-
-      <button id="apply-btn" type="button">Confirm Change</button>
     </div>
   </div>
 
-  <canvas id="clockCanvas"></canvas>
+  <!-- Fullscreen Clock View -->
+  <div id="fullscreen-clock" class="hidden">
+    <canvas id="clockCanvas"></canvas>
+    <button id="exit-fullscreen-btn" class="exit-btn">
+      <span class="exit-icon">←</span> Back to Karumes
+    </button>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>

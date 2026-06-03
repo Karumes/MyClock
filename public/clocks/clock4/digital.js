@@ -1,4 +1,5 @@
 (function (global) {
+  // Digital Reel Clock - Remove glowing borders, clean minimal style
   const DIGIT_MAX = [2, 9, 5, 9, 5, 9];
   const state = {
     value: [0, 0, 0, 0, 0, 0],
@@ -41,7 +42,7 @@
       ctx.fillStyle = paint;
       return paint;
     } catch (_) {
-      return "#3b5fbf";
+      return "#ffffff";
     }
   }
 
@@ -93,10 +94,9 @@
 
     const stripRadius = Math.floor(Math.min(width, stripCanvas.height) * 0.2);
     drawRoundedRect(stripCtx, 0, 0, width, stripCanvas.height, stripRadius);
-    const stripGradient = stripCtx.createLinearGradient(0, 0, 0, stripCanvas.height);
-    stripGradient.addColorStop(0, mixColor(bgColor, "#ffffff", 0.18));
-    stripGradient.addColorStop(1, mixColor(bgColor, "#000000", 0.06));
-    stripCtx.fillStyle = stripGradient;
+    
+    // Minimal, clean strip - subtle glass effect
+    stripCtx.fillStyle = 'rgba(255, 255, 255, 0.03)';
     stripCtx.fill();
 
     stripCtx.fillStyle = cardDigitColor;
@@ -114,22 +114,7 @@
   }
 
   function drawRaisedStrip(ctx, image, x, y) {
-    ctx.save();
-    ctx.shadowColor = "rgba(255,255,255,0.88)";
-    ctx.shadowBlur = 12;
-    ctx.shadowOffsetX = -5;
-    ctx.shadowOffsetY = -5;
-    ctx.drawImage(image, x, y);
-    ctx.restore();
-
-    ctx.save();
-    ctx.shadowColor = "rgba(41,53,72,0.22)";
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetX = 8;
-    ctx.shadowOffsetY = 8;
-    ctx.drawImage(image, x, y);
-    ctx.restore();
-
+    // Clean, no shadows - just draw the strip
     ctx.drawImage(image, x, y);
   }
 
@@ -169,45 +154,20 @@
     const circleY = cy + (offsetY || 0);
     const actualScale = scale || 1;
     const scaledRadius = radius * actualScale;
+    
+    // Clean circle - minimal glass effect, no heavy shadows
     ctx.save();
-    ctx.shadowColor = "rgba(255,255,255,0.88)";
-    ctx.shadowBlur = 14;
-    ctx.shadowOffsetX = -5;
-    ctx.shadowOffsetY = -5;
-    ctx.fillStyle = circleFill;
+    
+    // Very subtle inner glow
+    ctx.shadowColor = "rgba(255,255,255,0.1)";
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.beginPath();
     ctx.arc(cx, circleY, scaledRadius, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    ctx.save();
-    ctx.shadowColor = "rgba(41,53,72,0.24)";
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetX = 8;
-    ctx.shadowOffsetY = 8;
-    ctx.fillStyle = circleFill;
-    ctx.beginPath();
-    ctx.arc(cx, circleY, scaledRadius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    ctx.save();
-    const circleGradient = ctx.createRadialGradient(
-      cx - scaledRadius * 0.24,
-      circleY - scaledRadius * 0.28,
-      scaledRadius * 0.18,
-      cx,
-      circleY,
-      scaledRadius,
-    );
-    circleGradient.addColorStop(0, mixColor(circleFill, "#ffffff", 0.22));
-    circleGradient.addColorStop(1, mixColor(circleFill, "#000000", 0.04));
-    ctx.fillStyle = circleGradient;
-    ctx.beginPath();
-    ctx.arc(cx, circleY, scaledRadius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
+    // Draw digit
     ctx.save();
     ctx.fillStyle = circleDigitColor;
     const cFont = circleFontSize || Math.floor(scaledRadius * 0.98);
@@ -262,7 +222,6 @@
     now = now || new Date();
     options = options || {};
 
-    const bgColor = (options.bg && typeof options.bg === "string") ? options.bg : "#aeb8cc";
     const cardDigitColor = paintToColor(ctx, paint);
     const circleDigitColor = options.circleDigitColor || cardDigitColor;
     const family = options.fontFamily || '"Segoe UI", sans-serif';
@@ -280,21 +239,13 @@
     updateState(nextDigits, nowMs);
 
     ctx.clearRect(0, 0, w, h);
-    const background = ctx.createLinearGradient(0, 0, 0, h);
-    background.addColorStop(0, bgColor);
-    background.addColorStop(1, mixColor(bgColor, "#000000", 0.08));
-    ctx.fillStyle = background;
-    ctx.fillRect(0, 0, w, h);
 
     const layoutMetrics = getReelMetrics(w, h, size, 1);
-    // compute base fixed font sizes so digits remain consistent across cards
     const baseMetrics = getReelMetrics(w, h, size, 0);
     const fixedCardDigitSize = Math.max(12, Math.min(Math.floor(baseMetrics.cardWidth * 0.64), Math.floor(baseMetrics.rowHeight * 0.98)));
     const fixedCircleDigitSize = Math.max(12, Math.floor(baseMetrics.circleRadius * 0.92));
     const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairInnerGap * 3 + layoutMetrics.pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
-    const circleFill = "#d9dfe8";
-    const cardFill = "#d9dfe8";
     const centerY = Math.round(h / 2);
 
     for (let i = 0; i < 6; i += 1) {
@@ -313,7 +264,7 @@
         family,
         fixedCardDigitSize,
         nowMs,
-        cardFill,
+        'transparent',
         cardDigitColor,
         metrics.rowHeight,
         metrics.topPadding,
@@ -327,7 +278,7 @@
         x + metrics.cardWidth / 2,
         centerY,
         metrics.circleRadius,
-        circleFill,
+        'transparent',
         reel.visibleDigit,
         family,
         circleDigitColor,

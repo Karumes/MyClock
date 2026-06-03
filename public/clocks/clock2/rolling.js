@@ -1,8 +1,12 @@
 (function (global) {
+  // Rolling Clock - HH:MM:SS with tilted digits
   const columnState = Array.from({ length: 6 }, () => ({
     shown: null,
     anim: null,
   }));
+
+  // Per-column tilt angles (alternating, center row straightens)
+  const COLUMN_TILTS = [-8, 6, -5, 7, -6, 5]; // degrees
 
   function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
@@ -69,60 +73,74 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  function drawContinuousColumn(ctx, x, y, digitHeight, currentValue, color, fontSize, family, speed, nowMs) {
+  function drawTiltedDigit(ctx, digit, x, y, tiltDeg, fontSize, family, color, isCenter) {
     ctx.save();
     ctx.translate(x, y);
+    
+    // Center digit is straight, others are tilted with alternating angles per row
+    if (!isCenter) {
+      const rad = (tiltDeg * Math.PI) / 180;
+      ctx.rotate(rad);
+    }
+    
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
+    ctx.fillText(String(digit), 0, 0);
+    ctx.restore();
+  }
+
+  function drawContinuousColumn(ctx, x, centerY, digitHeight, currentValue, color, fontSize, family, speed, nowMs, columnIndex, canvasHeight) {
+    const baseTilt = COLUMN_TILTS[columnIndex] || 0;
     const rowsPerSecond = speed || 1;
     const absoluteOffsetRows = (nowMs / 1000) * rowsPerSecond;
     const fracRow = absoluteOffsetRows - Math.floor(absoluteOffsetRows);
     const offset = fracRow * digitHeight;
-    const visibleRows = Math.ceil(ctx.canvas.height / digitHeight) + 24;
+    const visibleRows = Math.ceil(canvasHeight / digitHeight) + 24;
     const half = Math.floor(visibleRows / 2);
 
     for (let r = -half; r <= half; r += 1) {
       let value = (currentValue - r) % 10;
       value = (value + 10) % 10;
-      ctx.fillText(String(value), 0, r * digitHeight + offset);
+      
+      const y = centerY + r * digitHeight + offset;
+      const isCenter = Math.abs(r) < 0.5;
+      
+      // Alternating tilt based on row position
+      const rowTilt = isCenter ? 0 : baseTilt * (r % 2 === 0 ? 1 : -1);
+      
+      drawTiltedDigit(ctx, value, x, y, rowTilt, fontSize, family, color, isCenter);
     }
-    ctx.restore();
   }
 
-  function drawStaticColumn(ctx, x, y, value, color, fontSize, family) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = color;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = `700 ${fontSize}px ${family}`;
-    ctx.fillText(String(value), 0, 0);
-    ctx.restore();
+  function drawStaticColumn(ctx, x, y, value, color, fontSize, family, columnIndex) {
+    const tilt = 0; // Center value is always straight
+    drawTiltedDigit(ctx, value, x, y, tilt, fontSize, family, color, true);
   }
 
-  function drawDropColumn(ctx, x, y, fromValue, toValue, progress, color, fontSize, family, canvasHeight) {
+  function drawDropColumn(ctx, x, centerY, fromValue, toValue, progress, color, fontSize, family, canvasHeight, columnIndex) {
+    const baseTilt = COLUMN_TILTS[columnIndex] || 0;
     const eased = easeOutCubic(progress);
     const topStart = -canvasHeight / 2 - fontSize * 1.2;
     const bottomEnd = canvasHeight / 2 + fontSize * 1.2;
     const incomingY = topStart + (0 - topStart) * eased;
     const outgoingY = 0 + (bottomEnd - 0) * eased;
 
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = color;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = `700 ${fontSize}px ${family}`;
-
+    // Outgoing digit (tilted, fading)
     if (fromValue !== null && fromValue !== undefined) {
-      ctx.globalAlpha = 1 - eased * 0.1;
-      ctx.fillText(String(fromValue), 0, outgoingY);
+      ctx.save();
+      ctx.globalAlpha = 1 - eased * 0.3;
+      const outTilt = baseTilt * (1 - eased);
+      drawTiltedDigit(ctx, fromValue, x, centerY + outgoingY, outTilt, fontSize, family, color, false);
+      ctx.restore();
     }
 
+    // Incoming digit (straightening as it centers)
+    ctx.save();
     ctx.globalAlpha = 0.25 + eased * 0.75;
-    ctx.fillText(String(toValue), 0, incomingY);
+    const inTilt = baseTilt * (1 - eased); // Straightens as it reaches center
+    drawTiltedDigit(ctx, toValue, x, centerY + incomingY, inTilt, fontSize, family, color, eased > 0.9);
     ctx.restore();
   }
 
@@ -184,7 +202,7 @@
       const colColor = colorAt(x, centerY);
 
       if (i === 5) {
-        drawContinuousColumn(ctx, x, centerY, digitHeight, digits[i], colColor, fontSize, family, options.clock6Speed || 1, nowMs);
+        drawContinuousColumn(ctx, x, centerY, digitHeight, digits[i], colColor, fontSize, family, options.clock6Speed || 1, nowMs, i, h);
         state.shown = digits[i];
         state.anim = null;
         continue;
@@ -192,13 +210,13 @@
 
       if (state.anim) {
         const progress = Math.min(1, (nowMs - state.anim.startedAt) / animDuration);
-        drawDropColumn(ctx, x, centerY, state.anim.from, state.anim.to, progress, colColor, fontSize, family, h);
+        drawDropColumn(ctx, x, centerY, state.anim.from, state.anim.to, progress, colColor, fontSize, family, h, i);
         if (progress >= 1) {
           state.shown = state.anim.to;
           state.anim = null;
         }
       } else {
-        drawStaticColumn(ctx, x, centerY, state.shown, colColor, fontSize, family);
+        drawStaticColumn(ctx, x, centerY, state.shown, colColor, fontSize, family, i);
       }
     }
 
