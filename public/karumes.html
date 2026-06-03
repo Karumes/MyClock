@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Karumes — Futuristic Clock Screensavers</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            karumes: {
+              bg: '#0a0a0f',
+              card: 'rgba(255, 255, 255, 0.03)',
+              border: 'rgba(255, 255, 255, 0.08)',
+              text: '#e4e4e7',
+              muted: '#71717a',
+              accent: '#a855f7',
+              cyan: '#22d3ee',
+              pink: '#ec4899',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0a0f;
+      color: #e4e4e7;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    
+    /* Grainy texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    /* Background gradient */
+    .bg-gradient-radial {
+      background: radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 40%),
+                  radial-gradient(ellipse at 20% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 40%),
+                  #0a0a0f;
+    }
+    
+    /* Three.js canvas */
+    #three-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    /* Main content */
+    .main-content {
+      position: relative;
+      z-index: 2;
+    }
+    
+    /* Glassmorphism card */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 24px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .glass-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px -15px rgba(139, 92, 246, 0.2);
+    }
+    
+    /* Clock preview container - 16:9 aspect ratio */
+    .clock-preview {
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .clock-preview canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    
+    /* Navigation */
+    .nav-glass {
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Button styles */
+    .btn-primary {
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      color: white;
+      font-weight: 600;
+      padding: 12px 28px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -10px rgba(168, 85, 247, 0.5);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #e4e4e7;
+      font-weight: 500;
+      padding: 12px 28px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Logo text gradient */
+    .logo-gradient {
+      background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Section title gradient */
+    .title-gradient {
+      background: linear-gradient(135deg, #e4e4e7 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Scroll animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Code editor mock */
+    .code-editor {
+      background: #0d0d12;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      overflow: hidden;
+    }
+    
+    .code-editor-header {
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .code-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    
+    .code-content {
+      padding: 20px;
+      line-height: 1.7;
+      color: #9ca3af;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .code-content .keyword { color: #c084fc; }
+    .code-content .string { color: #34d399; }
+    .code-content .number { color: #fbbf24; }
+    .code-content .comment { color: #6b7280; }
+    .code-content .property { color: #60a5fa; }
+    
+    /* Clock name label */
+    .clock-label {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .glass-card:hover .clock-label {
+      opacity: 1;
+    }
+    
+    /* Smooth scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Hero section */
+    .hero-text {
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+    
+    /* Footer */
+    footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-gradient-radial">
+  <!-- Three.js Canvas -->
+  <canvas id="three-canvas"></canvas>
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Navigation -->
+    <nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <a href="#" class="text-2xl font-bold logo-gradient tracking-tight">Karumes</a>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#clocks" class="text-sm text-zinc-400 hover:text-white transition-colors">Clocks</a>
+          <a href="#create" class="text-sm text-zinc-400 hover:text-white transition-colors">Create</a>
+          <a href="#features" class="text-sm text-zinc-400 hover:text-white transition-colors">Features</a>
+        </div>
+        <button class="btn-primary text-sm py-2.5 px-5">Download Free</button>
+      </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-12">
+      <div class="max-w-4xl mx-auto text-center fade-in">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-zinc-400 mb-8">
+          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+          New: Reel Clock Mode Available
+        </div>
+        <h1 class="hero-text text-white mb-6">
+          Time, <span class="title-gradient">Reimagined</span>
+        </h1>
+        <p class="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          Transform your desktop into a stunning visual experience with futuristic clock screensavers designed for the modern age.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button class="btn-primary">Get Started Free</button>
+          <button class="btn-secondary">View All Clocks</button>
+        </div>
+      </div>
+      
+      <!-- Scroll indicator -->
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <svg class="w-6 h-6 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </div>
+    </section>
+    
+    <!-- Clock Previews Section -->
+    <section id="clocks" class="py-24 px-6">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-16 fade-in">
+          <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Clock Modes</h2>
+          <p class="text-zinc-400 text-lg max-w-xl mx-auto">Five meticulously crafted clock designs, each with its own unique visual identity.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Rolling Clock -->
+          <div class="glass-card p-4 fade-in">
+            <div class="clock-preview" id="rolling-preview">
+              <canvas></canvas>
+              <span class="clock-label">Rolling</span>
+            </div>
+          </div>
+          
+          <!-- Flip Clock -->
+          <div class="glass-card p-4 fade-in">
+            <div class="clock-preview" id="flip-preview">
+              <canvas></canvas>
+              <span class="clock-label">Flip</span>
+            </div>
+          </div>
+          
+          <!-- Lumen Clock -->
+          <div class="glass-card p-4 fade-in">
+            <div class="clock-preview" id="lumen-preview">
+              <canvas></canvas>
+              <span class="clock-label">Lumen</span>
+            </div>
+          </div>
+          
+          <!-- Binary Clock -->
+          <div class="glass-card p-4 fade-in">
+            <div class="clock-preview" id="binary-preview">
+              <canvas></canvas>
+              <span class="clock-label">Binary</span>
+            </div>
+          </div>
+          
+          <!-- Reel Clock -->
+          <div class="glass-card p-4 fade-in md:col-span-2 lg:col-span-2">
+            <div class="clock-preview" id="reel-preview">
+              <canvas></canvas>
+              <span class="clock-label">Reel</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Karumes Create Section -->
+    <section id="create" class="py-24 px-6">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-16 fade-in">
+          <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Karumes Create</h2>
+          <p class="text-zinc-400 text-lg max-w-xl mx-auto">Design your own custom clock with our interactive playground.</p>
+        </div>
+        
+        <div class="glass-card p-6 md:p-8 fade-in">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Code Editor -->
+            <div class="code-editor">
+              <div class="code-editor-header">
+                <div class="code-dot bg-red-500"></div>
+                <div class="code-dot bg-yellow-500"></div>
+                <div class="code-dot bg-green-500"></div>
+                <span class="ml-4 text-xs text-zinc-500">custom-clock.js</span>
+              </div>
+              <div class="code-content">
+                <div><span class="comment">// Karumes Custom Clock Configuration</span></div>
+                <div><span class="keyword">const</span> <span class="property">clockConfig</span> = {</div>
+                <div>  <span class="property">style</span>: <span class="string">"neon-glow"</span>,</div>
+                <div>  <span class="property">primaryColor</span>: <span class="string">"#a855f7"</span>,</div>
+                <div>  <span class="property">secondaryColor</span>: <span class="string">"#22d3ee"</span>,</div>
+                <div>  <span class="property">fontSize</span>: <span class="number">120</span>,</div>
+                <div>  <span class="property">fontWeight</span>: <span class="number">800</span>,</div>
+                <div>  <span class="property">glowIntensity</span>: <span class="number">0.8</span>,</div>
+                <div>  <span class="property">animation</span>: {</div>
+                <div>    <span class="property">type</span>: <span class="string">"pulse"</span>,</div>
+                <div>    <span class="property">duration</span>: <span class="number">2000</span>,</div>
+                <div>    <span class="property">easing</span>: <span class="string">"easeInOut"</span></div>
+                <div>  },</div>
+                <div>  <span class="property">reflection</span>: {</div>
+                <div>    <span class="property">enabled</span>: <span class="keyword">true</span>,</div>
+                <div>    <span class="property">opacity</span>: <span class="number">0.3</span>,</div>
+                <div>    <span class="property">blur</span>: <span class="number">20</span></div>
+                <div>  }</div>
+                <div>};</div>
+                <div></div>
+                <div><span class="comment">// Apply configuration</span></div>
+                <div><span class="property">karumes</span>.<span class="property">create</span>(clockConfig);</div>
+              </div>
+            </div>
+            
+            <!-- Live Preview -->
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-sm text-zinc-400 font-medium">Live Preview</span>
+                <span class="text-xs text-green-400 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                  Synced
+                </span>
+              </div>
+              <div class="clock-preview" id="create-preview">
+                <canvas></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features" class="py-24 px-6">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-16 fade-in">
+          <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Why Karumes?</h2>
+          <p class="text-zinc-400 text-lg max-w-xl mx-auto">Built for performance, designed for beauty.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
+          <div class="glass-card p-8">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center mb-6">
+              <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-3">Ultra Lightweight</h3>
+            <p class="text-zinc-400 leading-relaxed">Minimal CPU and GPU usage. Your screensaver runs smoothly without impacting system performance.</p>
+          </div>
+          
+          <div class="glass-card p-8">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center mb-6">
+              <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-3">Fully Customizable</h3>
+            <p class="text-zinc-400 leading-relaxed">Colors, fonts, animations — everything is tweakable. Make it truly yours with the Create tool.</p>
+          </div>
+          
+          <div class="glass-card p-8">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center mb-6">
+              <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-3">Multi-Display Ready</h3>
+            <p class="text-zinc-400 leading-relaxed">Perfect support for multiple monitors. Each screen can display a different clock style.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="py-24 px-6">
+      <div class="max-w-4xl mx-auto text-center fade-in">
+        <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">Ready to transform your desktop?</h2>
+        <p class="text-zinc-400 text-lg mb-10 max-w-xl mx-auto">Join thousands of users who have made their screens more beautiful with Karumes.</p>
+        <button class="btn-primary text-lg py-4 px-10">Download for Windows</button>
+        <p class="text-sm text-zinc-500 mt-4">Free forever. No account required.</p>
+      </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="py-12 px-6">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-2">
+          <span class="text-xl font-bold logo-gradient">Karumes</span>
+          <span class="text-zinc-500 text-sm">© 2026</span>
+        </div>
+        <div class="flex items-center gap-8">
+          <a href="#" class="text-sm text-zinc-400 hover:text-white transition-colors">Privacy</a>
+          <a href="#" class="text-sm text-zinc-400 hover:text-white transition-colors">Terms</a>
+          <a href="#" class="text-sm text-zinc-400 hover:text-white transition-colors">GitHub</a>
+          <a href="#" class="text-sm text-zinc-400 hover:text-white transition-colors">Twitter</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ============================================
+    // THREE.JS PARTICLE BACKGROUND
+    // ============================================
+    (function initThreeBackground() {
+      const canvas = document.getElementById('three-canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 50;
+      
+      // Create particles
+      const particleCount = 800;
+      const positions = new Float32Array(particleCount * 3);
+      const colors = new Float32Array(particleCount * 3);
+      const sizes = new Float32Array(particleCount);
+      
+      const colorPalette = [
+        new THREE.Color(0xa855f7), // Purple
+        new THREE.Color(0x22d3ee), // Cyan
+        new THREE.Color(0xec4899), // Pink
+      ];
+      
+      for (let i = 0; i < particleCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 120;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 120;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 60;
+        
+        const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+        colors[i * 3] = color.r;
+        colors[i * 3 + 1] = color.g;
+        colors[i * 3 + 2] = color.b;
+        
+        sizes[i] = Math.random() * 2 + 0.5;
+      }
+      
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+      
+      const material = new THREE.PointsMaterial({
+        size: 1.5,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true,
+      });
+      
+      const particles = new THREE.Points(geometry, material);
+      scene.add(particles);
+      
+      // Mouse tracking
+      let mouseX = 0, mouseY = 0;
+      let targetX = 0, targetY = 0;
+      
+      document.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+      });
+      
+      // Animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+        
+        targetX += (mouseX - targetX) * 0.02;
+        targetY += (mouseY - targetY) * 0.02;
+        
+        particles.rotation.y = targetX * 0.3;
+        particles.rotation.x = targetY * 0.3;
+        particles.rotation.z += 0.0005;
+        
+        // Subtle floating animation
+        const positions = particles.geometry.attributes.position.array;
+        for (let i = 0; i < particleCount; i++) {
+          positions[i * 3 + 1] += Math.sin(Date.now() * 0.001 + i) * 0.003;
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+        
+        renderer.render(scene, camera);
+      }
+      animate();
+      
+      // Resize handler
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    })();
+
+    // ============================================
+    // SCROLL ANIMATIONS
+    // ============================================
+    const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+    
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // ============================================
+    // CLOCK RENDERING FUNCTIONS
+    // ============================================
+    
+    // Utility functions
+    function getTimeDigits() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      return { h, m, s, digits: [h[0], h[1], m[0], m[1], s[0], s[1]], ms: now.getMilliseconds() };
+    }
+
+    // ============================================
+    // 1. ROLLING CLOCK
+    // ============================================
+    (function initRollingClock() {
+      const container = document.getElementById('rolling-preview');
+      const canvas = container.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * 2;
+        canvas.height = rect.height * 2;
+        ctx.scale(2, 2);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      
+      const columnState = Array.from({ length: 6 }, () => ({ value: null, offset: 0 }));
+      const tiltAngles = Array.from({ length: 6 }, () => Array.from({ length: 10 }, () => (Math.random() - 0.5) * 8));
+      
+      function render() {
+        const rect = container.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        // Dark background
+        ctx.fillStyle = '#050508';
+        ctx.fillRect(0, 0, w, h);
+        
+        const { digits, ms } = getTimeDigits();
+        const fontSize = Math.min(h * 0.35, w / 8);
+        const digitWidth = fontSize * 0.75;
+        const digitHeight = fontSize * 1.2;
+        const gap = digitWidth * 0.15;
+        const pairGap = digitWidth * 0.4;
+        
+        const totalWidth = digitWidth * 6 + gap * 3 + pairGap * 2;
+        const startX = (w - totalWidth) / 2;
+        const centerY = h / 2;
+        
+        ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        for (let i = 0; i < 6; i++) {
+          const pairIndex = Math.floor(i / 2);
+          const inPair = i % 2;
+          const x = startX + pairIndex * (digitWidth * 2 + gap + pairGap) + inPair * (digitWidth + gap) + digitWidth / 2;
+          
+          const currentDigit = parseInt(digits[i]);
+          
+          // For the last column (seconds ones), continuous scrolling
+          const isSecondsOnes = i === 5;
+          const scrollOffset = isSecondsOnes ? (ms / 1000) * digitHeight : 0;
+          
+          // Draw multiple digits for scrolling effect
+          for (let offset = -2; offset <= 2; offset++) {
+            let displayDigit = (currentDigit - offset + 10) % 10;
+            const y = centerY + offset * digitHeight + scrollOffset;
+            
+            if (y < centerY - digitHeight * 1.5 || y > centerY + digitHeight * 1.5) continue;
+            
+            const distFromCenter = Math.abs(y - centerY);
+            const alpha = Math.max(0, 1 - distFromCenter / (digitHeight * 1.2));
+            const scale = 0.7 + alpha * 0.3;
+            
+            // Tilt angle for this digit position
+            const tilt = tiltAngles[i][displayDigit] * (1 - alpha * 0.5);
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(tilt * Math.PI / 180);
+            ctx.scale(scale, scale);
+            
+            // Gradient color based on position
+            const hue = 260 + i * 15;
+            ctx.fillStyle = `hsla(${hue}, 70%, 70%, ${alpha})`;
+            ctx.fillText(String(displayDigit), 0, 0);
+            
+            ctx.restore();
+          }
+        }
+        
+        // Draw colons
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.6)';
+        ctx.font = `700 ${fontSize * 0.6}px "Inter", sans-serif`;
+        const colon1X = startX + digitWidth * 2 + gap + pairGap / 2;
+        const colon2X = startX + digitWidth * 4 + gap * 2 + pairGap * 1.5;
+        ctx.fillText(':', colon1X, centerY);
+        ctx.fillText(':', colon2X, centerY);
+        
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+
+    // ============================================
+    // 2. FLIP CLOCK (Glassmorphism)
+    // ============================================
+    (function initFlipClock() {
+      const container = document.getElementById('flip-preview');
+      const canvas = container.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * 2;
+        canvas.height = rect.height * 2;
+        ctx.scale(2, 2);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      
+      const flipState = { shown: null, anims: [null, null] };
+      const flipDuration = 400;
+      
+      function drawGlassCard(x, y, width, height) {
+        // Glass effect with transparency
+        ctx.save();
+        ctx.beginPath();
+        const radius = width * 0.08;
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + width, y, x + width, y + height, radius);
+        ctx.arcTo(x + width, y + height, x, y + height, radius);
+        ctx.arcTo(x, y + height, x, y, radius);
+        ctx.arcTo(x, y, x + width, y, radius);
+        ctx.closePath();
+        
+        // Subtle gradient fill
+        const grad = ctx.createLinearGradient(x, y, x, y + height);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0.02)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+        
+        // Border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+      
+      function drawFlipCard(x, y, width, height, text, progress = null, fromText = null) {
+        drawGlassCard(x, y, width, height);
+        
+        const fontSize = height * 0.65;
+        ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff';
+        
+        if (progress === null) {
+          // Static card
+          ctx.fillText(text, x + width / 2, y + height / 2 + height * 0.02);
+        } else {
+          // Animated flip
+          const midY = y + height / 2;
+          
+          // Bottom half (new value, or old if not flipped yet)
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, midY, width, height / 2);
+          ctx.clip();
+          ctx.fillText(progress < 0.5 ? fromText : text, x + width / 2, y + height / 2 + height * 0.02);
+          ctx.restore();
+          
+          // Top half with flip effect
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, y, width, height / 2);
+          ctx.clip();
+          
+          if (progress < 0.5) {
+            // Old value flipping down
+            const scaleY = Math.cos(progress * Math.PI);
+            ctx.translate(x + width / 2, midY);
+            ctx.scale(1, Math.max(0.01, scaleY));
+            ctx.translate(-(x + width / 2), -midY);
+            ctx.fillText(fromText, x + width / 2, y + height / 2 + height * 0.02);
+          } else {
+            // New value flipping up
+            const scaleY = Math.cos((1 - progress) * Math.PI);
+            ctx.translate(x + width / 2, midY);
+            ctx.scale(1, Math.max(0.01, scaleY));
+            ctx.translate(-(x + width / 2), -midY);
+            ctx.fillText(text, x + width / 2, y + height / 2 + height * 0.02);
+          }
+          ctx.restore();
+        }
+        
+        // Center line
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + 2, y + height / 2);
+        ctx.lineTo(x + width - 2, y + height / 2);
+        ctx.stroke();
+      }
+      
+      function render() {
+        const rect = container.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        // Dark background
+        ctx.fillStyle = '#050508';
+        ctx.fillRect(0, 0, w, h);
+        
+        const { h: hh, m: mm } = getTimeDigits();
+        const pairs = [hh, mm];
+        const now = Date.now();
+        
+        if (!flipState.shown) {
+          flipState.shown = pairs.slice();
+        }
+        
+        const cardHeight = Math.min(h * 0.65, w / 4);
+        const cardWidth = cardHeight * 0.9;
+        const gap = cardWidth * 0.15;
+        const totalWidth = cardWidth * 2 + gap;
+        const startX = (w - totalWidth) / 2;
+        const startY = (h - cardHeight) / 2;
+        
+        // Check for changes and start animations
+        for (let i = 0; i < pairs.length; i++) {
+          if (flipState.shown[i] !== pairs[i] && !flipState.anims[i]) {
+            flipState.anims[i] = { from: flipState.shown[i], to: pairs[i], start: now };
+          }
+        }
+        
+        // Draw cards
+        for (let i = 0; i < pairs.length; i++) {
+          const x = startX + i * (cardWidth + gap);
+          const anim = flipState.anims[i];
+          
+          if (anim) {
+            const progress = Math.min(1, (now - anim.start) / flipDuration);
+            drawFlipCard(x, startY, cardWidth, cardHeight, anim.to, progress, anim.from);
+            
+            if (progress >= 1) {
+              flipState.shown[i] = anim.to;
+              flipState.anims[i] = null;
+            }
+          } else {
+            drawFlipCard(x, startY, cardWidth, cardHeight, flipState.shown[i]);
+          }
+        }
+        
+        // Colon
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.font = `700 ${cardHeight * 0.4}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(':', w / 2, h / 2);
+        
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+
+    // ============================================
+    // 3. LUMEN CLOCK (Glowing with reflection)
+    // ============================================
+    (function initLumenClock() {
+      const container = document.getElementById('lumen-preview');
+      const canvas = container.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * 2;
+        canvas.height = rect.height * 2;
+        ctx.scale(2, 2);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      
+      function render() {
+        const rect = container.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        // Dark background
+        ctx.fillStyle = '#030305';
+        ctx.fillRect(0, 0, w, h);
+        
+        const { h: hh, m: mm, s: ss } = getTimeDigits();
+        const timeStr = `${hh}:${mm}:${ss}`;
+        
+        const fontSize = Math.min(h * 0.28, w / 6);
+        const centerX = w / 2;
+        const centerY = h * 0.38;
+        
+        ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Outer glow
+        ctx.shadowColor = '#a855f7';
+        ctx.shadowBlur = 60;
+        ctx.fillStyle = '#a855f7';
+        ctx.fillText(timeStr, centerX, centerY);
+        
+        // Inner glow
+        ctx.shadowColor = '#22d3ee';
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = '#22d3ee';
+        ctx.fillText(timeStr, centerX, centerY);
+        
+        // Core text
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#fff';
+        ctx.fillText(timeStr, centerX, centerY);
+        
+        // Reflection with progressive blur fade
+        const reflectionY = h * 0.62;
+        const reflectionHeight = h * 0.35;
+        
+        // Create reflection gradient
+        const reflectGrad = ctx.createLinearGradient(0, reflectionY, 0, reflectionY + reflectionHeight);
+        reflectGrad.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
+        reflectGrad.addColorStop(0.3, 'rgba(168, 85, 247, 0.12)');
+        reflectGrad.addColorStop(0.6, 'rgba(168, 85, 247, 0.05)');
+        reflectGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+        
+        // Draw reflected text (flipped)
+        ctx.save();
+        ctx.translate(centerX, reflectionY);
+        ctx.scale(1.2, -0.5); // Wider and shorter
+        ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = reflectGrad;
+        ctx.filter = 'blur(8px)';
+        ctx.fillText(timeStr, 0, 0);
+        ctx.restore();
+        
+        // Additional blur layers for progressive effect
+        for (let i = 1; i <= 3; i++) {
+          ctx.save();
+          ctx.translate(centerX, reflectionY + i * 15);
+          ctx.scale(1.2 + i * 0.1, -0.4 + i * 0.05);
+          ctx.globalAlpha = 0.15 - i * 0.04;
+          ctx.filter = `blur(${12 + i * 8}px)`;
+          ctx.fillStyle = '#a855f7';
+          ctx.fillText(timeStr, 0, 0);
+          ctx.restore();
+        }
+        
+        ctx.filter = 'none';
+        
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+
+    // ============================================
+    // 4. BINARY CLOCK (Dot matrix style)
+    // ============================================
+    (function initBinaryClock() {
+      const container = document.getElementById('binary-preview');
+      const canvas = container.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * 2;
+        canvas.height = rect.height * 2;
+        ctx.scale(2, 2);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      
+      function render() {
+        const rect = container.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        // Dark background
+        ctx.fillStyle = '#050508';
+        ctx.fillRect(0, 0, w, h);
+        
+        const { h: hh, m: mm, s: ss } = getTimeDigits();
+        const values = [
+          parseInt(hh[0]), parseInt(hh[1]),
+          parseInt(mm[0]), parseInt(mm[1]),
+          parseInt(ss[0]), parseInt(ss[1])
+        ];
+        
+        // Binary representation (4 bits each)
+        const cols = 6;
+        const rows = 4;
+        const dotSize = Math.min(h / 8, w / 16);
+        const gapX = dotSize * 1.8;
+        const gapY = dotSize * 1.5;
+        const groupGap = dotSize * 1.2;
+        
+        const totalWidth = cols * gapX + 2 * groupGap - gapX + dotSize;
+        const totalHeight = rows * gapY - gapY + dotSize;
+        const startX = (w - totalWidth) / 2;
+        const startY = (h - totalHeight) / 2;
+        
+        for (let col = 0; col < cols; col++) {
+          const value = values[col];
+          const groupOffset = Math.floor(col / 2) * groupGap;
+          
+          for (let row = 0; row < rows; row++) {
+            const bitValue = 3 - row; // 8, 4, 2, 1 from top to bottom
+            const isOn = (value >> bitValue) & 1;
+            
+            const x = startX + col * gapX + groupOffset + dotSize / 2;
+            const y = startY + row * gapY + dotSize / 2;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, dotSize / 2, 0, Math.PI * 2);
+            
+            if (isOn) {
+              // Glowing dot
+              ctx.shadowColor = col < 2 ? '#a855f7' : col < 4 ? '#22d3ee' : '#ec4899';
+              ctx.shadowBlur = 15;
+              ctx.fillStyle = col < 2 ? '#a855f7' : col < 4 ? '#22d3ee' : '#ec4899';
+            } else {
+              // Dim dot
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            }
+            ctx.fill();
+          }
+        }
+        
+        ctx.shadowBlur = 0;
+        
+        // Labels at bottom
+        ctx.font = `500 ${dotSize * 0.5}px "JetBrains Mono", monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        
+        const labels = ['H', 'H', 'M', 'M', 'S', 'S'];
+        for (let col = 0; col < cols; col++) {
+          const groupOffset = Math.floor(col / 2) * groupGap;
+          const x = startX + col * gapX + groupOffset + dotSize / 2;
+          ctx.fillText(labels[col], x, startY + totalHeight + dotSize);
+        }
+        
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+
+    // ============================================
+    // 5. REEL CLOCK (Elegant slot machine style)
+    // ============================================
+    (function initReelClock() {
+      const container = document.getElementById('reel-preview');
+      const canvas = container.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * 2;
+        canvas.height = rect.height * 2;
+        ctx.scale(2, 2);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      
+      const reelState = Array.from({ length: 6 }, () => ({ value: null, targetValue: null, offset: 0 }));
+      
+      function render() {
+        const rect = container.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        // Dark background
+        ctx.fillStyle = '#050508';
+        ctx.fillRect(0, 0, w, h);
+        
+        const { digits, ms } = getTimeDigits();
+        
+        const fontSize = Math.min(h * 0.32, w / 12);
+        const digitWidth = fontSize * 0.7;
+        const digitHeight = fontSize * 1.3;
+        const gap = fontSize * 0.12; // Tight, consistent spacing
+        const pairGap = fontSize * 0.3;
+        
+        const totalWidth = digitWidth * 6 + gap * 3 + pairGap * 2;
+        const startX = (w - totalWidth) / 2;
+        const centerY = h / 2;
+        
+        ctx.font = `700 ${fontSize}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        for (let i = 0; i < 6; i++) {
+          const pairIndex = Math.floor(i / 2);
+          const inPair = i % 2;
+          const x = startX + pairIndex * (digitWidth * 2 + gap + pairGap) + inPair * (digitWidth + gap) + digitWidth / 2;
+          
+          const currentDigit = parseInt(digits[i]);
+          const state = reelState[i];
+          
+          // Initialize state
+          if (state.value === null) {
+            state.value = currentDigit;
+            state.targetValue = currentDigit;
+          }
+          
+          // Detect change
+          if (state.targetValue !== currentDigit) {
+            state.value = state.targetValue;
+            state.targetValue = currentDigit;
+            state.offset = 0;
+          }
+          
+          // Animate offset for seconds
+          const isSeconds = i >= 4;
+          if (isSeconds && state.value !== state.targetValue) {
+            state.offset = Math.min(1, state.offset + 0.08);
+            if (state.offset >= 1) {
+              state.value = state.targetValue;
+              state.offset = 0;
+            }
+          } else if (state.value !== state.targetValue) {
+            state.offset = Math.min(1, state.offset + 0.15);
+            if (state.offset >= 1) {
+              state.value = state.targetValue;
+              state.offset = 0;
+            }
+          }
+          
+          // Draw multiple digits for reel effect
+          const scrollY = state.offset * digitHeight;
+          
+          for (let offset = -1; offset <= 1; offset++) {
+            let displayDigit;
+            if (offset === 0) {
+              displayDigit = state.value;
+            } else if (offset === 1) {
+              displayDigit = state.targetValue;
+            } else {
+              displayDigit = (state.value - 1 + 10) % 10;
+            }
+            
+            const y = centerY + offset * digitHeight - scrollY;
+            
+            if (y < centerY - digitHeight || y > centerY + digitHeight) continue;
+            
+            const distFromCenter = Math.abs(y - centerY);
+            const alpha = Math.max(0.1, 1 - distFromCenter / digitHeight);
+            const isCenter = distFromCenter < digitHeight * 0.3;
+            
+            ctx.save();
+            
+            // Center digit gets dynamic color
+            if (isCenter) {
+              const hue = (Date.now() / 50 + i * 30) % 360;
+              ctx.fillStyle = `hsla(${hue}, 70%, 70%, 1)`;
+              ctx.shadowColor = `hsla(${hue}, 70%, 60%, 0.5)`;
+              ctx.shadowBlur = 20;
+            } else {
+              ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
+            }
+            
+            ctx.fillText(String(displayDigit), x, y);
+            ctx.restore();
+          }
+        }
+        
+        // Draw subtle separators (colons)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.font = `700 ${fontSize * 0.5}px "Inter", sans-serif`;
+        const colon1X = startX + digitWidth * 2 + gap + pairGap / 2;
+        const colon2X = startX + digitWidth * 4 + gap * 2 + pairGap * 1.5;
+        ctx.fillText(':', colon1X, centerY);
+        ctx.fillText(':', colon2X, centerY);
+        
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+
+    // ============================================
+    // 6. CREATE PREVIEW (Custom neon glow clock)
+    // ============================================
+    (function initCreatePreview() {
+      const container = document.getElementById('create-preview');
+      const canvas = container.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * 2;
+        canvas.height = rect.height * 2;
+        ctx.scale(2, 2);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      
+      function render() {
+        const rect = container.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        // Dark background with subtle gradient
+        const bgGrad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+        bgGrad.addColorStop(0, '#0a0a12');
+        bgGrad.addColorStop(1, '#050508');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+        
+        const { h: hh, m: mm, s: ss } = getTimeDigits();
+        const timeStr = `${hh}:${mm}`;
+        
+        const fontSize = Math.min(h * 0.35, w / 5);
+        const centerX = w / 2;
+        const centerY = h / 2;
+        
+        ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Pulsing effect
+        const pulse = Math.sin(Date.now() / 1000) * 0.2 + 0.8;
+        
+        // Multi-layer glow
+        ctx.shadowColor = '#a855f7';
+        ctx.shadowBlur = 80 * pulse;
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.3)';
+        ctx.fillText(timeStr, centerX, centerY);
+        
+        ctx.shadowColor = '#22d3ee';
+        ctx.shadowBlur = 40 * pulse;
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.5)';
+        ctx.fillText(timeStr, centerX, centerY);
+        
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(timeStr, centerX, centerY);
+        
+        // Seconds indicator
+        ctx.font = `600 ${fontSize * 0.25}px "JetBrains Mono", monospace`;
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.6)';
+        ctx.fillText(ss, centerX + fontSize * 1.1, centerY - fontSize * 0.15);
+        
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
