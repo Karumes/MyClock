@@ -17,7 +17,7 @@ const clocks = [
   { name: "Grid", renderer: "renderClock7", size: 130 },
 ];
 
-const defaultAccents = ["#69f7ff", "#ffffff", "#f7fbff", "#dbe8ff", "#89ffbf", "#ffffff", "#ff4fd8", "#f8fbff"];
+const defaultAccents = ["#69f7ff", "#ffffff", "#ffffff", "#ffffff", "#89ffbf", "#ffffff", "#ff4fd8", "#f8fbff"];
 
 const state = {
   section: "library",
@@ -139,7 +139,7 @@ function renderClock(ctx, canvas, index, now) {
   const lctx = layer.getContext("2d");
   const renderer = window[clock.renderer];
   const paint = solidPaint(lctx, profile, w, h);
-  const sizeRatio = index === 1 ? 0.5 : 0.42;
+  const sizeRatio = index === 1 ? 0.42 : 0.42;
   const size = Math.min(clock.size * window.devicePixelRatio, Math.min(w, h) * sizeRatio);
   const options = {
     suppressBg: true,
