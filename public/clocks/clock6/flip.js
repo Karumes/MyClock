@@ -185,7 +185,7 @@
     }
     const panelColor = (opts && typeof opts.flipBackColor === "string" && opts.flipBackColor.trim())
       ? opts.flipBackColor
-      : "rgba(63, 61, 61, 0.4)";
+      : "rgb(0, 0, 0)";
     const glassOnly = Boolean(opts && opts.glassOnly);
     const ts = now.getTime();
 

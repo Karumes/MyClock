@@ -25,9 +25,7 @@ const state = {
   profiles: clocks.map((clock, index) => ({
     bgColor: "#000000",
     color: defaultAccents[index],
-    colonColor: index === 1 ? "#69f7ff" : "#ffffff",
     cardColor: "rgba(255,255,255,0.055)",
-    fontFamily: index === 1 ? "mono" : index === 5 ? "condensed" : "rounded",
     imageScale: 1,
     image: null,
     imageUrl: "",
@@ -115,33 +113,6 @@ function fillPureBlack(ctx, w, h, color) {
 }
 
 function drawLumenReflection(ctx, source, w, h) {
-  const reflectionHeight = h * 0.48;
-  const reflectionY = h * 0.54;
-  const tmp = document.createElement("canvas");
-  tmp.width = w;
-  tmp.height = h;
-  const tctx = tmp.getContext("2d");
-
-  tctx.save();
-  tctx.translate(w / 2, reflectionY + reflectionHeight / 2);
-  tctx.scale(1.18, -0.62);
-  tctx.filter = `blur(${Math.max(10, Math.floor(h * 0.035))}px)`;
-  tctx.globalAlpha = 0.72;
-  tctx.drawImage(source, -w / 2, -h * 0.32, w, h);
-  tctx.restore();
-
-  const mask = tctx.createLinearGradient(0, reflectionY, 0, h);
-  mask.addColorStop(0, "rgba(255,255,255,0.78)");
-  mask.addColorStop(0.46, "rgba(255,255,255,0.22)");
-  mask.addColorStop(1, "rgba(255,255,255,0)");
-  tctx.globalCompositeOperation = "destination-in";
-  tctx.fillStyle = mask;
-  tctx.fillRect(0, reflectionY, w, h - reflectionY);
-
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  ctx.drawImage(tmp, 0, 0);
-  ctx.restore();
 }
 
 function drawClockFallback(ctx, w, h, clockName) {
@@ -176,11 +147,9 @@ function renderClock(ctx, canvas, index, now) {
     color: profile.color,
     colonColor: profile.colonColor,
     circleDigitColor: profile.colonColor,
-    flipBackColor: index === 5 ? "rgba(255,255,255,0)" : profile.cardColor,
     cardColor: profile.cardColor,
     fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
     clock6Speed: 0.72,
-    glassOnly: index === 5,
     fontMode: "solid",
   };
 
@@ -203,7 +172,7 @@ function renderClock(ctx, canvas, index, now) {
   }
 
   ctx.drawImage(layer, 0, 0);
-  if (index === 2) drawLumenReflection(ctx, layer, w, h);
+  if (index === 2){ drawLumenReflection(ctx, layer, w, h);}
 }
 
 function createClockCard(clock, index) {
