@@ -89,12 +89,13 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  function renderPairBitmap(width, height, pairText, color, family, glassOnly) {
+  function renderPairBitmap(width, height, pairText, color, family, glassOnly, fontSizeScale) {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    const fontSize = Math.floor(height * 0.78);
+    const scale = Math.max(0.7, Math.min(1.35, Number(fontSizeScale) || 1));
+    const fontSize = Math.floor(height * 0.78 * scale);
 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
@@ -110,16 +111,16 @@
     return canvas;
   }
 
-  function drawPairTileStatic(ctx, x, y, width, height, pairText, color, family, panelColor, glassOnly) {
+  function drawPairTileStatic(ctx, x, y, width, height, pairText, color, family, panelColor, glassOnly, fontSizeScale) {
     drawPlate(ctx, x, y, width, height, panelColor, glassOnly);
-    ctx.drawImage(renderPairBitmap(width, height, pairText, color, family, glassOnly), x, y);
+    ctx.drawImage(renderPairBitmap(width, height, pairText, color, family, glassOnly, fontSizeScale), x, y);
   }
 
-  function drawPairTileAnimated(ctx, x, y, width, height, fromPair, toPair, color, progress, family, panelColor, glassOnly) {
+  function drawPairTileAnimated(ctx, x, y, width, height, fromPair, toPair, color, progress, family, panelColor, glassOnly, fontSizeScale) {
     drawPlate(ctx, x, y, width, height, panelColor, glassOnly);
 
-    const fromBmp = renderPairBitmap(width, height, fromPair, color, family, glassOnly);
-    const toBmp = renderPairBitmap(width, height, toPair, color, family, glassOnly);
+    const fromBmp = renderPairBitmap(width, height, fromPair, color, family, glassOnly, fontSizeScale);
+    const toBmp = renderPairBitmap(width, height, toPair, color, family, glassOnly, fontSizeScale);
     const t = Math.max(0, Math.min(1, progress));
     const topProgress = easeInOutSine(Math.min(1, t * 2));
     const bottomProgress = easeInOutSine(Math.max(0, (t - 0.5) * 2));
@@ -187,6 +188,7 @@
       ? opts.flipBackColor
       : "rgb(0, 0, 0)";
     const glassOnly = Boolean(opts && opts.glassOnly);
+    const fontSizeScale = (opts && opts.fontSizeScale) || 1;
     const ts = now.getTime();
 
     if (!state.shown) {
@@ -222,13 +224,13 @@
       const anim = state.anims[i];
       if (anim) {
         const progress = Math.min(1, (ts - anim.start) / state.dur);
-        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, tileColor, progress, family, panelColor, glassOnly);
+        drawPairTileAnimated(ctx, x, startY, tileWidth, tileHeight, anim.from, anim.to, tileColor, progress, family, panelColor, glassOnly, fontSizeScale);
         if (progress >= 1) {
           state.shown[i] = anim.to;
           state.anims[i] = null;
         }
       } else {
-        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], tileColor, family, panelColor, glassOnly);
+        drawPairTileStatic(ctx, x, startY, tileWidth, tileHeight, state.shown[i], tileColor, family, panelColor, glassOnly, fontSizeScale);
       }
       drawPanelMidline(ctx, x, startY, tileWidth, tileHeight, panelColor, glassOnly);
     }

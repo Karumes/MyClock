@@ -170,7 +170,8 @@
 
     // semi-transparent white, no background — remains transparent
     ctx.save();
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillStyle = (opts && opts.colonColor) || 'rgba(255,255,255,0.6)';
+    ctx.globalAlpha = 0.72;
     ctx.beginPath(); ctx.arc(cx, topY, dotR, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx, bottomY, dotR, 0, Math.PI * 2); ctx.fill();
     ctx.restore();

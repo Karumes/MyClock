@@ -18,6 +18,10 @@
         <button class="tab active" type="button" data-section="library">Library</button>
         <button class="tab" type="button" data-section="create">Create</button>
       </nav>
+      <div class="topbar-actions">
+        <button id="dashboard-settings-btn" type="button" aria-label="Customize selected clock">Settings</button>
+        <button id="launch-btn" type="button" aria-label="Launch selected clock">Launch</button>
+      </div>
     </header>
 
     <section id="library-section" class="section active">
@@ -58,13 +62,13 @@
     </div>
 
     <div class="settings-grid">
-      <label>Background <input id="bg-custom-color" type="color" /></label>
-      <label>Digits <input id="font-custom-color" type="color" /></label>
-      <label>Colon <input id="colon-custom-color" type="color" /></label>
-      <label>Card <input id="card-custom-color" type="color" /></label>
+      <label data-setting="bg">Background <input id="bg-custom-color" type="color" /></label>
+      <label data-setting="primary">Main <input id="font-custom-color" type="color" /></label>
+      <label data-setting="colon">Accent <input id="colon-custom-color" type="color" /></label>
+      <label data-setting="card">Surface <input id="card-custom-color" type="color" /></label>
     </div>
 
-    <div class="settings-row">
+    <div class="settings-row" data-setting="font">
       <span>Font</span>
       <select id="font-family-select">
         <option value="rounded">Rounded</option>
@@ -76,11 +80,21 @@
     </div>
 
     <div class="settings-row">
+      <span>Size</span>
+      <input id="clock-size-scale" type="range" min="0.65" max="1.45" step="0.01" />
+    </div>
+
+    <div class="settings-row" data-setting="fontSize">
+      <span>Text size</span>
+      <input id="flip-font-size-scale" type="range" min="0.7" max="1.35" step="0.01" />
+    </div>
+
+    <div class="settings-row" data-setting="image">
       <span>Image in digits</span>
       <input id="digit-image-input" type="file" accept="image/*" />
     </div>
 
-    <div class="settings-row">
+    <div class="settings-row" data-setting="image">
       <span>Image scale</span>
       <input id="image-scale" type="range" min="0.5" max="2.5" step="0.05" />
     </div>
@@ -91,6 +105,7 @@
     </div>
   </aside>
 
+  <script src="clocks/clock-definitions.js"></script>
   <script src="clocks/clock1/binary.js"></script>
   <script src="clocks/clock2/rolling.js"></script>
   <script src="clocks/clock3/panel.js"></script>

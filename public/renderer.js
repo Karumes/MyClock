@@ -6,26 +6,20 @@ const fontFamilies = {
   serif: '"Cormorant Garamond", "Georgia", serif',
 };
 
-const clocks = [
-  { name: "Binary", renderer: "renderClock5", size: 120 },
-  { name: "Rolling", renderer: "renderClock6", size: 310 },
-  { name: "Lumen", renderer: "renderClock8", size: 120 },
-  { name: "Reel", renderer: "renderClock1", size: 120 },
-  { name: "Orbit", renderer: "renderClock2", size: 320 },
-  { name: "Flip", renderer: "renderClock3", size: 310 },
-  { name: "Halo", renderer: "renderClock4", size: 320 },
-  { name: "Grid", renderer: "renderClock7", size: 130 },
-];
-
-const defaultAccents = ["#69f7ff", "#ffffff", "#ffffff", "#ffffff", "#89ffbf", "#ffffff", "#ff4fd8", "#f8fbff"];
+const clocks = window.KARUMES_CLOCKS || [];
 
 const state = {
   section: "library",
   selected: 0,
-  profiles: clocks.map((clock, index) => ({
+  profiles: clocks.map((clock) => ({
     bgColor: "#000000",
-    color: defaultAccents[index],
-    cardColor: "rgba(255,255,255,0.055)",
+    color: clock.defaultAccent || "#ffffff",
+    colonColor: "#ffffff",
+    cardHex: clock.defaultSurface || "#d9dfe8",
+    cardColor: clock.defaultSurface || "#d9dfe8",
+    fontFamily: clock.defaultFont || "rounded",
+    sizeScale: 1,
+    fontSizeScale: 1,
     imageScale: 1,
     image: null,
     imageUrl: "",
@@ -48,8 +42,12 @@ const cardInput = document.getElementById("card-custom-color");
 const fontSelect = document.getElementById("font-family-select");
 const imageInput = document.getElementById("digit-image-input");
 const imageScale = document.getElementById("image-scale");
+const sizeScaleInput = document.getElementById("clock-size-scale");
+const fontSizeScaleInput = document.getElementById("flip-font-size-scale");
 const createCode = document.getElementById("create-code");
 const createPreview = document.getElementById("create-preview");
+const launchBtn = document.getElementById("launch-btn");
+const dashboardSettingsBtn = document.getElementById("dashboard-settings-btn");
 
 const previewCanvases = [];
 const revealObserver = "IntersectionObserver" in window
@@ -63,16 +61,6 @@ const revealObserver = "IntersectionObserver" in window
 let digitPatternCache = new WeakMap();
 let createCleanup = null;
 const renderErrors = new Set();
-
-function hexToRgba(hex, alpha) {
-  if (typeof hex !== "string" || !hex.startsWith("#")) return hex;
-  const raw = hex.slice(1);
-  const full = raw.length === 3 ? raw.split("").map((ch) => ch + ch).join("") : raw;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 function solidPaint(ctx, profile, w, h) {
   if (!profile.image) return profile.color;
@@ -126,6 +114,33 @@ function drawClockFallback(ctx, w, h, clockName) {
   ctx.restore();
 }
 
+function getClockControls(index) {
+  return new Set(clocks[index]?.controls || []);
+}
+
+function buildRendererOptions(clock, profile) {
+  const options = {
+    suppressBg: true,
+    bg: profile.bgColor,
+    color: profile.color,
+    colonColor: profile.colonColor,
+    circleDigitColor: profile.colonColor,
+    cardColor: profile.cardColor,
+    fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
+    fontSizeScale: profile.fontSizeScale,
+    clock6Speed: 0.72,
+    fontMode: "solid",
+  };
+
+  const optionMap = clock.optionMap || {};
+  Object.entries(optionMap).forEach(([profileKey, optionKey]) => {
+    if (profileKey === "card") options[optionKey] = profile.cardColor;
+    if (profileKey === "colon") options[optionKey] = profile.colonColor;
+  });
+
+  return options;
+}
+
 function renderClock(ctx, canvas, index, now) {
   const clock = clocks[index];
   const profile = state.profiles[index];
@@ -139,19 +154,10 @@ function renderClock(ctx, canvas, index, now) {
   const lctx = layer.getContext("2d");
   const renderer = window[clock.renderer];
   const paint = solidPaint(lctx, profile, w, h);
-  const sizeRatio = index === 1 ? 0.42 : 0.42;
-  const size = Math.min(clock.size * window.devicePixelRatio, Math.min(w, h) * sizeRatio);
-  const options = {
-    suppressBg: true,
-    bg: profile.bgColor,
-    color: profile.color,
-    colonColor: profile.colonColor,
-    circleDigitColor: profile.colonColor,
-    cardColor: profile.cardColor,
-    fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
-    clock6Speed: 0.72,
-    fontMode: "solid",
-  };
+  const sizeRatio = 0.42 * (Number(profile.sizeScale) || 1);
+  const baseSize = clock.size * window.devicePixelRatio * (Number(profile.sizeScale) || 1);
+  const size = Math.min(baseSize, Math.min(w, h) * sizeRatio);
+  const options = buildRendererOptions(clock, profile);
 
   if (typeof renderer === "function") {
     try {
@@ -195,6 +201,14 @@ function createClockCard(clock, index) {
 
 function buildGrid() {
   clocks.forEach(createClockCard);
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  document.querySelectorAll(".clock-card").forEach((card, index) => {
+    card.classList.toggle("selected", index === state.selected);
+    card.setAttribute("aria-pressed", String(index === state.selected));
+  });
 }
 
 function setSection(section) {
@@ -209,11 +223,12 @@ function setSection(section) {
 
 function launchClock(index) {
   state.selected = index;
+  updateSelectionUI();
   platform.classList.add("hidden");
   saver.classList.remove("hidden");
-  closeSettings();
   resizeMainCanvas();
   renderMain(new Date());
+  openSettings();
 }
 
 function returnHome() {
@@ -223,14 +238,26 @@ function returnHome() {
 }
 
 function openSettings() {
+  const clock = clocks[state.selected];
   const profile = state.profiles[state.selected];
-  settingsTitle.textContent = clocks[state.selected].name;
+  const controls = getClockControls(state.selected);
+  settingsTitle.textContent = clock.name;
   bgInput.value = profile.bgColor;
   fontInput.value = profile.color;
   colonInput.value = profile.colonColor;
-  cardInput.value = profile.cardColor.startsWith("#") ? profile.cardColor : "#0b1118";
+  cardInput.value = profile.cardHex;
   fontSelect.value = profile.fontFamily;
+  sizeScaleInput.value = profile.sizeScale;
+  fontSizeScaleInput.value = profile.fontSizeScale;
   imageScale.value = profile.imageScale;
+
+  document.querySelectorAll("[data-setting]").forEach((row) => {
+    const key = row.dataset.setting;
+    const visible = key === "font" || key === "image"
+      ? Boolean(clock.hasNumbers)
+      : controls.has(key);
+    row.classList.toggle("hidden-setting", !visible);
+  });
   settingsPanel.classList.remove("hidden");
 }
 
@@ -243,8 +270,11 @@ function updateProfileFromControls() {
   profile.bgColor = bgInput.value;
   profile.color = fontInput.value;
   profile.colonColor = colonInput.value;
-  profile.cardColor = hexToRgba(cardInput.value, 0.12);
+  profile.cardHex = cardInput.value;
+  profile.cardColor = cardInput.value;
   profile.fontFamily = fontSelect.value;
+  profile.sizeScale = Number(sizeScaleInput.value);
+  profile.fontSizeScale = Number(fontSizeScaleInput.value);
   profile.imageScale = Number(imageScale.value);
 }
 
@@ -273,17 +303,14 @@ function renderPreviews(now) {
   previewCanvases.forEach((canvas, index) => {
     resizeCanvasToDisplaySize(canvas);
     const ctx = canvas.getContext("2d");
-    if (index === 3) {
-      renderScaledScreenPreview(ctx, canvas, index, now);
-    } else {
-      renderClock(ctx, canvas, index, now);
-    }
+    renderScaledScreenPreview(ctx, canvas, index, now);
   });
 }
 
 function renderScaledScreenPreview(ctx, canvas, index, now) {
-  const screenW = Math.max(2, mainCanvas.width || Math.floor(window.innerWidth * window.devicePixelRatio));
-  const screenH = Math.max(2, mainCanvas.height || Math.floor(window.innerHeight * window.devicePixelRatio));
+  const ratio = window.innerHeight / Math.max(1, window.innerWidth);
+  const screenW = Math.max(480, Math.min(1100, Math.floor(canvas.width * 2.2)));
+  const screenH = Math.max(270, Math.floor(screenW * ratio));
   const offscreen = document.createElement("canvas");
   offscreen.width = screenW;
   offscreen.height = screenH;
@@ -390,7 +417,7 @@ function initThreeBackdrop() {
   const galaxy = new THREE.Group();
   scene.add(galaxy);
 
-  const starCount = 900;
+  const starCount = 1500;
   const positions = new Float32Array(starCount * 3);
   const colors = new Float32Array(starCount * 3);
   const palette = [
@@ -427,7 +454,7 @@ function initThreeBackdrop() {
   const stars = new THREE.Points(
     geometry,
     new THREE.PointsMaterial({
-      size: 0.045,
+      size: 0.052,
       vertexColors: true,
       transparent: true,
       opacity: 0.9,
@@ -436,6 +463,41 @@ function initThreeBackdrop() {
     })
   );
   galaxy.add(stars);
+
+  const dustCount = 520;
+  const dustPositions = new Float32Array(dustCount * 3);
+  const dustColors = new Float32Array(dustCount * 3);
+  for (let i = 0; i < dustCount; i += 1) {
+    const i3 = i * 3;
+    const radius = 3 + Math.random() * 18;
+    const angle = Math.random() * Math.PI * 2;
+    const z = (Math.random() - 0.5) * 8 - 9;
+    dustPositions[i3] = Math.cos(angle) * radius;
+    dustPositions[i3 + 1] = (Math.random() - 0.5) * 4;
+    dustPositions[i3 + 2] = Math.sin(angle) * radius * 0.45 + z;
+
+    const color = palette[Math.floor(Math.random() * palette.length)];
+    const dim = 0.28 + Math.random() * 0.36;
+    dustColors[i3] = color.r * dim;
+    dustColors[i3 + 1] = color.g * dim;
+    dustColors[i3 + 2] = color.b * dim;
+  }
+
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+  dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
+  const dust = new THREE.Points(
+    dustGeometry,
+    new THREE.PointsMaterial({
+      size: 0.12,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.38,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  galaxy.add(dust);
 
   const coreGeometry = new THREE.SphereGeometry(1.7, 40, 24);
   const coreMaterial = new THREE.MeshBasicMaterial({
@@ -459,6 +521,8 @@ function initThreeBackdrop() {
     galaxy.rotation.x = -0.22 + Math.sin(time * 0.00008) * 0.04;
     galaxy.rotation.y = time * 0.000055;
     stars.material.opacity = 0.72 + Math.sin(time * 0.00045) * 0.12;
+    dust.rotation.z = time * 0.000035;
+    dust.material.opacity = 0.3 + Math.sin(time * 0.00032) * 0.08;
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
@@ -473,6 +537,8 @@ function initEvents() {
     tab.addEventListener("click", () => setSection(tab.dataset.section));
   });
   document.getElementById("brand-btn").addEventListener("click", () => setSection("library"));
+  launchBtn.addEventListener("click", () => launchClock(state.selected));
+  dashboardSettingsBtn.addEventListener("click", openSettings);
   document.getElementById("home-btn").addEventListener("click", returnHome);
   document.getElementById("settings-btn").addEventListener("click", openSettings);
   document.getElementById("close-settings").addEventListener("click", closeSettings);
@@ -486,7 +552,7 @@ function initEvents() {
     digitPatternCache = new WeakMap();
   });
 
-  [bgInput, fontInput, colonInput, cardInput, fontSelect, imageScale].forEach((input) => {
+  [bgInput, fontInput, colonInput, cardInput, fontSelect, sizeScaleInput, fontSizeScaleInput, imageScale].forEach((input) => {
     input.addEventListener("input", updateProfileFromControls);
     input.addEventListener("change", updateProfileFromControls);
   });

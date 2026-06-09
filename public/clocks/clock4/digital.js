@@ -293,8 +293,9 @@
     const fixedCircleDigitSize = Math.max(12, Math.floor(baseMetrics.circleRadius * 0.92));
     const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairInnerGap * 3 + layoutMetrics.pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
-    const circleFill = "#d9dfe8";
-    const cardFill = "#d9dfe8";
+    const surfaceFill = options.cardColor || "#d9dfe8";
+    const circleFill = surfaceFill;
+    const cardFill = surfaceFill;
     const centerY = Math.round(h / 2);
 
     for (let i = 0; i < 6; i += 1) {

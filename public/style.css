@@ -25,10 +25,11 @@ body {
   margin: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 24% 18%, rgba(105, 247, 255, 0.18), transparent 34%),
-    radial-gradient(ellipse at 82% 28%, rgba(255, 79, 216, 0.14), transparent 36%),
-    radial-gradient(ellipse at 58% 82%, rgba(137, 255, 191, 0.08), transparent 44%),
-    linear-gradient(155deg, #01030b 0%, #04020c 42%, #000000 100%),
+    radial-gradient(ellipse at 18% 12%, rgba(105, 247, 255, 0.22), transparent 28%),
+    radial-gradient(ellipse at 82% 20%, rgba(255, 79, 216, 0.17), transparent 32%),
+    radial-gradient(ellipse at 64% 84%, rgba(137, 255, 191, 0.11), transparent 42%),
+    radial-gradient(ellipse at 50% 46%, rgba(160, 120, 255, 0.1), transparent 48%),
+    linear-gradient(155deg, #01030b 0%, #060315 38%, #000000 100%),
     #000000;
   color: var(--ink);
   font-family: "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
@@ -57,11 +58,12 @@ body::after {
   z-index: 1;
   pointer-events: none;
   content: "";
-  opacity: 0.2;
+  opacity: 0.25;
   background-image:
+    radial-gradient(ellipse at 50% 50%, transparent 0 46%, rgba(105, 247, 255, 0.09) 52%, transparent 67%),
     linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 4px 4px, 7px 7px;
+  background-size: 100vw 100vh, 4px 4px, 7px 7px;
   mix-blend-mode: screen;
 }
 
@@ -116,6 +118,7 @@ button {
 
 .brand-mark,
 .tab,
+.topbar-actions button,
 .saver-actions button,
 .settings-panel button,
 .pane-bar button {
@@ -144,6 +147,17 @@ button {
   backdrop-filter: blur(24px);
 }
 
+.topbar-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.topbar-actions button {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+}
+
 .tab {
   min-width: 84px;
   height: 36px;
@@ -155,6 +169,7 @@ button {
 .tab.active,
 .tab:hover,
 .brand-mark:hover,
+.topbar-actions button:hover,
 .saver-actions button:hover,
 .settings-panel button:hover,
 .pane-bar button:hover {
@@ -222,6 +237,24 @@ button {
   transform: translateY(-6px) scale(1.018);
   border-color: rgba(105, 247, 255, 0.62);
   box-shadow: 0 22px 85px rgba(0, 0, 0, 0.44), 0 0 46px rgba(105, 247, 255, 0.22);
+}
+
+.clock-card.selected {
+  border-color: rgba(105, 247, 255, 0.96);
+  box-shadow:
+    0 22px 85px rgba(0, 0, 0, 0.46),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 0 24px rgba(105, 247, 255, 0.62),
+    0 0 66px rgba(255, 79, 216, 0.34);
+}
+
+.clock-card.selected::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  border-radius: 8px;
+  box-shadow: inset 0 0 34px rgba(105, 247, 255, 0.28);
 }
 
 .clock-card canvas {
@@ -443,6 +476,10 @@ button {
   accent-color: var(--cyan);
 }
 
+.settings-panel [data-setting].hidden-setting {
+  display: none;
+}
+
 .settings-panel select {
   border: 1px solid rgba(255,255,255,0.16);
   border-radius: 999px;
@@ -482,6 +519,7 @@ button {
   .topbar {
     align-items: flex-start;
     gap: 12px;
+    flex-wrap: wrap;
   }
 
   .clock-grid {
