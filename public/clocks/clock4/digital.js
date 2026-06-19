@@ -170,7 +170,7 @@
     const actualScale = scale || 1;
     const scaledRadius = radius * actualScale;
     ctx.save();
-    ctx.shadowColor = "rgba(41,53,72,0.22S)";
+    ctx.shadowColor = "rgba(41,53,72,0.22)";
     ctx.shadowBlur = 14;
     ctx.shadowOffsetX = -5;
     ctx.shadowOffsetY = -5;
@@ -287,10 +287,8 @@
     ctx.fillRect(0, 0, w, h);
 
     const layoutMetrics = getReelMetrics(w, h, size, 1);
-    // compute base fixed font sizes so digits remain consistent across cards
-    const baseMetrics = getReelMetrics(w, h, size, 0);
-    const fixedCardDigitSize = Math.max(12, Math.min(Math.floor(baseMetrics.cardWidth * 0.64), Math.floor(baseMetrics.rowHeight * 0.98)));
-    const fixedCircleDigitSize = Math.max(12, Math.floor(baseMetrics.circleRadius * 0.92));
+    const fixedCardDigitSize = Math.max(12, Math.min(Math.floor(layoutMetrics.cardWidth * 0.64), Math.floor(layoutMetrics.rowHeight * 0.98)));
+    const fixedCircleDigitSize = Math.max(12, Math.floor(layoutMetrics.circleRadius * 0.92));
     const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairInnerGap * 3 + layoutMetrics.pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
     const surfaceFill = options.cardColor || "#d9dfe8";
@@ -299,35 +297,34 @@
     const centerY = Math.round(h / 2);
 
     for (let i = 0; i < 6; i += 1) {
-      const metrics = getReelMetrics(w, h, size, i);
       const groupIndex = Math.floor(i / 2);
       const inGroupIndex = i % 2;
       const x = startX
-        + groupIndex * (metrics.cardWidth * 2 + metrics.pairInnerGap + metrics.pairOuterGap)
-        + inGroupIndex * (metrics.cardWidth + metrics.pairInnerGap);
+        + groupIndex * (layoutMetrics.cardWidth * 2 + layoutMetrics.pairInnerGap + layoutMetrics.pairOuterGap)
+        + inGroupIndex * (layoutMetrics.cardWidth + layoutMetrics.pairInnerGap);
       const reel = drawReel(
         ctx,
         x,
         centerY,
-        metrics.cardWidth,
+        layoutMetrics.cardWidth,
         i,
         family,
         fixedCardDigitSize,
         nowMs,
         cardFill,
         cardDigitColor,
-        metrics.rowHeight,
-        metrics.topPadding,
-        metrics.bottomPadding,
+        layoutMetrics.rowHeight,
+        layoutMetrics.topPadding,
+        layoutMetrics.bottomPadding,
       );
       const circleScale = state.anim[i]
         ? 1 - 0.14 * Math.sin(Math.PI * easeInOutSine(reel.progress))
         : 1;
       drawCircleWindow(
         ctx,
-        x + metrics.cardWidth / 2,
+        x + layoutMetrics.cardWidth / 2,
         centerY,
-        metrics.circleRadius,
+        layoutMetrics.circleRadius,
         circleFill,
         reel.visibleDigit,
         family,

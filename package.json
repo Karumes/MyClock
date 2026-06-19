@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "set ELECTRON_RUN_AS_NODE=& electron .",
+    "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "A local Electron clock selection platform with eight customizable clock modes.",
   "dependencies": {
     "electron": "^38.1.0",
     "express": "^5.1.0",

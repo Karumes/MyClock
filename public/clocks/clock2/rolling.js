@@ -151,12 +151,22 @@
       now.getSeconds() % 10,
     ];
 
-    const digitWidth = Math.min(120, Math.floor(w / 9.5));
-    const digitHeight = Math.max(96, Math.floor(size * 0.95));
-    const fontSize = Math.max(46, Math.floor(size * 0.74));
-    const pairInnerGap = Math.max(10, Math.floor(digitWidth * 0.16));
-    const pairOuterGap = Math.max(28, Math.floor(digitWidth * 0.34));
-    const totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
+    let digitWidth = Math.min(120, Math.floor(w / 9.5));
+    let digitHeight = Math.max(96, Math.floor(size * 0.95));
+    let fontSize = Math.max(46, Math.floor(size * 0.74));
+    let pairInnerGap = Math.max(10, Math.floor(digitWidth * 0.16));
+    let pairOuterGap = Math.max(28, Math.floor(digitWidth * 0.34));
+    let totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
+    const maxWidth = w * 0.9;
+    if (totalWidth > maxWidth) {
+      const scale = maxWidth / totalWidth;
+      digitWidth = Math.max(28, Math.floor(digitWidth * scale));
+      digitHeight = Math.max(54, Math.floor(digitHeight * scale));
+      fontSize = Math.max(30, Math.floor(fontSize * scale));
+      pairInnerGap = Math.max(8, Math.floor(pairInnerGap * scale));
+      pairOuterGap = Math.max(16, Math.floor(pairOuterGap * scale));
+      totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
+    }
     const startX = (w - totalWidth) / 2 + digitWidth / 2;
     const centerY = h / 2;
     const nowMs = now.getTime();

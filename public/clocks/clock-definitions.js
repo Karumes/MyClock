@@ -7,7 +7,7 @@
       defaultAccent: "#69f7ff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary", "colon"],
+      controls: ["bg", "primary", "colon", "font"],
     },
     {
       name: "Rolling",
@@ -16,7 +16,7 @@
       defaultAccent: "#ffffff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary"],
+      controls: ["bg", "primary", "font"],
     },
     {
       name: "Lumen",
@@ -31,11 +31,13 @@
       name: "Reel",
       renderer: "renderClock1",
       size: 120,
-      defaultAccent: "#ffffff",
+      defaultBg: "#090b10",
+      defaultAccent: "#eaf6ff",
+      defaultColon: "#77f0ff",
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "card"],
-      defaultSurface: "#d9dfe8",
+      defaultSurface: "#202833",
       optionMap: { colon: "circleDigitColor", card: "cardColor" },
     },
     {
@@ -53,7 +55,7 @@
       defaultAccent: "#ffffff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary", "card", "fontSize"],
+      controls: ["bg", "primary", "card", "fontSize", "font"],
       defaultSurface: "#000000",
       optionMap: { card: "flipBackColor" },
     },
@@ -72,7 +74,7 @@
       defaultAccent: "#f8fbff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary"],
+      controls: ["bg", "primary", "font"],
     },
   ];
 })();

@@ -25,32 +25,11 @@
     const panelW = w / 4;
     const panelH = h;
 
-    // font setup (square/straight font)
-    const weight = 700; // Oswald
-    const family = (opts && opts.fontFamily) || "system-ui, sans-serif";
-
-    // vertical shift: hours lower, minutes higher
-    const vShiftMag = Math.round(panelH * 0.01); // minimize shift to allow bigger font
-    // per-group offsets: hours down, minutes up (can be overridden)
-    const hourOffsetDown = (opts && typeof opts.hourOffsetY === 'number')
-      ? Math.round(Math.max(0, opts.hourOffsetY))
-      : Math.round(panelH * 0.10);
-    const minOffsetUp = (opts && typeof opts.minOffsetY === 'number')
-      ? Math.round(Math.max(0, opts.minOffsetY))
-      : Math.round(panelH * 0.10);
-    // global push to move the whole numbers lower (can be overridden)
-    const globalPushDown = (opts && typeof opts.globalOffsetY === 'number')
-      ? Math.round(opts.globalOffsetY)
-      : Math.round(panelH * 0.06);
-
-    // Fit font so top/bottom don't clip even after the shifts
-    let fontSize = Math.max(16, Math.floor(panelH * 2.60)); // larger base size target
-    const margin = Math.floor(panelH * 0.001); // minimal margin for maximum height
-    // include worst-case extra (hours down plus global; minutes up reduced by global)
-    const maxExtra = Math.max(hourOffsetDown + globalPushDown, Math.abs(minOffsetUp - globalPushDown));
-    const allowedHBase = Math.max(8, panelH - 2 * margin - 2 * (vShiftMag + maxExtra));
-    // relax fit a bit more so numbers can be bigger without being scaled down too much
-    const allowedH = Math.floor(allowedHBase * 1.20);
+    const weight = 760;
+    const family = '"Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif';
+    const offset = Math.round(panelH * 0.145);
+    let fontSize = Math.max(16, Math.floor(Math.min(panelH * 1.55, panelW * 2.4)));
+    const allowedH = Math.floor(panelH * 0.94);
     function measureDigitHeight(fs) {
       ctx.font = `${weight} ${fs}px ${family}`;
       const m = ctx.measureText('8'); // tallest digit
@@ -67,10 +46,6 @@
         measured = measureDigitHeight(fontSize);
       }
     }
-    // small oversize boost after fitting; configurable via opts.oversize
-    const oversize = (opts && typeof opts.oversize === 'number') ? Math.max(1, opts.oversize) : 1.08;
-    fontSize = Math.floor(fontSize * oversize);
-
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = `${weight} ${fontSize}px ${family}`;
@@ -82,16 +57,7 @@
     for (let i = 0; i < 4; i++) {
       const x0 = Math.floor(i * panelW);
       const xCenter = Math.floor(x0 + panelW / 2);
-      let yCenter = Math.floor(panelH / 2);
-      // Per-digit shifts:
-      // 1st: down, 2nd: up, 3rd: down, 4th: up
-      if (i === 0 || i === 2) {
-        yCenter += vShiftMag + hourOffsetDown;
-      } else {
-        yCenter -= vShiftMag + minOffsetUp;
-      }
-      // move the whole numbers lower
-      yCenter += globalPushDown;
+      const yCenter = Math.floor(panelH / 2) + (i % 2 === 0 ? offset : -offset);
 
       ctx.save();
       // clip to panel rect so overflow is cropped

@@ -95,12 +95,22 @@
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     const scale = Math.max(0.7, Math.min(1.35, Number(fontSizeScale) || 1));
-    const fontSize = Math.floor(height * 0.78 * scale);
+    let fontSize = Math.floor(height * 0.78 * scale);
 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
+    const maxTextWidth = width * 0.84;
+    const maxTextHeight = height * 0.78;
+    let metrics = ctx.measureText(pairText);
+    let textHeight = (metrics.actualBoundingBoxAscent || fontSize * 0.76) + (metrics.actualBoundingBoxDescent || fontSize * 0.18);
+    while ((metrics.width > maxTextWidth || textHeight > maxTextHeight) && fontSize > 10) {
+      fontSize -= 1;
+      ctx.font = `700 ${fontSize}px ${family}`;
+      metrics = ctx.measureText(pairText);
+      textHeight = (metrics.actualBoundingBoxAscent || fontSize * 0.76) + (metrics.actualBoundingBoxDescent || fontSize * 0.18);
+    }
     if (glassOnly) {
       ctx.shadowColor = "rgb(0, 0, 0)";
       ctx.shadowBlur = Math.max(10, Math.floor(height * 0.08));

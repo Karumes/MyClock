@@ -1,34 +1,36 @@
 const fontFamilies = {
-  rounded: '"Arial Rounded MT Bold", "M PLUS Rounded 1c", "Nunito", "Avenir Next Rounded", "Segoe UI Rounded", "Segoe UI", sans-serif',
+  rounded: '"Arial Rounded MT Bold", "Nunito", "Avenir Next Rounded", "Segoe UI Rounded", "Segoe UI", sans-serif',
   modern: '"SF Pro Display", "Inter", "Segoe UI", sans-serif',
   mono: '"Cascadia Code", "JetBrains Mono", "SFMono-Regular", monospace',
   condensed: '"Roboto Condensed", "Oswald", "Arial Narrow", sans-serif',
-  serif: '"Cormorant Garamond", "Georgia", serif',
+  serif: '"Georgia", "Times New Roman", serif',
+};
+
+const colorPresets = {
+  bg: ["#000000", "#05070a", "#101016", "#11140f", "#160f13"],
+  primary: ["#ffffff", "#69f7ff", "#89ffbf", "#ffe66d", "#ff8f5f"],
+  colon: ["#ffffff", "#69f7ff", "#ff4fd8", "#89ffbf", "#ffe66d"],
+  card: ["#000000", "#11151c", "#d9dfe8", "#f1eadf", "#6f7785"],
 };
 
 const clocks = window.KARUMES_CLOCKS || [];
-
 const state = {
   section: "library",
   selected: 0,
+  idleDelaySeconds: 300,
+  lastActivityAt: Date.now(),
   profiles: clocks.map((clock) => ({
-    bgColor: "#000000",
+    bgColor: clock.defaultBg || "#000000",
     color: clock.defaultAccent || "#ffffff",
-    colonColor: "#ffffff",
-    cardHex: clock.defaultSurface || "#d9dfe8",
+    colonColor: clock.defaultColon || "#ffffff",
     cardColor: clock.defaultSurface || "#d9dfe8",
     fontFamily: clock.defaultFont || "rounded",
-    sizeScale: 1,
     fontSizeScale: 1,
-    imageScale: 1,
-    image: null,
-    imageUrl: "",
   })),
 };
 
 const platform = document.getElementById("platform");
 const librarySection = document.getElementById("library-section");
-const createSection = document.getElementById("create-section");
 const clockGrid = document.getElementById("clock-grid");
 const saver = document.getElementById("saver");
 const mainCanvas = document.getElementById("clockCanvas");
@@ -40,16 +42,13 @@ const fontInput = document.getElementById("font-custom-color");
 const colonInput = document.getElementById("colon-custom-color");
 const cardInput = document.getElementById("card-custom-color");
 const fontSelect = document.getElementById("font-family-select");
-const imageInput = document.getElementById("digit-image-input");
-const imageScale = document.getElementById("image-scale");
-const sizeScaleInput = document.getElementById("clock-size-scale");
 const fontSizeScaleInput = document.getElementById("flip-font-size-scale");
-const createCode = document.getElementById("create-code");
-const createPreview = document.getElementById("create-preview");
+const idleDelaySelect = document.getElementById("idle-delay-select");
 const launchBtn = document.getElementById("launch-btn");
 const dashboardSettingsBtn = document.getElementById("dashboard-settings-btn");
-
 const previewCanvases = [];
+const renderErrors = new Set();
+
 const revealObserver = "IntersectionObserver" in window
   ? new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -58,49 +57,10 @@ const revealObserver = "IntersectionObserver" in window
     }, { threshold: 0.16 })
   : null;
 
-let digitPatternCache = new WeakMap();
-let createCleanup = null;
-const renderErrors = new Set();
-
-function solidPaint(ctx, profile, w, h) {
-  if (!profile.image) return profile.color;
-  let cache = digitPatternCache.get(profile.image);
-  const scale = Number(profile.imageScale) || 1;
-  if (!cache || cache.scale !== scale) {
-    const tile = document.createElement("canvas");
-    const base = Math.max(220, Math.floor(Math.min(w, h) * 0.48 * scale));
-    tile.width = base;
-    tile.height = base;
-    const tctx = tile.getContext("2d");
-    tctx.fillStyle = "#000";
-    tctx.fillRect(0, 0, base, base);
-    const ratio = Math.max(base / profile.image.width, base / profile.image.height);
-    const iw = profile.image.width * ratio;
-    const ih = profile.image.height * ratio;
-    tctx.drawImage(profile.image, (base - iw) / 2, (base - ih) / 2, iw, ih);
-    cache = { scale, tile };
-    digitPatternCache.set(profile.image, cache);
-  }
-  return ctx.createPattern(cache.tile, "repeat") || profile.color;
-}
-
-function resizeCanvasToDisplaySize(canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(2, Math.floor(rect.width * window.devicePixelRatio));
-  const height = Math.max(2, Math.floor(rect.height * window.devicePixelRatio));
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
-}
-
 function fillPureBlack(ctx, w, h, color) {
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = color || "#000000";
   ctx.fillRect(0, 0, w, h);
-}
-
-function drawLumenReflection(ctx, source, w, h) {
 }
 
 function drawClockFallback(ctx, w, h, clockName) {
@@ -112,6 +72,16 @@ function drawClockFallback(ctx, w, h, clockName) {
   ctx.font = `700 ${Math.max(18, Math.floor(Math.min(w, h) * 0.055))}px ${fontFamilies.modern}`;
   ctx.fillText(clockName || "Clock", w / 2, h / 2);
   ctx.restore();
+}
+
+function resizeCanvasToDisplaySize(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(2, Math.floor(rect.width * window.devicePixelRatio));
+  const height = Math.max(2, Math.floor(rect.height * window.devicePixelRatio));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
 }
 
 function getClockControls(index) {
@@ -128,7 +98,7 @@ function buildRendererOptions(clock, profile) {
     cardColor: profile.cardColor,
     fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
     fontSizeScale: profile.fontSizeScale,
-    clock6Speed: 0.72,
+    clock6Speed: 1.45,
     fontMode: "solid",
   };
 
@@ -153,15 +123,12 @@ function renderClock(ctx, canvas, index, now) {
   layer.height = h;
   const lctx = layer.getContext("2d");
   const renderer = window[clock.renderer];
-  const paint = solidPaint(lctx, profile, w, h);
-  const sizeRatio = 0.42 * (Number(profile.sizeScale) || 1);
-  const baseSize = clock.size * window.devicePixelRatio * (Number(profile.sizeScale) || 1);
-  const size = Math.min(baseSize, Math.min(w, h) * sizeRatio);
+  const size = Math.min(clock.size * window.devicePixelRatio, Math.min(w, h) * 0.48);
   const options = buildRendererOptions(clock, profile);
 
   if (typeof renderer === "function") {
     try {
-      renderer(lctx, w, h, paint, size, now, options);
+      renderer(lctx, w, h, profile.color, size, now, options);
     } catch (error) {
       if (!renderErrors.has(clock.renderer)) {
         console.error(`Failed to render ${clock.name}`, error);
@@ -178,7 +145,6 @@ function renderClock(ctx, canvas, index, now) {
   }
 
   ctx.drawImage(layer, 0, 0);
-  if (index === 2){ drawLumenReflection(ctx, layer, w, h);}
 }
 
 function createClockCard(clock, index) {
@@ -191,10 +157,10 @@ function createClockCard(clock, index) {
   const canvas = document.createElement("canvas");
   const shine = document.createElement("span");
   shine.className = "card-shine";
-
   card.append(canvas, shine);
   clockGrid.appendChild(card);
   previewCanvases[index] = canvas;
+
   if (revealObserver) revealObserver.observe(card);
   else requestAnimationFrame(() => card.classList.add("revealed"));
 }
@@ -217,8 +183,6 @@ function setSection(section) {
     tab.classList.toggle("active", tab.dataset.section === section);
   });
   librarySection.classList.toggle("active", section === "library");
-  createSection.classList.toggle("active", section === "create");
-  if (section === "create") runCreate();
 }
 
 function launchClock(index) {
@@ -226,38 +190,89 @@ function launchClock(index) {
   updateSelectionUI();
   platform.classList.add("hidden");
   saver.classList.remove("hidden");
+  closeSettings();
   resizeMainCanvas();
   renderMain(new Date());
-  openSettings();
 }
 
 function returnHome() {
   saver.classList.add("hidden");
   settingsPanel.classList.add("hidden");
   platform.classList.remove("hidden");
+  markActivity();
+}
+
+function setColorInput(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function syncSwatchState() {
+  const map = {
+    bg: bgInput.value,
+    primary: fontInput.value,
+    colon: colonInput.value,
+    card: cardInput.value,
+  };
+
+  Object.entries(map).forEach(([key, value]) => {
+    document.querySelectorAll(`[data-swatches="${key}"] .color-swatch`).forEach((button) => {
+      button.classList.toggle("active", button.dataset.color === value);
+    });
+  });
+}
+
+function buildColorSwatches() {
+  Object.entries(colorPresets).forEach(([key, colors]) => {
+    const wrap = document.querySelector(`[data-swatches="${key}"]`);
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    colors.forEach((color) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "color-swatch";
+      button.dataset.color = color;
+      button.style.setProperty("--swatch", color);
+      button.setAttribute("aria-label", `${key} ${color}`);
+      button.addEventListener("click", () => {
+        const input = document.getElementById(wrap.closest("[data-color-target]").dataset.colorTarget);
+        wrap.closest(".settings-color").querySelector(".custom-color-panel").classList.remove("open");
+        setColorInput(input, color);
+        syncSwatchState();
+      });
+      wrap.appendChild(button);
+    });
+
+    const custom = document.createElement("button");
+    custom.type = "button";
+    custom.className = "color-swatch custom";
+    custom.setAttribute("aria-label", `Custom ${key} color`);
+    custom.addEventListener("click", () => {
+      wrap.closest(".settings-color").querySelector(".custom-color-panel").classList.toggle("open");
+    });
+    wrap.appendChild(custom);
+  });
 }
 
 function openSettings() {
   const clock = clocks[state.selected];
   const profile = state.profiles[state.selected];
   const controls = getClockControls(state.selected);
+
   settingsTitle.textContent = clock.name;
   bgInput.value = profile.bgColor;
   fontInput.value = profile.color;
   colonInput.value = profile.colonColor;
-  cardInput.value = profile.cardHex;
+  cardInput.value = profile.cardColor;
   fontSelect.value = profile.fontFamily;
-  sizeScaleInput.value = profile.sizeScale;
   fontSizeScaleInput.value = profile.fontSizeScale;
-  imageScale.value = profile.imageScale;
+  idleDelaySelect.value = String(state.idleDelaySeconds);
 
   document.querySelectorAll("[data-setting]").forEach((row) => {
-    const key = row.dataset.setting;
-    const visible = key === "font" || key === "image"
-      ? Boolean(clock.hasNumbers)
-      : controls.has(key);
+    const visible = controls.has(row.dataset.setting);
     row.classList.toggle("hidden-setting", !visible);
   });
+  syncSwatchState();
   settingsPanel.classList.remove("hidden");
 }
 
@@ -270,28 +285,11 @@ function updateProfileFromControls() {
   profile.bgColor = bgInput.value;
   profile.color = fontInput.value;
   profile.colonColor = colonInput.value;
-  profile.cardHex = cardInput.value;
   profile.cardColor = cardInput.value;
   profile.fontFamily = fontSelect.value;
-  profile.sizeScale = Number(sizeScaleInput.value);
   profile.fontSizeScale = Number(fontSizeScaleInput.value);
-  profile.imageScale = Number(imageScale.value);
-}
-
-function handleImageUpload(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const profile = state.profiles[state.selected];
-      profile.image = img;
-      profile.imageUrl = reader.result;
-      digitPatternCache = new WeakMap();
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+  state.idleDelaySeconds = Number(idleDelaySelect.value);
+  syncSwatchState();
 }
 
 function resizeMainCanvas() {
@@ -330,206 +328,22 @@ function renderMain(now) {
   renderClock(mainCtx, mainCanvas, state.selected, now);
 }
 
+function markActivity() {
+  state.lastActivityAt = Date.now();
+}
+
+function checkIdleLaunch() {
+  if (state.idleDelaySeconds <= 0 || !saver.classList.contains("hidden")) return;
+  const elapsed = (Date.now() - state.lastActivityAt) / 1000;
+  if (elapsed >= state.idleDelaySeconds) launchClock(state.selected);
+}
+
 function loop() {
   const now = new Date();
   renderPreviews(now);
   renderMain(now);
+  checkIdleLaunch();
   requestAnimationFrame(loop);
-}
-
-function defaultCreateCode() {
-  return `const style = document.createElement("style");
-style.textContent = \`
-.custom-clock {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  background: radial-gradient(circle at 50% 32%, rgba(105,247,255,.2), transparent 32%), #000;
-  color: white;
-  overflow: hidden;
-}
-.custom-time {
-  font: 800 clamp(44px, 18vw, 210px)/1 "SF Pro Display", system-ui;
-  letter-spacing: 0;
-  background: linear-gradient(110deg, #fff, #69f7ff 42%, #ff4fd8);
-  -webkit-background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 0 28px rgba(105,247,255,.34));
-}
-\`;
-
-root.appendChild(style);
-const shell = document.createElement("div");
-shell.className = "custom-clock";
-const time = document.createElement("div");
-time.className = "custom-time";
-shell.appendChild(time);
-root.appendChild(shell);
-
-render = (now) => {
-  time.textContent = now.toLocaleTimeString("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
-  });
-};`;
-}
-
-function runCreate() {
-  createPreview.innerHTML = "";
-  if (typeof createCleanup === "function") createCleanup();
-  createCleanup = null;
-
-  let render = () => {};
-  try {
-    const fn = new Function("root", "now", "render", `${createCode.value}\nreturn { render, cleanup: typeof cleanup === "function" ? cleanup : null };`);
-    const result = fn(createPreview, new Date(), render);
-    render = result.render || render;
-    createCleanup = result.cleanup;
-  } catch (error) {
-    createPreview.innerHTML = `<div class="custom-error">${String(error.message || error)}</div>`;
-    return;
-  }
-
-  function tick() {
-    if (!createSection.classList.contains("active")) return;
-    try {
-      render(new Date());
-    } catch (error) {
-      createPreview.innerHTML = `<div class="custom-error">${String(error.message || error)}</div>`;
-      return;
-    }
-    requestAnimationFrame(tick);
-  }
-  tick();
-}
-
-function initThreeBackdrop() {
-  const canvas = document.getElementById("auroraCanvas");
-  if (!window.THREE || !canvas) return;
-
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 140);
-  camera.position.z = 18;
-
-  const galaxy = new THREE.Group();
-  scene.add(galaxy);
-
-  const starCount = 1500;
-  const positions = new Float32Array(starCount * 3);
-  const colors = new Float32Array(starCount * 3);
-  const palette = [
-    new THREE.Color(0xb9f6ff),
-    new THREE.Color(0xffffff),
-    new THREE.Color(0xff8de8),
-    new THREE.Color(0x8dffcf),
-    new THREE.Color(0x98a8ff),
-  ];
-
-  for (let i = 0; i < starCount; i += 1) {
-    const i3 = i * 3;
-    const radius = Math.pow(Math.random(), 0.54) * 22;
-    const arm = (i % 4) * (Math.PI / 2);
-    const spin = radius * 0.32;
-    const angle = arm + spin + (Math.random() - 0.5) * 0.78;
-    const height = (Math.random() - 0.5) * Math.max(0.8, radius * 0.16);
-
-    positions[i3] = Math.cos(angle) * radius;
-    positions[i3 + 1] = height;
-    positions[i3 + 2] = Math.sin(angle) * radius - 8;
-
-    const color = palette[Math.floor(Math.random() * palette.length)];
-    const dim = 0.52 + Math.random() * 0.48;
-    colors[i3] = color.r * dim;
-    colors[i3 + 1] = color.g * dim;
-    colors[i3 + 2] = color.b * dim;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-  const stars = new THREE.Points(
-    geometry,
-    new THREE.PointsMaterial({
-      size: 0.052,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.9,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
-  );
-  galaxy.add(stars);
-
-  const dustCount = 520;
-  const dustPositions = new Float32Array(dustCount * 3);
-  const dustColors = new Float32Array(dustCount * 3);
-  for (let i = 0; i < dustCount; i += 1) {
-    const i3 = i * 3;
-    const radius = 3 + Math.random() * 18;
-    const angle = Math.random() * Math.PI * 2;
-    const z = (Math.random() - 0.5) * 8 - 9;
-    dustPositions[i3] = Math.cos(angle) * radius;
-    dustPositions[i3 + 1] = (Math.random() - 0.5) * 4;
-    dustPositions[i3 + 2] = Math.sin(angle) * radius * 0.45 + z;
-
-    const color = palette[Math.floor(Math.random() * palette.length)];
-    const dim = 0.28 + Math.random() * 0.36;
-    dustColors[i3] = color.r * dim;
-    dustColors[i3 + 1] = color.g * dim;
-    dustColors[i3 + 2] = color.b * dim;
-  }
-
-  const dustGeometry = new THREE.BufferGeometry();
-  dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
-  dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
-  const dust = new THREE.Points(
-    dustGeometry,
-    new THREE.PointsMaterial({
-      size: 0.12,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.38,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
-  );
-  galaxy.add(dust);
-
-  const coreGeometry = new THREE.SphereGeometry(1.7, 40, 24);
-  const coreMaterial = new THREE.MeshBasicMaterial({
-    color: 0x69f7ff,
-    transparent: true,
-    opacity: 0.1,
-    blending: THREE.AdditiveBlending,
-  });
-  const core = new THREE.Mesh(coreGeometry, coreMaterial);
-  core.scale.set(1.7, 0.28, 1.7);
-  galaxy.add(core);
-
-  function resize() {
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight, false);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-  }
-
-  function animate(time) {
-    galaxy.rotation.x = -0.22 + Math.sin(time * 0.00008) * 0.04;
-    galaxy.rotation.y = time * 0.000055;
-    stars.material.opacity = 0.72 + Math.sin(time * 0.00045) * 0.12;
-    dust.rotation.z = time * 0.000035;
-    dust.material.opacity = 0.3 + Math.sin(time * 0.00032) * 0.08;
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-  }
-
-  resize();
-  window.addEventListener("resize", resize);
-  requestAnimationFrame(animate);
 }
 
 function initEvents() {
@@ -542,25 +356,15 @@ function initEvents() {
   document.getElementById("home-btn").addEventListener("click", returnHome);
   document.getElementById("settings-btn").addEventListener("click", openSettings);
   document.getElementById("close-settings").addEventListener("click", closeSettings);
-  document.getElementById("apply-btn").addEventListener("click", closeSettings);
-  document.getElementById("run-create").addEventListener("click", runCreate);
-  document.getElementById("clear-image").addEventListener("click", () => {
-    const profile = state.profiles[state.selected];
-    profile.image = null;
-    profile.imageUrl = "";
-    imageInput.value = "";
-    digitPatternCache = new WeakMap();
-  });
+  document.getElementById("apply-btn").addEventListener("click", () => launchClock(state.selected));
 
-  [bgInput, fontInput, colonInput, cardInput, fontSelect, sizeScaleInput, fontSizeScaleInput, imageScale].forEach((input) => {
+  [bgInput, fontInput, colonInput, cardInput, fontSelect, fontSizeScaleInput, idleDelaySelect].forEach((input) => {
     input.addEventListener("input", updateProfileFromControls);
     input.addEventListener("change", updateProfileFromControls);
   });
 
-  imageInput.addEventListener("change", () => handleImageUpload(imageInput.files[0]));
-  createCode.addEventListener("input", () => {
-    clearTimeout(createCode.runTimer);
-    createCode.runTimer = setTimeout(runCreate, 260);
+  ["mousemove", "mousedown", "keydown", "touchstart", "wheel"].forEach((eventName) => {
+    window.addEventListener(eventName, markActivity, { passive: true });
   });
 
   window.addEventListener("resize", resizeMainCanvas);
@@ -570,11 +374,10 @@ function initEvents() {
 }
 
 function init() {
-  createCode.value = defaultCreateCode();
+  buildColorSwatches();
   buildGrid();
   initEvents();
   resizeMainCanvas();
-  initThreeBackdrop();
   setSection("library");
   requestAnimationFrame(loop);
 }
