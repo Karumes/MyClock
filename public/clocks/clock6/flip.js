@@ -199,13 +199,14 @@
       : "rgb(0, 0, 0)";
     const glassOnly = Boolean(opts && opts.glassOnly);
     const fontSizeScale = (opts && opts.fontSizeScale) || 1;
+    const panelSizeScale = Math.max(0.65, Math.min(1.6, Number(opts && opts.panelSizeScale) || 1));
     const ts = now.getTime();
 
     if (!state.shown) {
       state.shown = pairs.slice();
     }
 
-    let tileHeight = Math.min(Math.floor(h * 0.78), Math.floor(size * 1.55));
+    let tileHeight = Math.min(Math.floor(h * 0.88), Math.floor(size * 1.55 * panelSizeScale));
     let tileWidth = Math.floor(tileHeight * 1.1);
     let gap = Math.max(12, Math.floor(tileWidth * 0.1));
     let totalWidth = tileWidth * 2 + gap;

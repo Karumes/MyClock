@@ -28,6 +28,7 @@
     const weight = 760;
     const family = '"Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif';
     const offset = Math.round(panelH * 0.145);
+    const globalDrop = Math.round(panelH * 0.045);
     let fontSize = Math.max(16, Math.floor(Math.min(panelH * 1.55, panelW * 2.4)));
     const allowedH = Math.floor(panelH * 0.94);
     function measureDigitHeight(fs) {
@@ -57,7 +58,7 @@
     for (let i = 0; i < 4; i++) {
       const x0 = Math.floor(i * panelW);
       const xCenter = Math.floor(x0 + panelW / 2);
-      const yCenter = Math.floor(panelH / 2) + (i % 2 === 0 ? offset : -offset);
+      const yCenter = Math.floor(panelH / 2) + globalDrop + (i % 2 === 0 ? offset : -offset);
 
       ctx.save();
       // clip to panel rect so overflow is cropped

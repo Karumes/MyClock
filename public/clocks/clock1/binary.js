@@ -34,8 +34,6 @@
     ctx.rotate(angle);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = fontSize * 0.035;
     ctx.fillText(text, 0, 0);
     ctx.restore();
   }
@@ -81,7 +79,7 @@
     const margin = Math.max(12, Math.floor(Math.min(w, h) * 0.035));
     const usableW = w - margin * 2;
     const usableH = h - margin * 2;
-    let fontSize = Math.floor(Math.min(usableH * 0.9, usableW * 0.32));
+    let fontSize = Math.floor(Math.min(usableH * 0.9, usableW * 0.32, size * 1.35));
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";

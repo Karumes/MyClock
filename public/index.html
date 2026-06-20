@@ -10,9 +10,6 @@
   <main id="platform" class="platform-shell">
     <header class="topbar">
       <button id="brand-btn" class="brand-mark" type="button" aria-label="Karumes home">Karumes</button>
-      <nav class="mode-tabs" aria-label="Karumes sections">
-        <button class="tab active" type="button" data-section="library">Library</button>
-      </nav>
       <div class="topbar-actions">
         <button id="dashboard-settings-btn" type="button" aria-label="Customize selected clock">Settings</button>
         <button id="launch-btn" type="button" aria-label="Launch selected clock">Launch</button>
@@ -75,19 +72,19 @@
       </select>
     </div>
 
-    <div class="settings-row" data-setting="fontSize">
-      <span>Text size</span>
-      <input id="flip-font-size-scale" type="range" min="0.7" max="1.35" step="0.01" />
+    <div class="settings-row" data-setting="size">
+      <span>Clock size</span>
+      <input id="clock-size-scale" type="range" min="0.55" max="4.5" step="0.01" />
     </div>
 
-    <div class="settings-row">
-      <span>Idle launch</span>
-      <select id="idle-delay-select">
-        <option value="0">Off</option>
-        <option value="60">1 min</option>
-        <option value="300" selected>5 min</option>
-        <option value="600">10 min</option>
-      </select>
+    <div class="settings-row" data-setting="fontSize">
+      <span>Text size</span>
+      <input id="text-size-scale" type="range" min="0.65" max="3.5" step="0.01" />
+    </div>
+
+    <div class="settings-row" data-setting="panelSize">
+      <span>Panel size</span>
+      <input id="panel-size-scale" type="range" min="0.65" max="1.6" step="0.01" />
     </div>
 
     <div class="settings-actions">

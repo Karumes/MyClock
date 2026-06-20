@@ -69,22 +69,21 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  function drawContinuousColumn(ctx, x, y, digitHeight, currentValue, color, fontSize, family, speed, nowMs) {
+  function drawContinuousColumn(ctx, x, y, digitHeight, color, fontSize, family, now) {
     ctx.save();
     ctx.translate(x, y);
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
-    const rowsPerSecond = speed || 1;
-    const absoluteOffsetRows = (nowMs / 1000) * rowsPerSecond;
-    const fracRow = absoluteOffsetRows - Math.floor(absoluteOffsetRows);
-    const offset = fracRow * digitHeight;
+    const phase = now.getSeconds() + now.getMilliseconds() / 1000;
+    const base = Math.floor(phase) % 10;
+    const offset = (phase - Math.floor(phase)) * digitHeight;
     const visibleRows = Math.ceil(ctx.canvas.height / digitHeight) + 24;
     const half = Math.floor(visibleRows / 2);
 
     for (let r = -half; r <= half; r += 1) {
-      let value = (currentValue - r) % 10;
+      let value = (base - r) % 10;
       value = (value + 10) % 10;
       ctx.fillText(String(value), 0, r * digitHeight + offset);
     }
@@ -154,17 +153,17 @@
     let digitWidth = Math.min(120, Math.floor(w / 9.5));
     let digitHeight = Math.max(96, Math.floor(size * 0.95));
     let fontSize = Math.max(46, Math.floor(size * 0.74));
-    let pairInnerGap = Math.max(10, Math.floor(digitWidth * 0.16));
-    let pairOuterGap = Math.max(28, Math.floor(digitWidth * 0.34));
+    let pairInnerGap = Math.max(18, Math.floor(digitWidth * 0.24));
+    let pairOuterGap = Math.max(64, Math.floor(digitWidth * 0.64));
     let totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
-    const maxWidth = w * 0.9;
+    const maxWidth = w * 0.92;
     if (totalWidth > maxWidth) {
       const scale = maxWidth / totalWidth;
       digitWidth = Math.max(28, Math.floor(digitWidth * scale));
       digitHeight = Math.max(54, Math.floor(digitHeight * scale));
       fontSize = Math.max(30, Math.floor(fontSize * scale));
-      pairInnerGap = Math.max(8, Math.floor(pairInnerGap * scale));
-      pairOuterGap = Math.max(16, Math.floor(pairOuterGap * scale));
+      pairInnerGap = Math.max(12, Math.floor(pairInnerGap * scale));
+      pairOuterGap = Math.max(34, Math.floor(pairOuterGap * scale));
       totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
     }
     const startX = (w - totalWidth) / 2 + digitWidth / 2;
@@ -194,7 +193,7 @@
       const colColor = colorAt(x, centerY);
 
       if (i === 5) {
-        drawContinuousColumn(ctx, x, centerY, digitHeight, digits[i], colColor, fontSize, family, options.clock6Speed || 1, nowMs);
+        drawContinuousColumn(ctx, x, centerY, digitHeight, colColor, fontSize, family, now);
         state.shown = digits[i];
         state.anim = null;
         continue;

@@ -14,18 +14,22 @@ const colorPresets = {
 };
 
 const clocks = window.KARUMES_CLOCKS || [];
+const launchParams = new URLSearchParams(window.location.search);
+const isClockMode = launchParams.get("mode") === "clock";
 const state = {
   section: "library",
   selected: 0,
-  idleDelaySeconds: 300,
-  lastActivityAt: Date.now(),
+  pointerStart: null,
+  glow: { x: 50, y: 42, targetX: 50, targetY: 42 },
   profiles: clocks.map((clock) => ({
     bgColor: clock.defaultBg || "#000000",
     color: clock.defaultAccent || "#ffffff",
     colonColor: clock.defaultColon || "#ffffff",
     cardColor: clock.defaultSurface || "#d9dfe8",
     fontFamily: clock.defaultFont || "rounded",
+    sizeScale: clock.defaultSizeScale || 1,
     fontSizeScale: 1,
+    panelSizeScale: 1,
   })),
 };
 
@@ -42,8 +46,9 @@ const fontInput = document.getElementById("font-custom-color");
 const colonInput = document.getElementById("colon-custom-color");
 const cardInput = document.getElementById("card-custom-color");
 const fontSelect = document.getElementById("font-family-select");
-const fontSizeScaleInput = document.getElementById("flip-font-size-scale");
-const idleDelaySelect = document.getElementById("idle-delay-select");
+const sizeScaleInput = document.getElementById("clock-size-scale");
+const fontSizeScaleInput = document.getElementById("text-size-scale");
+const panelSizeScaleInput = document.getElementById("panel-size-scale");
 const launchBtn = document.getElementById("launch-btn");
 const dashboardSettingsBtn = document.getElementById("dashboard-settings-btn");
 const previewCanvases = [];
@@ -97,8 +102,10 @@ function buildRendererOptions(clock, profile) {
     circleDigitColor: profile.colonColor,
     cardColor: profile.cardColor,
     fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
+    sizeScale: profile.sizeScale,
     fontSizeScale: profile.fontSizeScale,
-    clock6Speed: 1.45,
+    panelSizeScale: profile.panelSizeScale,
+    clock6Speed: 0.42,
     fontMode: "solid",
   };
 
@@ -123,7 +130,9 @@ function renderClock(ctx, canvas, index, now) {
   layer.height = h;
   const lctx = layer.getContext("2d");
   const renderer = window[clock.renderer];
-  const size = Math.min(clock.size * window.devicePixelRatio, Math.min(w, h) * 0.48);
+  const rawSize = clock.size * window.devicePixelRatio * (Number(profile.sizeScale) || 1);
+  const maxSize = Math.min(w, h) * (clock.maxScreenRatio || 0.9);
+  const size = Math.min(rawSize, maxSize);
   const options = buildRendererOptions(clock, profile);
 
   if (typeof renderer === "function") {
@@ -179,9 +188,6 @@ function updateSelectionUI() {
 
 function setSection(section) {
   state.section = section;
-  document.querySelectorAll(".tab").forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.section === section);
-  });
   librarySection.classList.toggle("active", section === "library");
 }
 
@@ -196,10 +202,10 @@ function launchClock(index) {
 }
 
 function returnHome() {
+  if (isClockMode) return;
   saver.classList.add("hidden");
   settingsPanel.classList.add("hidden");
   platform.classList.remove("hidden");
-  markActivity();
 }
 
 function setColorInput(input, value) {
@@ -265,8 +271,9 @@ function openSettings() {
   colonInput.value = profile.colonColor;
   cardInput.value = profile.cardColor;
   fontSelect.value = profile.fontFamily;
+  sizeScaleInput.value = profile.sizeScale;
   fontSizeScaleInput.value = profile.fontSizeScale;
-  idleDelaySelect.value = String(state.idleDelaySeconds);
+  panelSizeScaleInput.value = profile.panelSizeScale;
 
   document.querySelectorAll("[data-setting]").forEach((row) => {
     const visible = controls.has(row.dataset.setting);
@@ -287,8 +294,9 @@ function updateProfileFromControls() {
   profile.colonColor = colonInput.value;
   profile.cardColor = cardInput.value;
   profile.fontFamily = fontSelect.value;
+  profile.sizeScale = Number(sizeScaleInput.value);
   profile.fontSizeScale = Number(fontSizeScaleInput.value);
-  state.idleDelaySeconds = Number(idleDelaySelect.value);
+  profile.panelSizeScale = Number(panelSizeScaleInput.value);
   syncSwatchState();
 }
 
@@ -298,6 +306,7 @@ function resizeMainCanvas() {
 }
 
 function renderPreviews(now) {
+  if (platform.classList.contains("hidden")) return;
   previewCanvases.forEach((canvas, index) => {
     resizeCanvasToDisplaySize(canvas);
     const ctx = canvas.getContext("2d");
@@ -328,28 +337,46 @@ function renderMain(now) {
   renderClock(mainCtx, mainCanvas, state.selected, now);
 }
 
-function markActivity() {
-  state.lastActivityAt = Date.now();
-}
-
-function checkIdleLaunch() {
-  if (state.idleDelaySeconds <= 0 || !saver.classList.contains("hidden")) return;
-  const elapsed = (Date.now() - state.lastActivityAt) / 1000;
-  if (elapsed >= state.idleDelaySeconds) launchClock(state.selected);
-}
-
 function loop() {
   const now = new Date();
+  updateBackdropGlow();
   renderPreviews(now);
   renderMain(now);
-  checkIdleLaunch();
   requestAnimationFrame(loop);
 }
 
+function requestCloseApp() {
+  if (window.electronAPI && typeof window.electronAPI.closeApp === "function") {
+    window.electronAPI.closeApp();
+  }
+}
+
+function handleClockModeMouseMove(event) {
+  if (!isClockMode) return;
+  if (!state.pointerStart) {
+    state.pointerStart = { x: event.screenX, y: event.screenY };
+    return;
+  }
+  if (Math.hypot(event.screenX - state.pointerStart.x, event.screenY - state.pointerStart.y) >= 5) {
+    requestCloseApp();
+  }
+}
+
+function handleLibraryPointer(event) {
+  if (isClockMode) return;
+  state.glow.targetX = (event.clientX / Math.max(1, window.innerWidth)) * 100;
+  state.glow.targetY = (event.clientY / Math.max(1, window.innerHeight)) * 100;
+}
+
+function updateBackdropGlow() {
+  if (isClockMode) return;
+  state.glow.x += (state.glow.targetX - state.glow.x) * 0.08;
+  state.glow.y += (state.glow.targetY - state.glow.y) * 0.08;
+  document.body.style.setProperty("--glow-x", `${state.glow.x.toFixed(2)}%`);
+  document.body.style.setProperty("--glow-y", `${state.glow.y.toFixed(2)}%`);
+}
+
 function initEvents() {
-  document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => setSection(tab.dataset.section));
-  });
   document.getElementById("brand-btn").addEventListener("click", () => setSection("library"));
   launchBtn.addEventListener("click", () => launchClock(state.selected));
   dashboardSettingsBtn.addEventListener("click", openSettings);
@@ -358,18 +385,19 @@ function initEvents() {
   document.getElementById("close-settings").addEventListener("click", closeSettings);
   document.getElementById("apply-btn").addEventListener("click", () => launchClock(state.selected));
 
-  [bgInput, fontInput, colonInput, cardInput, fontSelect, fontSizeScaleInput, idleDelaySelect].forEach((input) => {
+  [bgInput, fontInput, colonInput, cardInput, fontSelect, sizeScaleInput, fontSizeScaleInput, panelSizeScaleInput].forEach((input) => {
     input.addEventListener("input", updateProfileFromControls);
     input.addEventListener("change", updateProfileFromControls);
   });
 
-  ["mousemove", "mousedown", "keydown", "touchstart", "wheel"].forEach((eventName) => {
-    window.addEventListener(eventName, markActivity, { passive: true });
-  });
+  window.addEventListener("mousemove", handleLibraryPointer, { passive: true });
+  window.addEventListener("mousemove", handleClockModeMouseMove, { passive: true });
+  window.addEventListener("mousedown", () => { if (isClockMode) requestCloseApp(); });
+  window.addEventListener("keydown", () => { if (isClockMode) requestCloseApp(); });
 
   window.addEventListener("resize", resizeMainCanvas);
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
+    if (!isClockMode && event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
   });
 }
 
@@ -379,6 +407,10 @@ function init() {
   initEvents();
   resizeMainCanvas();
   setSection("library");
+  if (isClockMode) {
+    document.body.classList.add("clock-mode");
+    launchClock(state.selected);
+  }
   requestAnimationFrame(loop);
 }
 

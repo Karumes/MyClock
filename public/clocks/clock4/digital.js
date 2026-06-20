@@ -60,13 +60,13 @@
     const maxValue = DIGIT_MAX[stripIndex];
     const edgeInset = 4;
     const minEdgePadding = 2;
-    const pairInnerGap = Math.max(30, Math.floor(Math.min(w, h) * 0.038));
-    const pairOuterGap = Math.max(62, Math.floor(Math.min(w, h) * 0.072));
+    const pairInnerGap = Math.max(34, Math.floor(Math.min(w, h) * 0.044));
+    const pairOuterGap = Math.max(76, Math.floor(Math.min(w, h) * 0.086));
     const cardWidth = Math.max(54, Math.floor(Math.min((w - pairInnerGap * 3 - pairOuterGap * 2) / 6, size * 0.68)));
     const circleRadius = Math.max(48, Math.floor(cardWidth * 0.68));
-    const maxRowByHeight = Math.floor((h * 0.82) / (maxValue + 0.5));
-    const maxRowByCircle = Math.floor((circleRadius - edgeInset - minEdgePadding) * 2.4);
-    const rowHeight = Math.max(35, Math.min(maxRowByHeight, maxRowByCircle));
+    const maxRowByHeight = Math.floor((h * 0.9) / (maxValue + 0.35));
+    const maxRowByCircle = Math.floor((circleRadius - edgeInset - minEdgePadding) * 3.05);
+    const rowHeight = Math.max(42, Math.min(maxRowByHeight, maxRowByCircle));
     const maxVisibleEdge = Math.max(0, circleRadius - Math.floor(rowHeight / 2) - edgeInset);
     const desiredEdgePadding = Math.max(minEdgePadding, Math.floor(rowHeight * 0.03));
     const topPadding = Math.min(maxVisibleEdge, desiredEdgePadding);
@@ -287,8 +287,16 @@
     ctx.fillRect(0, 0, w, h);
 
     const layoutMetrics = getReelMetrics(w, h, size, 1);
-    const fixedCardDigitSize = Math.max(12, Math.min(Math.floor(layoutMetrics.cardWidth * 0.64), Math.floor(layoutMetrics.rowHeight * 0.98)));
-    const fixedCircleDigitSize = Math.max(12, Math.floor(layoutMetrics.circleRadius * 0.92));
+    const textScale = Math.max(0.65, Math.min(3.5, Number(options.fontSizeScale) || 1));
+    const fixedCardDigitSize = Math.max(12, Math.min(
+      Math.floor(layoutMetrics.cardWidth * 0.92),
+      Math.floor(layoutMetrics.rowHeight * 1.08),
+      Math.floor(layoutMetrics.cardWidth * 0.64 * textScale),
+    ));
+    const fixedCircleDigitSize = Math.max(12, Math.min(
+      Math.floor(layoutMetrics.circleRadius * 1.44),
+      Math.floor(layoutMetrics.circleRadius * 0.92 * textScale),
+    ));
     const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairInnerGap * 3 + layoutMetrics.pairOuterGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
     const surfaceFill = options.cardColor || "#d9dfe8";

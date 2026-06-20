@@ -1,5 +1,7 @@
 :root {
   color-scheme: dark;
+  --glow-x: 50%;
+  --glow-y: 42%;
   --black: #000000;
   --ink: #f8fbff;
   --muted: rgba(235, 244, 255, 0.66);
@@ -25,16 +27,17 @@ body {
   margin: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 18% 14%, rgba(114, 202, 255, 0.16), transparent 34%),
-    radial-gradient(ellipse at 82% 22%, rgba(255, 190, 225, 0.11), transparent 36%),
-    radial-gradient(ellipse at 58% 86%, rgba(190, 255, 220, 0.08), transparent 44%),
+    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(150, 220, 255, 0.16), transparent 44%),
+    radial-gradient(ellipse at calc(100% - var(--glow-x)) 24%, rgba(255, 196, 230, 0.1), transparent 46%),
+    radial-gradient(ellipse at 56% 88%, rgba(202, 255, 226, 0.075), transparent 52%),
     linear-gradient(155deg, #020307 0%, #050506 48%, #000000 100%),
     #000000;
   background-size: 140% 140%, 150% 150%, 160% 160%, 100% 100%;
   color: var(--ink);
   font-family: "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
   letter-spacing: 0;
-  animation: softBackdrop 18s ease-in-out infinite alternate;
+  transition: background-position 600ms ease, background 600ms ease;
+  animation: softBackdrop 22s ease-in-out infinite alternate;
 }
 
 body::before {
@@ -43,12 +46,13 @@ body::before {
   z-index: 1;
   pointer-events: none;
   content: "";
-  opacity: 0.4;
+  opacity: 0.34;
   background:
-    radial-gradient(ellipse at 28% 30%, rgba(255,255,255,0.08), transparent 42%),
-    radial-gradient(ellipse at 72% 64%, rgba(120,240,255,0.07), transparent 44%);
-  filter: blur(18px);
+    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(255,255,255,0.09), transparent 48%),
+    radial-gradient(ellipse at 72% 64%, rgba(120,240,255,0.055), transparent 50%);
+  filter: blur(42px);
   animation: softVeil 14s ease-in-out infinite alternate;
+  transition: background 520ms ease, opacity 520ms ease;
 }
 
 body::after {
@@ -402,6 +406,10 @@ button {
   margin-bottom: 10px;
 }
 
+.clock-mode .saver-actions {
+  display: none;
+}
+
 .color-swatches {
   display: flex;
   flex-wrap: wrap;
@@ -409,11 +417,12 @@ button {
 }
 
 .color-swatch {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  aspect-ratio: 1 / 1;
   border: 1px solid rgba(255,255,255,0.24);
-  border-radius: 50%;
+  border-radius: 999px;
   padding: 0;
   background: var(--swatch);
   box-shadow: inset 0 0 0 2px rgba(0,0,0,0.22);
@@ -438,11 +447,23 @@ button {
 }
 
 .settings-grid input[type="color"] {
-  width: 100%;
-  height: 30px;
+  width: 34px;
+  height: 34px;
+  display: block;
   padding: 0;
-  border: 0;
+  border: 1px solid rgba(255,255,255,0.26);
+  border-radius: 999px;
   background: transparent;
+  overflow: hidden;
+}
+
+.settings-grid input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.settings-grid input[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
 }
 
 .settings-panel select,
