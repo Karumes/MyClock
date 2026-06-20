@@ -54,11 +54,8 @@
     now = now || new Date();
     opts = opts || {};
 
-    const maxSize = Math.min(w, h) * 0.85;
-    const effectiveSize = Math.min(size, maxSize);
-
     const cx = w/2, cy = h/2;
-    const r = effectiveSize;
+    const r = size;
     const colorAt = (x, y, fallback) => sampleFontGradientColor(x, y, fallback, opts);
 
     ctx.clearRect(0,0,w,h);

@@ -27,7 +27,7 @@ const state = {
     cardColor: clock.defaultSurface || "#d9dfe8",
     fontFamily: clock.defaultFont || "rounded",
     sizeScale: clock.defaultSizeScale || 1,
-    fontSizeScale: 1,
+    fontSizeScale: clock.defaultFontSizeScale || 1,
     panelSizeScale: 1,
   })),
 };
@@ -131,7 +131,7 @@ function renderClock(ctx, canvas, index, now) {
   const renderer = window[clock.renderer];
   const sizeScale = Number(profile.sizeScale) || 1;
   const rawSize = clock.size * window.devicePixelRatio * sizeScale;
-  const maxSize = Math.min(w, h) * 0.95;
+  const maxSize = Math.min(w, h) * 3.5;
   const size = Math.min(rawSize, maxSize);
   const options = buildRendererOptions(clock, profile);
 

@@ -60,9 +60,9 @@
     const maxValue = DIGIT_MAX[stripIndex];
     const edgeInset = 4;
     const minEdgePadding = 2;
-    const digitGap = Math.max(48, Math.floor(Math.min(w, h) * 0.056));
-    const cardWidth = Math.max(54, Math.floor(Math.min((w - digitGap * 5) / 6, size * 0.68)));
-    const circleRadius = Math.max(48, Math.floor(cardWidth * 0.68));
+    const digitGap = Math.max(64, Math.floor(Math.min(w, h) * 0.08));
+    const cardWidth = Math.max(54, Math.floor(size * 0.55));
+    const circleRadius = Math.max(48, Math.floor(cardWidth * 0.75));
     const maxRowByHeight = Math.floor((h * 0.9) / (maxValue + 0.35));
     const maxRowByCircle = Math.floor((circleRadius - edgeInset - minEdgePadding) * 3.05);
     const rowHeight = Math.max(42, Math.min(maxRowByHeight, maxRowByCircle));
@@ -285,14 +285,11 @@
     ctx.fillRect(0, 0, w, h);
 
     const layoutMetrics = getReelMetrics(w, h, size, 1);
-    const fixedCardDigitSize = Math.max(12, Math.min(
-      Math.floor(layoutMetrics.cardWidth * 0.92),
-      Math.floor(layoutMetrics.rowHeight * 1.08),
+    let cardDigitSize = Math.max(12, Math.min(
+      Math.floor(layoutMetrics.cardWidth * 0.72),
+      Math.floor(layoutMetrics.rowHeight * 0.84),
     ));
-    const fixedCircleDigitSize = Math.max(12, Math.min(
-      Math.floor(layoutMetrics.circleRadius * 1.44),
-      Math.floor(layoutMetrics.circleRadius * 0.92),
-    ));
+    const fixedCircleDigitSize = Math.ceil(cardDigitSize * 1.15);
     const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.digitGap * 5;
     const startX = Math.round((w - totalWidth) / 2);
     const surfaceFill = options.cardColor || "#d9dfe8";
@@ -309,7 +306,7 @@
         layoutMetrics.cardWidth,
         i,
         family,
-        fixedCardDigitSize,
+        cardDigitSize,
         nowMs,
         cardFill,
         cardDigitColor,

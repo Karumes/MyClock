@@ -16,10 +16,7 @@
     const weight = '300';
     const family = (opts && opts.fontFamily) || "Inter, 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif";
 
-    const maxSize = Math.min(w, h) * 0.85;
-    const effectiveSize = Math.min(size, maxSize);
-
-    let fontSize = Math.max(12, Math.floor(effectiveSize * 1.15), Math.floor(Math.min(usableW, usableH) / 2));
+    let fontSize = Math.max(12, Math.floor(size * 0.9), Math.floor(Math.min(usableW, usableH) / 2));
     const minFont = 8;
 
     const verticalSpacingFactor = 0.90;
@@ -43,7 +40,7 @@
       const totalRowWidth = 2 * digitW;
       const totalColHeight = 2 * centerDist;
 
-      if (totalRowWidth <= usableW && totalColHeight <= usableH) break;
+      if (totalRowWidth <= usableW * 2 && totalColHeight <= usableH * 2) break;
       fontSize--;
     }
 
