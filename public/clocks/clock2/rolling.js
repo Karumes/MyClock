@@ -152,27 +152,27 @@ global.renderClock6 = function renderClock6(ctx, w, h, paint, size, now, options
       now.getSeconds() % 10,
     ];
 
-    let digitWidth = Math.min(120, Math.floor(size * 0.42));
-    let digitHeight = Math.max(96, Math.floor(size * 0.95));
-    let fontSize = Math.max(46, Math.floor(size * 0.74));
-    let pairInnerGap = Math.max(36, Math.floor(digitWidth * 0.35));
-    let pairOuterGap = Math.max(80, Math.floor(digitWidth * 0.75));
-    let totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
+     let digitWidth = 20 + Math.floor(size * 0.42);
+     let digitHeight = 96 + Math.floor(size * 0.95);
+     let fontSize = 46 + Math.floor(size * 0.74);
+     let pairInnerGap = Math.floor(digitWidth * 0.2);
+     let pairOuterGap = Math.floor(digitWidth * 0.5);
+     let totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
 
-    const startX = Math.floor(w / 2 - totalWidth / 2);
-    const centerY = h / 2;
-    const nowMs = now.getTime();
-    const animDuration = 520;
+     const startX = Math.floor(w / 2 - totalWidth / 2);
+     const centerY = h / 2;
+     const nowMs = now.getTime();
+     const animDuration = 520;
 
-    const xForIndex = (index) => {
-      const pairIndex = Math.floor(index / 2);
-      const inPairIndex = index % 2;
-      const x = startX + pairIndex * (digitWidth * 2 + pairInnerGap) + inPairIndex * digitWidth;
-      return x + digitWidth / 2;
-    };
+     const xForIndex = (index) => {
+       const pairIndex = Math.floor(index / 2);
+       const inPairIndex = index % 2;
+       const x = startX + pairIndex * (digitWidth * 2 + pairInnerGap) + inPairIndex * digitWidth;
+       return x + digitWidth / 2;
+     };
 
-    const colon1X = xForIndex(1) + pairInnerGap / 2;
-    const colon2X = xForIndex(3) + pairInnerGap / 2;
+     const colon1X = (xForIndex(1) + xForIndex(2)) / 2;
+     const colon2X = (xForIndex(3) + xForIndex(4)) / 2;
 
     const colorAt = (x, y) => sampleFontGradientColor(x, y, w, h, options, baseColor);
 

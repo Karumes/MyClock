@@ -395,8 +395,8 @@ button {
 }
 
 .color-swatch:hover {
-  transform: scale(1.15);
-}
+     transform: none;
+   }
 
 .color-swatch.active {
   border-color: rgba(255,255,255,0.95);
