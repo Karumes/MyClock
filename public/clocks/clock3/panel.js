@@ -28,12 +28,12 @@
     const weight = 760;
     const family = '"Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif';
     const offset = Math.round(panelH * 0.145);
-    const globalDrop = Math.round(panelH * 0.045);
+    const globalDrop = Math.round(panelH * 0.085);
     let fontSize = Math.max(16, Math.floor(Math.min(panelH * 1.55, panelW * 2.4)));
     const allowedH = Math.floor(panelH * 0.94);
     function measureDigitHeight(fs) {
       ctx.font = `${weight} ${fs}px ${family}`;
-      const m = ctx.measureText('8'); // tallest digit
+      const m = ctx.measureText('8');
       const asc = (m.actualBoundingBoxAscent != null) ? m.actualBoundingBoxAscent : fs * 0.8;
       const desc = (m.actualBoundingBoxDescent != null) ? m.actualBoundingBoxDescent : fs * 0.2;
       return asc + desc;
@@ -51,7 +51,6 @@
     ctx.textBaseline = 'middle';
     ctx.font = `${weight} ${fontSize}px ${family}`;
 
-    // fill color/paint
     try { ctx.fillStyle = paint; } catch { ctx.fillStyle = '#ffffff'; }
 
     // Draw each digit clipped to its panel with vertical offsets (hours lower, minutes higher)
@@ -61,23 +60,21 @@
       const yCenter = Math.floor(panelH / 2) + globalDrop + (i % 2 === 0 ? offset : -offset);
 
       ctx.save();
-      // clip to panel rect so overflow is cropped
       ctx.beginPath();
       ctx.rect(x0, 0, Math.ceil(panelW), panelH);
       ctx.clip();
 
-      // render digit
       ctx.fillText(digits[i], xCenter, yCenter);
 
       ctx.restore();
     }
 
-    // divider lines between panels (on top of numbers) — pure black and thinner
+    // divider lines between panels
     ctx.save();
-    ctx.strokeStyle = '#000'; // pure black
-    ctx.lineWidth = 0.1;      // thinner than before
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 0.1;
     for (let k = 1; k < 4; k++) {
-      const xLine = Math.floor(k * panelW) + 0.5; // center between panels, crisp 1px line
+      const xLine = Math.floor(k * panelW) + 0.5;
       ctx.beginPath();
       ctx.moveTo(xLine, 0);
       ctx.lineTo(xLine, h);

@@ -11,11 +11,16 @@
 
   window.renderClock4 = function (ctx, w, h, paint, size, now, opts) {
     now = now || new Date();
+    opts = opts || {};
+
+    const maxSize = Math.min(w, h) * 0.9;
+    const effectiveSize = Math.min(size, maxSize);
+
     const bg = (opts && opts.bg) || "#bcd4e6";
     const diskColor = typeof bg === "string" && bg.startsWith("#") ? blendHex(bg, 0.18) : "rgba(255,255,255,0.68)";
     const cx = w / 2;
     const cy = h / 2;
-    const radius = Math.min(Math.min(w, h) * 0.37, size * 0.96);
+    const radius = Math.min(Math.min(w, h) * 0.44, effectiveSize * 0.96);
     const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
     const minutes = now.getMinutes() + seconds / 60;
     const hours = (now.getHours() % 12) + minutes / 60;

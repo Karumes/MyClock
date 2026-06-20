@@ -36,7 +36,7 @@
       defaultColon: "#77f0ff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary", "colon", "card", "size", "fontSize"],
+      controls: ["bg", "primary", "colon", "card", "size"],
       defaultSurface: "#202833",
       optionMap: { colon: "circleDigitColor", card: "cardColor" },
     },
@@ -46,7 +46,7 @@
       size: 320,
       defaultAccent: "#89ffbf",
       hasNumbers: false,
-      controls: ["bg", "primary"],
+      controls: ["bg", "primary", "size"],
     },
     {
       name: "Flip",
@@ -55,7 +55,7 @@
       defaultAccent: "#ffffff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary", "card", "fontSize", "panelSize", "font"],
+      controls: ["bg", "primary", "card", "size", "fontSize", "panelSize", "font"],
       defaultSurface: "#000000",
       optionMap: { card: "flipBackColor" },
     },
@@ -65,7 +65,7 @@
       size: 320,
       defaultAccent: "#ff4fd8",
       hasNumbers: false,
-      controls: ["bg", "primary"],
+      controls: ["bg", "primary", "size"],
     },
     {
       name: "Grid",
@@ -74,7 +74,7 @@
       defaultAccent: "#f8fbff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary", "font"],
+      controls: ["bg", "primary", "font", "size"],
     },
   ];
 })();

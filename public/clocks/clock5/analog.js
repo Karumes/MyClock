@@ -19,7 +19,7 @@
           return a + (b - a) * t;
         }
 
-        function sampleFontGradientColor(x, y, fallback) {
+        function sampleFontGradientColor(x, y, fallback, opts) {
           if (!opts || opts.fontMode !== 'gradient' || !Array.isArray(opts.fontGrad)) {
             return fallback;
           }
@@ -36,7 +36,9 @@
           } else if (pattern === 'diag-bltr') {
             t = (x + (h - y)) / Math.max(1, w + h);
           } else if (pattern === 'radial') {
-            const dist = Math.hypot(x - cx, y - cy);
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const dist = Math.hypot(x - centerX, y - centerY);
             t = dist / Math.max(1, Math.max(w, h) * 0.7);
           } else {
             t = y / Math.max(1, h);
@@ -50,10 +52,15 @@
         }
 
     now = now || new Date();
-    const cx = w/2, cy = h/2;
-    const r = size;
+    opts = opts || {};
 
-    // clear and (optionally) background
+    const maxSize = Math.min(w, h) * 0.85;
+    const effectiveSize = Math.min(size, maxSize);
+
+    const cx = w/2, cy = h/2;
+    const r = effectiveSize;
+    const colorAt = (x, y, fallback) => sampleFontGradientColor(x, y, fallback, opts);
+
     ctx.clearRect(0,0,w,h);
     if (opts && !opts.suppressBg) {
       if (opts.bgGradient && Array.isArray(opts.bgGradient) && opts.bgGradient.length >= 2) {
@@ -66,7 +73,6 @@
       }
     }
 
-    // 12 hour markers: circles for 1,2,4,5,7,8,10,11; rectangles for 0,3,6,9
     let basePaint = '#ffffff';
     try {
       ctx.fillStyle = paint;
@@ -76,13 +82,11 @@
       ctx.fillStyle = basePaint;
     }
 
-    const colorAt = (x, y) => sampleFontGradientColor(x, y, basePaint);
-
     ctx.save();
     const ringR = r * 0.85;
-    const rectW = Math.max(6, Math.round(size * 0.15)); // radial length
-    const rectH = Math.max(3, Math.round(size * 0.05)); // tangential thickness
-    const dotR  = Math.max(3, Math.round(size * 0.03));
+    const rectW = Math.max(6, Math.round(r * 0.15));
+    const rectH = Math.max(3, Math.round(r * 0.05));
+    const dotR  = Math.max(3, Math.round(r * 0.03));
     const circleIdx = new Set([1,2,4,5,7,8,10,11]);
     for (let i=0;i<12;i++){
       const ang = (i * Math.PI) / 6 - Math.PI/2;
@@ -90,15 +94,13 @@
       const y = cy + Math.sin(ang) * ringR;
 
       if (circleIdx.has(i)) {
-        // circle marker
-        ctx.fillStyle = colorAt(x, y);
+        ctx.fillStyle = colorAt(x, y, basePaint);
         ctx.beginPath();
         ctx.arc(Math.round(x), Math.round(y), dotR, 0, Math.PI*2);
         ctx.fill();
       } else {
-        // rectangular marker (radially oriented)
         ctx.save();
-        ctx.fillStyle = colorAt(x, y);
+        ctx.fillStyle = colorAt(x, y, basePaint);
         ctx.translate(x, y);
         ctx.rotate(ang);
         ctx.fillRect(-rectW/2, -rectH/2, rectW, rectH);
@@ -107,7 +109,6 @@
     }
     ctx.restore();
 
-    // hands as rectangular sticks
     const sec = now.getSeconds() + now.getMilliseconds()/1000;
     const min = now.getMinutes() + sec/60;
     const hr  = (now.getHours()%12) + min/60;
@@ -117,22 +118,18 @@
       ctx.translate(cx, cy);
       ctx.rotate(angle);
       ctx.fillStyle = color;
-      // from center to outer radius along the angle
       ctx.fillRect(0, -thickness/2, length, thickness);
       ctx.restore();
     }
 
-    // angles
     const hourAng = (hr * Math.PI)/6 - Math.PI/2;
     const minAng  = (min * Math.PI)/30 - Math.PI/2;
     const secAng  = (sec * Math.PI)/30 - Math.PI/2;
 
-    // dimensions
     const hourLen = r * 0.50, hourTh = Math.max(6, Math.round(r * 0.05));
     const minLen  = r * 0.78, minTh  = Math.max(4, Math.round(r * 0.02));
     const secLen  = r * 0.82, secTh  = Math.max(2, Math.round(r * 0.0035));
 
-    // hour and minute (use paint color)
     const hourTipX = cx + Math.cos(hourAng) * hourLen;
     const hourTipY = cy + Math.sin(hourAng) * hourLen;
     const minTipX = cx + Math.cos(minAng) * minLen;
@@ -140,12 +137,11 @@
     const secTipX = cx + Math.cos(secAng) * secLen;
     const secTipY = cy + Math.sin(secAng) * secLen;
 
-    drawStick(hourAng, hourLen, hourTh, colorAt(hourTipX, hourTipY));
-    drawStick(minAng,  minLen,  minTh,  colorAt(minTipX, minTipY));
-    drawStick(secAng,  secLen,  secTh,  colorAt(secTipX, secTipY));
+    drawStick(hourAng, hourLen, hourTh, colorAt(hourTipX, hourTipY, basePaint));
+    drawStick(minAng,  minLen,  minTh,  colorAt(minTipX, minTipY, basePaint));
+    drawStick(secAng,  secLen,  secTh,  colorAt(secTipX, secTipY, basePaint));
 
-    // center cap follows selected clock color
-    ctx.fillStyle = colorAt(cx, cy);
+    ctx.fillStyle = colorAt(cx, cy, basePaint);
     ctx.beginPath();
     ctx.arc(cx, cy, Math.max(4, Math.round(r * 0.04)), 0, Math.PI*2);
     ctx.fill();

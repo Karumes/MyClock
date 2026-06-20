@@ -26,67 +26,32 @@ body {
 body {
   margin: 0;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(150, 220, 255, 0.16), transparent 44%),
-    radial-gradient(ellipse at calc(100% - var(--glow-x)) 24%, rgba(255, 196, 230, 0.1), transparent 46%),
-    radial-gradient(ellipse at 56% 88%, rgba(202, 255, 226, 0.075), transparent 52%),
-    linear-gradient(155deg, #020307 0%, #050506 48%, #000000 100%),
-    #000000;
-  background-size: 140% 140%, 150% 150%, 160% 160%, 100% 100%;
+  background: #000000;
   color: var(--ink);
   font-family: "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
   letter-spacing: 0;
-  transition: background-position 600ms ease, background 600ms ease;
-  animation: softBackdrop 22s ease-in-out infinite alternate;
+}
+
+.platform-shell {
+  background: #000000;
 }
 
 body::before {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  content: "";
-  opacity: 0.34;
-  background:
-    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(255,255,255,0.09), transparent 48%),
-    radial-gradient(ellipse at 72% 64%, rgba(120,240,255,0.055), transparent 50%);
-  filter: blur(42px);
-  animation: softVeil 14s ease-in-out infinite alternate;
-  transition: background 520ms ease, opacity 520ms ease;
+  display: none;
 }
 
 body::after {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  content: "";
-  opacity: 0.18;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 100% 4px;
-  mix-blend-mode: screen;
+  display: none;
 }
 
 @keyframes softBackdrop {
-  from {
-    background-position: 0% 0%, 80% 20%, 50% 100%, 0 0;
-  }
-
-  to {
-    background-position: 16% 10%, 66% 30%, 42% 88%, 0 0;
-  }
+  from { opacity: 0.3; }
+  to { opacity: 0.5; }
 }
 
 @keyframes softVeil {
-  from {
-    opacity: 0.28;
-    transform: scale(1);
-  }
-
-  to {
-    opacity: 0.48;
-    transform: scale(1.04);
-  }
+  from { opacity: 0.28; transform: scale(1); }
+  to { opacity: 0.48; transform: scale(1.04); }
 }
 
 button,
@@ -417,15 +382,20 @@ button {
 }
 
 .color-swatch {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   aspect-ratio: 1 / 1;
-  border: 1px solid rgba(255,255,255,0.24);
-  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
   padding: 0;
-  background: var(--swatch);
-  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.22);
+  background-color: var(--swatch);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.25);
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
 }
 
 .color-swatch.active {
@@ -451,8 +421,8 @@ button {
   height: 34px;
   display: block;
   padding: 0;
-  border: 1px solid rgba(255,255,255,0.26);
-  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
   background: transparent;
   overflow: hidden;
 }
@@ -463,7 +433,7 @@ button {
 
 .settings-grid input[type="color"]::-webkit-color-swatch {
   border: 0;
-  border-radius: 999px;
+  border-radius: 50%;
 }
 
 .settings-panel select,
@@ -502,7 +472,6 @@ button {
   .clock-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
 }
 
 @media (max-width: 680px) {

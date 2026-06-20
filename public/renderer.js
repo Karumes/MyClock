@@ -20,7 +20,6 @@ const state = {
   section: "library",
   selected: 0,
   pointerStart: null,
-  glow: { x: 50, y: 42, targetX: 50, targetY: 42 },
   profiles: clocks.map((clock) => ({
     bgColor: clock.defaultBg || "#000000",
     color: clock.defaultAccent || "#ffffff",
@@ -130,8 +129,9 @@ function renderClock(ctx, canvas, index, now) {
   layer.height = h;
   const lctx = layer.getContext("2d");
   const renderer = window[clock.renderer];
-  const rawSize = clock.size * window.devicePixelRatio * (Number(profile.sizeScale) || 1);
-  const maxSize = Math.min(w, h) * (clock.maxScreenRatio || 0.9);
+  const sizeScale = Number(profile.sizeScale) || 1;
+  const rawSize = clock.size * window.devicePixelRatio * sizeScale;
+  const maxSize = Math.min(w, h) * 0.95;
   const size = Math.min(rawSize, maxSize);
   const options = buildRendererOptions(clock, profile);
 
@@ -339,7 +339,6 @@ function renderMain(now) {
 
 function loop() {
   const now = new Date();
-  updateBackdropGlow();
   renderPreviews(now);
   renderMain(now);
   requestAnimationFrame(loop);
@@ -362,20 +361,6 @@ function handleClockModeMouseMove(event) {
   }
 }
 
-function handleLibraryPointer(event) {
-  if (isClockMode) return;
-  state.glow.targetX = (event.clientX / Math.max(1, window.innerWidth)) * 100;
-  state.glow.targetY = (event.clientY / Math.max(1, window.innerHeight)) * 100;
-}
-
-function updateBackdropGlow() {
-  if (isClockMode) return;
-  state.glow.x += (state.glow.targetX - state.glow.x) * 0.08;
-  state.glow.y += (state.glow.targetY - state.glow.y) * 0.08;
-  document.body.style.setProperty("--glow-x", `${state.glow.x.toFixed(2)}%`);
-  document.body.style.setProperty("--glow-y", `${state.glow.y.toFixed(2)}%`);
-}
-
 function initEvents() {
   document.getElementById("brand-btn").addEventListener("click", () => setSection("library"));
   launchBtn.addEventListener("click", () => launchClock(state.selected));
@@ -390,7 +375,6 @@ function initEvents() {
     input.addEventListener("change", updateProfileFromControls);
   });
 
-  window.addEventListener("mousemove", handleLibraryPointer, { passive: true });
   window.addEventListener("mousemove", handleClockModeMouseMove, { passive: true });
   window.addEventListener("mousedown", () => { if (isClockMode) requestCloseApp(); });
   window.addEventListener("keydown", () => { if (isClockMode) requestCloseApp(); });

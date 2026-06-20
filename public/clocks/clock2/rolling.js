@@ -76,9 +76,11 @@
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
-    const phase = now.getSeconds() + now.getMilliseconds() / 1000;
-    const base = Math.floor(phase) % 10;
-    const offset = (phase - Math.floor(phase)) * digitHeight;
+    const ms = now.getTime();
+    const phase = (ms % 1000) / 1000;
+    const seconds = now.getSeconds();
+    const base = seconds % 10;
+    const offset = phase * digitHeight;
     const visibleRows = Math.ceil(ctx.canvas.height / digitHeight) + 24;
     const half = Math.floor(visibleRows / 2);
 
@@ -150,11 +152,14 @@
       now.getSeconds() % 10,
     ];
 
-    let digitWidth = Math.min(120, Math.floor(w / 9.5));
-    let digitHeight = Math.max(96, Math.floor(size * 0.95));
-    let fontSize = Math.max(46, Math.floor(size * 0.74));
-    let pairInnerGap = Math.max(18, Math.floor(digitWidth * 0.24));
-    let pairOuterGap = Math.max(64, Math.floor(digitWidth * 0.64));
+    const maxSize = Math.min(w, h) * 0.95;
+    const effectiveSize = Math.min(size, maxSize);
+
+    let digitWidth = Math.min(120, Math.floor(effectiveSize * 0.42));
+    let digitHeight = Math.max(96, Math.floor(effectiveSize * 0.95));
+    let fontSize = Math.max(46, Math.floor(effectiveSize * 0.74));
+    let pairInnerGap = Math.max(36, Math.floor(digitWidth * 0.35));
+    let pairOuterGap = Math.max(80, Math.floor(digitWidth * 0.75));
     let totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
     const maxWidth = w * 0.92;
     if (totalWidth > maxWidth) {
@@ -162,11 +167,16 @@
       digitWidth = Math.max(28, Math.floor(digitWidth * scale));
       digitHeight = Math.max(54, Math.floor(digitHeight * scale));
       fontSize = Math.max(30, Math.floor(fontSize * scale));
-      pairInnerGap = Math.max(12, Math.floor(pairInnerGap * scale));
-      pairOuterGap = Math.max(34, Math.floor(pairOuterGap * scale));
+      pairInnerGap = Math.max(20, Math.floor(pairInnerGap * scale));
+      pairOuterGap = Math.max(40, Math.floor(pairOuterGap * scale));
       totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
     }
-    const startX = (w - totalWidth) / 2 + digitWidth / 2;
+
+    const digitsTotalWidth = digitWidth * 6 + pairInnerGap * 2;
+    const colon1X = Math.floor(w / 2 - digitsTotalWidth / 2 + digitWidth * 2 + pairInnerGap + digitWidth / 2);
+    const colon2X = Math.floor(w / 2 - digitsTotalWidth / 2 + digitWidth * 4 + pairInnerGap * 2 + digitWidth / 2);
+
+    const startX = Math.floor(w / 2 - digitsTotalWidth / 2);
     const centerY = h / 2;
     const nowMs = now.getTime();
     const animDuration = 520;
@@ -174,45 +184,44 @@
     const xForIndex = (index) => {
       const pairIndex = Math.floor(index / 2);
       const inPairIndex = index % 2;
-      return startX + pairIndex * (digitWidth * 2 + pairInnerGap + pairOuterGap) + inPairIndex * (digitWidth + pairInnerGap);
+      const x = startX + pairIndex * (digitWidth * 2 + pairInnerGap) + inPairIndex * digitWidth;
+      return x + digitWidth / 2;
     };
 
     const colorAt = (x, y) => sampleFontGradientColor(x, y, w, h, options, baseColor);
 
     for (let i = 0; i < digits.length; i += 1) {
-      const state = columnState[i];
-      if (state.shown === null) state.shown = digits[i];
-      if (state.shown !== digits[i] && !state.anim) {
-        state.anim = { from: state.shown, to: digits[i], startedAt: nowMs };
+      const colState = columnState[i];
+      if (colState.shown === null) colState.shown = digits[i];
+      if (colState.shown !== digits[i] && !colState.anim) {
+        colState.anim = { from: colState.shown, to: digits[i], startedAt: nowMs };
       }
     }
 
     for (let i = 0; i < digits.length; i += 1) {
       const x = xForIndex(i);
-      const state = columnState[i];
+      const colState = columnState[i];
       const colColor = colorAt(x, centerY);
 
       if (i === 5) {
         drawContinuousColumn(ctx, x, centerY, digitHeight, colColor, fontSize, family, now);
-        state.shown = digits[i];
-        state.anim = null;
+        colState.shown = digits[i];
+        colState.anim = null;
         continue;
       }
 
-      if (state.anim) {
-        const progress = Math.min(1, (nowMs - state.anim.startedAt) / animDuration);
-        drawDropColumn(ctx, x, centerY, state.anim.from, state.anim.to, progress, colColor, fontSize, family, h);
+      if (colState.anim) {
+        const progress = Math.min(1, (nowMs - colState.anim.startedAt) / animDuration);
+        drawDropColumn(ctx, x, centerY, colState.anim.from, colState.anim.to, progress, colColor, fontSize, family, h);
         if (progress >= 1) {
-          state.shown = state.anim.to;
-          state.anim = null;
+          colState.shown = colState.anim.to;
+          colState.anim = null;
         }
       } else {
-        drawStaticColumn(ctx, x, centerY, state.shown, colColor, fontSize, family);
+        drawStaticColumn(ctx, x, centerY, colState.shown, colColor, fontSize, family);
       }
     }
 
-    const colon1X = (xForIndex(1) + xForIndex(2)) / 2;
-    const colon2X = (xForIndex(3) + xForIndex(4)) / 2;
     drawColon(ctx, colon1X, centerY, colorAt(colon1X, centerY), fontSize, family);
     drawColon(ctx, colon2X, centerY, colorAt(colon2X, centerY), fontSize, family);
   };
