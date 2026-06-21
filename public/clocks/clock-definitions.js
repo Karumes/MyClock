@@ -8,7 +8,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "font", "size"],
-      defaultSizeScale: 0.55,
+      defaultSizeScale: 0.75,
       centerZoom: true,
     },
     {
@@ -19,7 +19,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "font", "size"],
-      defaultSizeScale: 0.55,
+      defaultSizeScale: 0.45,
     },
     {
       name: "Lumen",
@@ -28,7 +28,8 @@
       defaultAccent: "#ffffff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary"],
+      controls: ["bg", "primary", "size"],
+      defaultSizeScale: 0.5,
     },
     {
       name: "Reel",
@@ -69,7 +70,7 @@
       renderer: "renderClock4",
       size: 320,
       defaultAccent: "#ffffff",
-      defaultBg: "#b07aa8",
+      defaultBg: "#000000",
       hasNumbers: true,
       controls: ["bg", "primary", "size"],
     },

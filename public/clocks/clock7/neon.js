@@ -67,32 +67,11 @@
 
     ctx.save();
     ctx.translate(x, y);
-
-    for (let pass = 0; pass < 3; pass += 1) {
-      const blur = glow * (0.18 + pass * 0.26);
-      const alpha = pass === 0 ? 0.18 : pass === 1 ? 0.34 : 1;
-      ctx.shadowColor = rgba(color, 0.68);
-      ctx.shadowBlur = blur;
-      ctx.fillStyle = rgba(color, alpha);
-      flags.forEach((on, index) => {
-        if (!on) return;
-        const rect = rects[index];
-        drawRoundedSegment(ctx, rect.x, rect.y, rect.w, rect.h, radius);
-        ctx.fill();
-      });
-    }
-
-    ctx.restore();
-
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.globalCompositeOperation = "screen";
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillStyle = color;
     flags.forEach((on, index) => {
       if (!on) return;
       const rect = rects[index];
-      const inset = Math.max(1, thickness * 0.18);
-      drawRoundedSegment(ctx, rect.x + inset, rect.y + inset, rect.w - inset * 2, rect.h - inset * 2, radius * 0.64);
+      drawRoundedSegment(ctx, rect.x, rect.y, rect.w, rect.h, radius);
       ctx.fill();
     });
     ctx.restore();
@@ -183,13 +162,11 @@
     ctx.restore();
   }
 
-  function drawColon(ctx, x, y, size, color, glow) {
+  function drawColon(ctx, x, y, size, color) {
     const dotR = size * 0.11;
     const gap = size * 0.18;
     ctx.save();
     ctx.fillStyle = rgba(color, 1);
-    ctx.shadowColor = rgba(color, 0.7);
-    ctx.shadowBlur = glow * 0.36;
     ctx.beginPath();
     ctx.arc(x, y - gap, dotR, 0, Math.PI * 2);
     ctx.fill();
@@ -218,28 +195,8 @@
 
     ctx.clearRect(0, 0, w, h);
 
-    const bgBase = (opts.bg && typeof opts.bg === "string") ? opts.bg : "#050609";
-    const bg = ctx.createLinearGradient(0, 0, w, h);
-    bg.addColorStop(0, "#07090e");
-    bg.addColorStop(0.45, bgBase === "#000000" ? "#030407" : rgba(bgBase, 0.42));
-    bg.addColorStop(1, "#010102");
-    ctx.fillStyle = bg;
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, w, h);
-
-    const floorY = h * 0.74;
-    const floorGrad = ctx.createLinearGradient(0, h * 0.48, 0, h);
-    floorGrad.addColorStop(0, "rgba(255,255,255,0)");
-    floorGrad.addColorStop(0.55, "rgba(255,255,255,0.035)");
-    floorGrad.addColorStop(1, "rgba(255,255,255,0.09)");
-    ctx.fillStyle = floorGrad;
-    ctx.fillRect(0, h * 0.46, w, h * 0.54);
-
-    const horizon = ctx.createLinearGradient(0, floorY - h * 0.16, 0, floorY + h * 0.08);
-    horizon.addColorStop(0, "rgba(255,255,255,0)");
-    horizon.addColorStop(0.62, "rgba(255,255,255,0.08)");
-    horizon.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = horizon;
-    ctx.fillRect(0, floorY - h * 0.16, w, h * 0.24);
 
     const margin = Math.max(16, Math.min(w, h) * 0.04);
     const usableW = w - margin * 2;
@@ -249,29 +206,15 @@
     const totalW = digitW * 6 + colonW * 2;
     const startX = (w - totalW) / 2;
     const startY = h * 0.29 - digitH / 2;
-    const glow = Math.max(8, digitW * 0.16);
 
     let cursor = startX;
     chars.forEach((ch) => {
       if (ch === ":") {
-        drawColon(ctx, cursor + colonW / 2, startY + digitH / 2, digitH, digitColor, glow);
+        drawColon(ctx, cursor + colonW / 2, startY + digitH / 2, digitH, digitColor);
         cursor += colonW;
         return;
       }
-      const digit = Number(ch);
-      drawLightRays(ctx, cursor, startY, digitW, digitH, digit, floorY, digitColor);
-      cursor += digitW;
-    });
-
-    cursor = startX;
-    chars.forEach((ch) => {
-      if (ch === ":") {
-        drawColon(ctx, cursor + colonW / 2, startY + digitH / 2, digitH, digitColor, glow);
-        cursor += colonW;
-        return;
-      }
-      drawReflection(ctx, cursor, startY, digitW, digitH, Number(ch), floorY, digitColor);
-      drawDigitCore(ctx, cursor, startY, digitW, digitH, Number(ch), digitColor, glow);
+      drawDigitCore(ctx, cursor, startY, digitW, digitH, Number(ch), digitColor);
       cursor += digitW;
     });
   };

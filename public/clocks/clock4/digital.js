@@ -93,10 +93,7 @@
 
     const stripRadius = Math.floor(Math.min(width, stripCanvas.height) * 0.2);
     drawRoundedRect(stripCtx, 0, 0, width, stripCanvas.height, stripRadius);
-    const stripGradient = stripCtx.createLinearGradient(0, 0, 0, stripCanvas.height);
-    stripGradient.addColorStop(0, mixColor(bgColor, "#ffffff", 0.18));
-    stripGradient.addColorStop(1, mixColor(bgColor, "#000000", 0.06));
-    stripCtx.fillStyle = stripGradient;
+    stripCtx.fillStyle = bgColor;
     stripCtx.fill();
 
     stripCtx.fillStyle = cardDigitColor;
@@ -192,17 +189,7 @@
     ctx.restore();
 
     ctx.save();
-    const circleGradient = ctx.createRadialGradient(
-      cx - scaledRadius * 0.24,
-      circleY - scaledRadius * 0.28,
-      scaledRadius * 0.18,
-      cx,
-      circleY,
-      scaledRadius,
-    );
-    circleGradient.addColorStop(0, mixColor(circleFill, "#ffffff", 0.22));
-    circleGradient.addColorStop(1, mixColor(circleFill, "#000000", 0.04));
-    ctx.fillStyle = circleGradient;
+    ctx.fillStyle = circleFill;
     ctx.beginPath();
     ctx.arc(cx, circleY, scaledRadius, 0, Math.PI * 2);
     ctx.fill();
