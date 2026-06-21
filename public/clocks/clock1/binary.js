@@ -14,28 +14,106 @@
     return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
   }
 
-  function lightenHex(hex, amount) {
-    const value = hex.replace("#", "");
-    const full = value.length === 3 ? value.split("").map((ch) => ch + ch).join("") : value;
-    const r = parseInt(full.slice(0, 2), 16);
-    const g = parseInt(full.slice(2, 4), 16);
-    const b = parseInt(full.slice(4, 6), 16);
+  function parseColor(color) {
+    if (typeof color !== "string") return { r: 105, g: 247, b: 255 };
+    const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
+    if (hex) {
+      const raw = hex[1];
+      const full = raw.length === 3 ? raw.split("").map((ch) => ch + ch).join("") : raw;
+      return {
+        r: parseInt(full.slice(0, 2), 16),
+        g: parseInt(full.slice(2, 4), 16),
+        b: parseInt(full.slice(4, 6), 16),
+      };
+    }
+    const rgb = /^rgba?\(([^)]+)\)$/i.exec(color.trim());
+    if (rgb) {
+      const parts = rgb[1].split(",").map((part) => Number(part.trim()));
+      return { r: parts[0] || 0, g: parts[1] || 0, b: parts[2] || 0 };
+    }
+    return { r: 105, g: 247, b: 255 };
+  }
+
+  function lightenColor(color, amount) {
+    const c = parseColor(color);
     const next = (channel) => Math.min(255, Math.round(channel + (255 - channel) * amount));
-    return `rgb(${next(r)}, ${next(g)}, ${next(b)})`;
+    return { r: next(c.r), g: next(c.g), b: next(c.b) };
+  }
+
+  function lightenHex(hex, amount) {
+    const c = lightenColor(hex, amount);
+    return `rgb(${c.r}, ${c.g}, ${c.b})`;
   }
 
   function safeColor(color, fallback) {
     return typeof color === "string" && color.trim() ? color : fallback;
   }
 
-  function drawDigit(ctx, text, x, y, angle, color, fontSize, family, alpha, travelY) {
+  function renderGlyphMask(ctx, text, x, y, angle, alpha, travelY) {
     ctx.save();
     ctx.translate(x, y + travelY);
     ctx.rotate(angle);
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = color;
+    ctx.fillStyle = "#ffffff";
     ctx.fillText(text, 0, 0);
     ctx.restore();
+  }
+
+  function buildSlotMaskCanvas(w, h, font, weight, family, entries) {
+    const mask = document.createElement("canvas");
+    mask.width = w;
+    mask.height = h;
+    const mctx = mask.getContext("2d");
+    mctx.textAlign = "center";
+    mctx.textBaseline = "middle";
+    mctx.font = `${weight} ${font}px ${family}`;
+    entries.forEach((entry) => {
+      renderGlyphMask(mctx, entry.text, entry.x, entry.y, entry.angle, entry.alpha, entry.travelY);
+    });
+    return mask;
+  }
+
+  function compositeSlots(ctx, w, h, slotMasks, slotColors) {
+    const maskData = slotMasks.map((mask) => mask.getContext("2d").getImageData(0, 0, w, h).data);
+    const colors = slotColors.map(parseColor);
+    const blend01 = lightenColor(slotColors[1], 0.42);
+    const blend23 = lightenColor(slotColors[3], 0.42);
+    const output = ctx.createImageData(w, h);
+    const out = output.data;
+
+    for (let i = 0; i < out.length; i += 4) {
+      const alphas = maskData.map((data) => data[i + 3]);
+      const active = alphas.map((alpha, index) => (alpha >= 20 ? index : -1)).filter((index) => index >= 0);
+      if (!active.length) continue;
+
+      let color = colors[active[active.length - 1]];
+      let alpha = Math.max(...active.map((index) => alphas[index]));
+
+      const has01 = active.includes(0) && active.includes(1);
+      const has23 = active.includes(2) && active.includes(3);
+
+      if (has01 && !has23) {
+        color = blend01;
+        alpha = Math.min(255, Math.round((alphas[0] + alphas[1]) * 0.5));
+      } else if (has23 && !has01) {
+        color = blend23;
+        alpha = Math.min(255, Math.round((alphas[2] + alphas[3]) * 0.5));
+      } else if (active.length === 1) {
+        color = colors[active[0]];
+        alpha = alphas[active[0]];
+      } else {
+        const top = active[active.length - 1];
+        color = colors[top];
+        alpha = alphas[top];
+      }
+
+      out[i] = color.r;
+      out[i + 1] = color.g;
+      out[i + 2] = color.b;
+      out[i + 3] = alpha;
+    }
+
+    ctx.putImageData(output, 0, 0);
   }
 
   window.renderClock5 = function (ctx, w, h, paint, size, now, opts) {
@@ -101,7 +179,8 @@
       metrics = measure(fontSize);
     }
 
-    ctx.font = `${weight} ${fontSize}px ${family}`;
+    const fontSpec = `${weight} ${fontSize}px ${family}`;
+    ctx.font = fontSpec;
     const startX = (w - metrics.total) / 2;
     const centerY = h / 2;
     const positions = [];
@@ -112,23 +191,60 @@
       cursor += width - metrics.overlap + (i === 1 ? metrics.groupGap : 0);
     }
 
+    const slotEntries = [[], [], [], []];
+    const slotColors = [primary, secondary, primary, secondary];
+
     for (let i = 0; i < chars.length; i += 1) {
-      const color = (i === 0 || i === 2) ? primary : secondary;
       const anim = state.anims[i];
       if (anim) {
         const t = Math.min(1, (nowMs - anim.startedAt) / anim.duration);
         const eased = easeOutCubic(t);
         const travel = fontSize * 1.45;
-        drawDigit(ctx, anim.from, positions[i], centerY, state.rotations[i], color, fontSize, family, 1 - eased * 0.2, eased * travel);
-        drawDigit(ctx, anim.to, positions[i], centerY, state.rotations[i], color, fontSize, family, 0.25 + eased * 0.75, -travel + eased * travel);
+        slotEntries[i].push({
+          text: anim.from,
+          x: positions[i],
+          y: centerY,
+          angle: state.rotations[i],
+          alpha: 1 - eased * 0.2,
+          travelY: eased * travel,
+        });
+        slotEntries[i].push({
+          text: anim.to,
+          x: positions[i],
+          y: centerY,
+          angle: state.rotations[i],
+          alpha: 0.25 + eased * 0.75,
+          travelY: -travel + eased * travel,
+        });
         if (t >= 1) {
           state.chars[i] = anim.to;
           state.anims[i] = null;
         }
       } else {
-        drawDigit(ctx, state.chars[i], positions[i], centerY, state.rotations[i], color, fontSize, family, 1, 0);
+        slotEntries[i].push({
+          text: state.chars[i],
+          x: positions[i],
+          y: centerY,
+          angle: state.rotations[i],
+          alpha: 1,
+          travelY: 0,
+        });
       }
     }
+
+    const layer = document.createElement("canvas");
+    layer.width = w;
+    layer.height = h;
+    const lctx = layer.getContext("2d");
+    lctx.textAlign = "center";
+    lctx.textBaseline = "middle";
+    lctx.font = fontSpec;
+    lctx.imageSmoothingEnabled = true;
+    lctx.imageSmoothingQuality = "high";
+
+    const slotMasks = slotEntries.map((entries) => buildSlotMaskCanvas(w, h, fontSize, weight, family, entries));
+    compositeSlots(lctx, w, h, slotMasks, slotColors);
+    ctx.drawImage(layer, 0, 0);
 
     const cx = (positions[1] + positions[2]) / 2;
     const dotR = Math.max(6, fontSize * 0.07);

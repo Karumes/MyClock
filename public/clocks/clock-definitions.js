@@ -8,6 +8,8 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "font", "size"],
+      defaultSizeScale: 0.55,
+      centerZoom: true,
     },
     {
       name: "Rolling",
@@ -40,6 +42,8 @@
       controls: ["bg", "primary", "colon", "card", "size"],
       defaultSurface: "#202833",
       optionMap: { colon: "circleDigitColor", card: "cardColor" },
+      defaultSizeScale: 0.55,
+      centerZoom: true,
     },
     {
       name: "Orbit",
@@ -56,17 +60,17 @@
       defaultAccent: "#ffffff",
       defaultFont: "rounded",
       hasNumbers: true,
-      controls: ["bg", "primary", "card", "size", "fontSize"],
+      controls: ["bg", "primary", "card", "size"],
       defaultSurface: "#000000",
       optionMap: { card: "flipBackColor" },
-      defaultFontSizeScale: 1.5,
     },
     {
-      name: "Halo",
+      name: "Neon",
       renderer: "renderClock4",
       size: 320,
-      defaultAccent: "#ff4fd8",
-      hasNumbers: false,
+      defaultAccent: "#ffffff",
+      defaultBg: "#b07aa8",
+      hasNumbers: true,
       controls: ["bg", "primary", "size"],
     },
     {
@@ -77,6 +81,8 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "font", "size"],
+      defaultSizeScale: 0.55,
+      centerZoom: true,
     },
   ];
 })();

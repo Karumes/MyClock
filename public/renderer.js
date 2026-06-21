@@ -154,7 +154,14 @@ function renderClock(ctx, canvas, index, now) {
     drawClockFallback(targetCtx, w, h, clock.name);
   };
 
-  if (sizeScale < 1) {
+  if (clock.centerZoom) {
+    lctx.save();
+    lctx.translate(w / 2, h / 2);
+    lctx.scale(sizeScale, sizeScale);
+    lctx.translate(-w / 2, -h / 2);
+    drawRenderer(lctx, baseSize);
+    lctx.restore();
+  } else if (sizeScale < 1) {
     lctx.save();
     lctx.translate(w / 2, h / 2);
     lctx.scale(sizeScale, sizeScale);

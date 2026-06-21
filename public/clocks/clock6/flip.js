@@ -207,7 +207,7 @@ let baseColor = "#ffffff";
 
     let tileHeight = Math.floor(size * 1.55);
     let tileWidth = Math.floor(tileHeight * 1.1);
-    let gap = Math.max(12, Math.floor(tileWidth * 0.1));
+    let gap = Math.max(4, Math.floor(tileWidth * 0.035));
     let totalWidth = tileWidth * 2 + gap;
 
     const startX = Math.round((w - totalWidth) / 2);
