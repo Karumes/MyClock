@@ -16,14 +16,18 @@
       }
     }
 
-    // digits HHMM (no colon)
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
     const digits = [hh[0], hh[1], mm[0], mm[1]];
 
-    // 4 vertical panels
-    const panelW = w / 4;
-    const panelH = h;
+    const sizeFactor = Math.max(0.35, size / 120);
+    const cx = w / 2;
+    const cy = h / 2;
+    const panelW = (w / 4) * sizeFactor;
+    const panelH = h * sizeFactor;
+    const totalW = panelW * 4;
+    const startX = cx - totalW / 2;
+    const startY = cy - panelH / 2;
 
     const weight = 760;
     const family = '"Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif';
@@ -53,15 +57,14 @@
 
     try { ctx.fillStyle = paint; } catch { ctx.fillStyle = '#ffffff'; }
 
-    // Draw each digit clipped to its panel with vertical offsets (hours lower, minutes higher)
     for (let i = 0; i < 4; i++) {
-      const x0 = Math.floor(i * panelW);
+      const x0 = Math.floor(startX + i * panelW);
       const xCenter = Math.floor(x0 + panelW / 2);
-      const yCenter = Math.floor(panelH / 2) + globalDrop + (i % 2 === 0 ? offset : -offset);
+      const yCenter = Math.floor(startY + panelH / 2) + globalDrop + (i % 2 === 0 ? offset : -offset);
 
       ctx.save();
       ctx.beginPath();
-      ctx.rect(x0, 0, Math.ceil(panelW), panelH);
+      ctx.rect(x0, startY, Math.ceil(panelW), panelH);
       ctx.clip();
 
       ctx.fillText(digits[i], xCenter, yCenter);
@@ -69,15 +72,14 @@
       ctx.restore();
     }
 
-    // divider lines between panels
     ctx.save();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 0.1;
     for (let k = 1; k < 4; k++) {
-      const xLine = Math.floor(k * panelW) + 0.5;
+      const xLine = Math.floor(startX + k * panelW) + 0.5;
       ctx.beginPath();
-      ctx.moveTo(xLine, 0);
-      ctx.lineTo(xLine, h);
+      ctx.moveTo(xLine, startY);
+      ctx.lineTo(xLine, startY + panelH);
       ctx.stroke();
     }
     ctx.restore();

@@ -155,9 +155,9 @@ global.renderClock6 = function renderClock6(ctx, w, h, paint, size, now, options
      let digitWidth = 20 + Math.floor(size * 0.42);
      let digitHeight = 96 + Math.floor(size * 0.95);
      let fontSize = 46 + Math.floor(size * 0.74);
-     let pairInnerGap = Math.floor(digitWidth * 0.2);
-     let pairOuterGap = Math.floor(digitWidth * 0.5);
-     let totalWidth = digitWidth * 6 + pairInnerGap * 3 + pairOuterGap * 2;
+     let pairOuterGap = Math.floor(digitWidth * 0.68);
+     const pairBlock = digitWidth * 2;
+     let totalWidth = pairBlock * 3 + pairOuterGap * 2;
 
      const startX = Math.floor(w / 2 - totalWidth / 2);
      const centerY = h / 2;
@@ -167,7 +167,7 @@ global.renderClock6 = function renderClock6(ctx, w, h, paint, size, now, options
      const xForIndex = (index) => {
        const pairIndex = Math.floor(index / 2);
        const inPairIndex = index % 2;
-       const x = startX + pairIndex * (digitWidth * 2 + pairInnerGap) + inPairIndex * digitWidth;
+       const x = startX + pairIndex * (pairBlock + pairOuterGap) + inPairIndex * digitWidth;
        return x + digitWidth / 2;
      };
 

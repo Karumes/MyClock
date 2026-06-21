@@ -130,27 +130,39 @@ function renderClock(ctx, canvas, index, now) {
   const lctx = layer.getContext("2d");
   const renderer = window[clock.renderer];
   const sizeScale = Number(profile.sizeScale) || 1;
-  const rawSize = clock.size * window.devicePixelRatio * sizeScale;
-  const maxSize = Math.min(w, h) * 3.5;
-  const size = Math.min(rawSize, maxSize);
+  const baseSize = clock.size * window.devicePixelRatio;
   const options = buildRendererOptions(clock, profile);
 
-  if (typeof renderer === "function") {
-    try {
-      renderer(lctx, w, h, profile.color, size, now, options);
-    } catch (error) {
-      if (!renderErrors.has(clock.renderer)) {
-        console.error(`Failed to render ${clock.name}`, error);
-        renderErrors.add(clock.renderer);
+  const drawRenderer = (targetCtx, renderSize) => {
+    if (typeof renderer === "function") {
+      try {
+        renderer(targetCtx, w, h, profile.color, renderSize, now, options);
+      } catch (error) {
+        if (!renderErrors.has(clock.renderer)) {
+          console.error(`Failed to render ${clock.name}`, error);
+          renderErrors.add(clock.renderer);
+        }
+        drawClockFallback(targetCtx, w, h, clock.name);
       }
-      drawClockFallback(lctx, w, h, clock.name);
+      return;
     }
-  } else {
+
     if (!renderErrors.has(clock.renderer)) {
       console.error(`Missing renderer: ${clock.renderer}`);
       renderErrors.add(clock.renderer);
     }
-    drawClockFallback(lctx, w, h, clock.name);
+    drawClockFallback(targetCtx, w, h, clock.name);
+  };
+
+  if (sizeScale < 1) {
+    lctx.save();
+    lctx.translate(w / 2, h / 2);
+    lctx.scale(sizeScale, sizeScale);
+    lctx.translate(-w / 2, -h / 2);
+    drawRenderer(lctx, baseSize);
+    lctx.restore();
+  } else {
+    drawRenderer(lctx, baseSize * sizeScale);
   }
 
   ctx.drawImage(layer, 0, 0);
