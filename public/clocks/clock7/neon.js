@@ -69,9 +69,9 @@
     ctx.translate(x, y);
 
     for (let pass = 0; pass < 3; pass += 1) {
-      const blur = glow * (0.45 + pass * 0.55);
-      const alpha = pass === 0 ? 0.34 : pass === 1 ? 0.58 : 1;
-      ctx.shadowColor = rgba(color, 0.92);
+      const blur = glow * (0.18 + pass * 0.26);
+      const alpha = pass === 0 ? 0.18 : pass === 1 ? 0.34 : 1;
+      ctx.shadowColor = rgba(color, 0.68);
       ctx.shadowBlur = blur;
       ctx.fillStyle = rgba(color, alpha);
       flags.forEach((on, index) => {
@@ -82,6 +82,19 @@
       });
     }
 
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalCompositeOperation = "screen";
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    flags.forEach((on, index) => {
+      if (!on) return;
+      const rect = rects[index];
+      const inset = Math.max(1, thickness * 0.18);
+      drawRoundedSegment(ctx, rect.x + inset, rect.y + inset, rect.w - inset * 2, rect.h - inset * 2, radius * 0.64);
+      ctx.fill();
+    });
     ctx.restore();
   }
 
@@ -101,8 +114,8 @@
       const topHalf = rect.w * 0.34;
       const bottomHalf = rect.w * 1.05;
       const grad = ctx.createLinearGradient(0, rayTop, 0, rayBottom);
-      grad.addColorStop(0, rgba(color, 0.42));
-      grad.addColorStop(0.35, rgba(color, 0.16));
+      grad.addColorStop(0, rgba(color, 0.2));
+      grad.addColorStop(0.35, rgba(color, 0.08));
       grad.addColorStop(1, rgba(color, 0));
 
       ctx.save();
@@ -113,7 +126,7 @@
       ctx.lineTo(sourceX - bottomHalf, rayBottom);
       ctx.closePath();
       ctx.fillStyle = grad;
-      ctx.filter = "blur(8px)";
+      ctx.filter = "blur(14px)";
       ctx.fill();
       ctx.restore();
     });
@@ -128,7 +141,7 @@
       const topHalf = thickness * 0.55;
       const bottomHalf = thickness * 1.8;
       const grad = ctx.createLinearGradient(0, rayTop, 0, rayBottom);
-      grad.addColorStop(0, rgba(color, 0.28));
+      grad.addColorStop(0, rgba(color, 0.12));
       grad.addColorStop(1, rgba(color, 0));
       ctx.save();
       ctx.beginPath();
@@ -138,10 +151,36 @@
       ctx.lineTo(sourceX - bottomHalf, rayBottom);
       ctx.closePath();
       ctx.fillStyle = grad;
-      ctx.filter = "blur(6px)";
+      ctx.filter = "blur(10px)";
       ctx.fill();
       ctx.restore();
     });
+  }
+
+  function drawReflection(ctx, x, y, sw, sh, digit, floorY, color) {
+    const flags = SEGMENTS[digit] || SEGMENTS[8];
+    const thickness = Math.max(3, sw * 0.11);
+    const radius = thickness * 0.42;
+    const rects = getSegmentRects(sw, sh, thickness);
+    const reflectionH = sh * 0.48;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x - sw * 0.22, floorY - 2, sw * 1.44, reflectionH);
+    ctx.clip();
+    ctx.translate(x + sw / 2, floorY);
+    ctx.scale(1.08, -0.42);
+    ctx.translate(-(x + sw / 2), -(y + sh));
+    ctx.globalAlpha = 0.2;
+    ctx.filter = "blur(7px)";
+    ctx.fillStyle = rgba(color, 0.72);
+    flags.forEach((on, index) => {
+      if (!on) return;
+      const rect = rects[index];
+      drawRoundedSegment(ctx, x + rect.x, y + rect.y, rect.w, rect.h, radius);
+      ctx.fill();
+    });
+    ctx.restore();
   }
 
   function drawColon(ctx, x, y, size, color, glow) {
@@ -149,8 +188,8 @@
     const gap = size * 0.18;
     ctx.save();
     ctx.fillStyle = rgba(color, 1);
-    ctx.shadowColor = rgba(color, 0.95);
-    ctx.shadowBlur = glow * 0.7;
+    ctx.shadowColor = rgba(color, 0.7);
+    ctx.shadowBlur = glow * 0.36;
     ctx.beginPath();
     ctx.arc(x, y - gap, dotR, 0, Math.PI * 2);
     ctx.fill();
@@ -179,20 +218,28 @@
 
     ctx.clearRect(0, 0, w, h);
 
+    const bgBase = (opts.bg && typeof opts.bg === "string") ? opts.bg : "#050609";
     const bg = ctx.createLinearGradient(0, 0, w, h);
-    bg.addColorStop(0, "#d88aa0");
-    bg.addColorStop(0.42, "#b07aa8");
-    bg.addColorStop(1, "#9a88b8");
+    bg.addColorStop(0, "#07090e");
+    bg.addColorStop(0.45, bgBase === "#000000" ? "#030407" : rgba(bgBase, 0.42));
+    bg.addColorStop(1, "#010102");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
-    const floorY = h * 0.92;
-    const floorGrad = ctx.createLinearGradient(0, h * 0.62, 0, h);
+    const floorY = h * 0.74;
+    const floorGrad = ctx.createLinearGradient(0, h * 0.48, 0, h);
     floorGrad.addColorStop(0, "rgba(255,255,255,0)");
-    floorGrad.addColorStop(0.45, "rgba(255,255,255,0.05)");
-    floorGrad.addColorStop(1, "rgba(255,255,255,0.12)");
+    floorGrad.addColorStop(0.55, "rgba(255,255,255,0.035)");
+    floorGrad.addColorStop(1, "rgba(255,255,255,0.09)");
     ctx.fillStyle = floorGrad;
-    ctx.fillRect(0, h * 0.58, w, h * 0.42);
+    ctx.fillRect(0, h * 0.46, w, h * 0.54);
+
+    const horizon = ctx.createLinearGradient(0, floorY - h * 0.16, 0, floorY + h * 0.08);
+    horizon.addColorStop(0, "rgba(255,255,255,0)");
+    horizon.addColorStop(0.62, "rgba(255,255,255,0.08)");
+    horizon.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = horizon;
+    ctx.fillRect(0, floorY - h * 0.16, w, h * 0.24);
 
     const margin = Math.max(16, Math.min(w, h) * 0.04);
     const usableW = w - margin * 2;
@@ -201,8 +248,8 @@
     const colonW = Math.floor(digitW * 0.34);
     const totalW = digitW * 6 + colonW * 2;
     const startX = (w - totalW) / 2;
-    const startY = h * 0.34 - digitH / 2;
-    const glow = Math.max(12, digitW * 0.34);
+    const startY = h * 0.29 - digitH / 2;
+    const glow = Math.max(8, digitW * 0.16);
 
     let cursor = startX;
     chars.forEach((ch) => {
@@ -223,6 +270,7 @@
         cursor += colonW;
         return;
       }
+      drawReflection(ctx, cursor, startY, digitW, digitH, Number(ch), floorY, digitColor);
       drawDigitCore(ctx, cursor, startY, digitW, digitH, Number(ch), digitColor, glow);
       cursor += digitW;
     });

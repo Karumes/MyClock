@@ -61,6 +61,7 @@
     const edgeInset = 4;
     const minEdgePadding = 2;
     const digitGap = Math.max(64, Math.floor(Math.min(w, h) * 0.08));
+    const pairGap = Math.max(18, Math.floor(digitGap * 0.67));
     const cardWidth = Math.max(54, Math.floor(size * 0.55));
     const circleRadius = Math.max(48, Math.floor(cardWidth * 0.75));
     const maxRowByHeight = Math.floor((h * 0.9) / (maxValue + 0.35));
@@ -73,6 +74,7 @@
 
     return {
       digitGap,
+      pairGap,
       cardWidth,
       circleRadius,
       rowHeight,
@@ -290,7 +292,7 @@
       Math.floor(layoutMetrics.rowHeight * 0.84),
     ));
     const fixedCircleDigitSize = Math.ceil(cardDigitSize * 1.15);
-    const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.digitGap * 5;
+    const totalWidth = layoutMetrics.cardWidth * 6 + layoutMetrics.pairGap * 3 + layoutMetrics.digitGap * 2;
     const startX = Math.round((w - totalWidth) / 2);
     const surfaceFill = options.cardColor || "#d9dfe8";
     const circleFill = surfaceFill;
@@ -298,7 +300,10 @@
     const centerY = Math.round(h / 2);
 
     for (let i = 0; i < 6; i += 1) {
-      const x = startX + i * (layoutMetrics.cardWidth + layoutMetrics.digitGap);
+      let x = startX;
+      for (let j = 0; j < i; j += 1) {
+        x += layoutMetrics.cardWidth + (j % 2 === 0 ? layoutMetrics.pairGap : layoutMetrics.digitGap);
+      }
       const reel = drawReel(
         ctx,
         x,

@@ -64,6 +64,10 @@
     mask.width = w;
     mask.height = h;
     const mctx = mask.getContext("2d");
+    mctx.imageSmoothingEnabled = true;
+    mctx.imageSmoothingQuality = "high";
+    if ("fontKerning" in mctx) mctx.fontKerning = "normal";
+    if ("textRendering" in mctx) mctx.textRendering = "geometricPrecision";
     mctx.textAlign = "center";
     mctx.textBaseline = "middle";
     mctx.font = `${weight} ${font}px ${family}`;
@@ -76,14 +80,14 @@
   function compositeSlots(ctx, w, h, slotMasks, slotColors) {
     const maskData = slotMasks.map((mask) => mask.getContext("2d").getImageData(0, 0, w, h).data);
     const colors = slotColors.map(parseColor);
-    const blend01 = lightenColor(slotColors[1], 0.42);
-    const blend23 = lightenColor(slotColors[3], 0.42);
+    const blend01 = lightenColor(slotColors[1], 0.58);
+    const blend23 = lightenColor(slotColors[3], 0.58);
     const output = ctx.createImageData(w, h);
     const out = output.data;
 
     for (let i = 0; i < out.length; i += 4) {
       const alphas = maskData.map((data) => data[i + 3]);
-      const active = alphas.map((alpha, index) => (alpha >= 20 ? index : -1)).filter((index) => index >= 0);
+      const active = alphas.map((alpha, index) => (alpha > 1 ? index : -1)).filter((index) => index >= 0);
       if (!active.length) continue;
 
       let color = colors[active[active.length - 1]];
@@ -94,10 +98,10 @@
 
       if (has01 && !has23) {
         color = blend01;
-        alpha = Math.min(255, Math.round((alphas[0] + alphas[1]) * 0.5));
+        alpha = Math.max(alphas[0], alphas[1]);
       } else if (has23 && !has01) {
         color = blend23;
-        alpha = Math.min(255, Math.round((alphas[2] + alphas[3]) * 0.5));
+        alpha = Math.max(alphas[2], alphas[3]);
       } else if (active.length === 1) {
         color = colors[active[0]];
         alpha = alphas[active[0]];
@@ -162,6 +166,10 @@
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    if ("fontKerning" in ctx) ctx.fontKerning = "normal";
+    if ("textRendering" in ctx) ctx.textRendering = "geometricPrecision";
 
     function measure(fs) {
       ctx.font = `${weight} ${fs}px ${family}`;
@@ -241,6 +249,8 @@
     lctx.font = fontSpec;
     lctx.imageSmoothingEnabled = true;
     lctx.imageSmoothingQuality = "high";
+    if ("fontKerning" in lctx) lctx.fontKerning = "normal";
+    if ("textRendering" in lctx) lctx.textRendering = "geometricPrecision";
 
     const slotMasks = slotEntries.map((entries) => buildSlotMaskCanvas(w, h, fontSize, weight, family, entries));
     compositeSlots(lctx, w, h, slotMasks, slotColors);
