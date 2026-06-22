@@ -1,4 +1,5 @@
 (function () {
+  // 7セグメントの点灯パターン (a, f, b, d, e, c, g)
   const SEGMENTS = {
     0: [1, 1, 1, 1, 1, 1, 0],
     1: [0, 0, 1, 0, 0, 1, 0],
@@ -32,145 +33,118 @@
     return `rgba(${c.r}, ${c.g}, ${c.b}, ${alpha})`;
   }
 
-  function drawRoundedSegment(ctx, x, y, width, height, radius) {
-    const r = Math.min(radius, width / 2, height / 2);
+  // 汎用的な多角形パス描画
+  function drawPolygon(ctx, points, offsetX, offsetY) {
+    if (points.length < 3) return;
     ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + width, y, x + width, y + height, r);
-    ctx.arcTo(x + width, y + height, x, y + height, r);
-    ctx.arcTo(x, y + height, x, y, r);
-    ctx.arcTo(x, y, x + width, y, r);
+    ctx.moveTo(points[0].x + offsetX, points[0].y + offsetY);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x + offsetX, points[i].y + offsetY);
+    }
     ctx.closePath();
+    ctx.fill();
   }
 
-  function getSegmentRects(sw, sh, t) {
-    const gap = t * 1.35;
-    const segW = sw - t * 2.2;
-    const segH = (sh - t * 3.4 - gap * 2) / 2;
+  // 画像の形状（45度カットで隙間が限界まで詰まった配置）を生成
+  function getStrictSegments(sw, sh, t) {
+    // 完全に噛み合わせた状態から、境界に作るごくわずかなスリット幅（ピクセル単位）
+    const slit = Math.max(1, t * 0.08); 
+
     const midY = sh / 2;
+    const th = t; // 厚み
+
+    // 各セグメントの頂点データをぴったり噛み合うように定義
     return [
-      { x: t, y: t, w: segW, h: segH },
-      { x: t, y: t + segH * 0.5, w: t, h: segH + gap },
-      { x: sw - t * 2, y: t + segH * 0.5, w: t, h: segH + gap },
-      { x: t, y: sh - t - segH, w: segW, h: segH },
-      { x: t, y: midY + gap * 0.5, w: t, h: segH + gap },
-      { x: sw - t * 2, y: midY + gap * 0.5, w: t, h: segH + gap },
-      { x: t, y: midY - segH / 2, w: segW, h: segH },
+      // 0: トップ (a) - 両端が45度内側にカットされた六角形
+      [
+        { x: th + slit, y: 0 },
+        { x: sw - th - slit, y: 0 },
+        { x: sw - th * 0.5 - slit, y: th * 0.5 },
+        { x: sw - th - slit, y: th },
+        { x: th + slit, y: th },
+        { x: th * 0.5 + slit, y: th * 0.5 }
+      ],
+      // 1: 左上 (f) - 上端はaと45度で噛み合い、下端はgと噛み合う
+      [
+        { x: 0, y: th + slit },
+        { x: th * 0.5, y: th * 0.5 + slit },
+        { x: th, y: th + slit },
+        { x: th, y: midY - th * 0.5 - slit },
+        { x: th * 0.5, y: midY - slit },
+        { x: 0, y: midY - th * 0.5 - slit }
+      ],
+      // 2: 右上 (b)
+      [
+        { x: sw - th, y: th + slit },
+        { x: sw - th * 0.5, y: th * 0.5 + slit },
+        { x: sw, y: th + slit },
+        { x: sw, y: midY - th * 0.5 - slit },
+        { x: sw - th * 0.5, y: midY - slit },
+        { x: sw - th, y: midY - th * 0.5 - slit }
+      ],
+      // 3: ボトム (d)
+      [
+        { x: th + slit, y: sh - th },
+        { x: sw - th - slit, y: sh - th },
+        { x: sw - th * 0.5 - slit, y: sh - th * 0.5 },
+        { x: sw - th - slit, y: sh },
+        { x: th + slit, y: sh },
+        { x: th * 0.5 + slit, y: sh - th * 0.5 }
+      ],
+      // 4: 左下 (e)
+      [
+        { x: 0, y: midY + th * 0.5 + slit },
+        { x: th * 0.5, y: midY + slit },
+        { x: th, y: midY + th * 0.5 + slit },
+        { x: th, y: sh - th - slit },
+        { x: th * 0.5, y: sh - th * 0.5 - slit },
+        { x: 0, y: sh - th - slit }
+      ],
+      // 5: 右下 (c)
+      [
+        { x: sw - th, y: midY + th * 0.5 + slit },
+        { x: sw - th * 0.5, y: midY + slit },
+        { x: sw, y: midY + th * 0.5 + slit },
+        { x: sw, y: sh - th - slit },
+        { x: sw - th * 0.5, y: sh - th * 0.5 - slit },
+        { x: sw - th, y: sh - th - slit }
+      ],
+      // 6: ミドル (g) - 両端が左右の縦バーの凹みにぴったり入る六角形
+      [
+        { x: th + slit, y: midY - th * 0.5 },
+        { x: sw - th - slit, y: midY - th * 0.5 },
+        { x: sw - th * 0.5 - slit, y: midY },
+        { x: sw - th - slit, y: midY + th * 0.5 },
+        { x: th + slit, y: midY + th * 0.5 },
+        { x: th * 0.5 + slit, y: midY }
+      ]
     ];
   }
 
-  function drawDigitCore(ctx, x, y, sw, sh, digit, color, glow) {
+  function drawDigitCore(ctx, x, y, sw, sh, digit, color) {
     const flags = SEGMENTS[digit] || SEGMENTS[8];
-    const thickness = Math.max(3, sw * 0.11);
-    const radius = thickness * 0.42;
-    const rects = getSegmentRects(sw, sh, thickness);
+    const thickness = Math.max(3, sw * 0.15); // 画像に合わせた太めの比率
+    const segPointsList = getStrictSegments(sw, sh, thickness);
 
     ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = color;
-    flags.forEach((on, index) => {
-      if (!on) return;
-      const rect = rects[index];
-      drawRoundedSegment(ctx, rect.x, rect.y, rect.w, rect.h, radius);
-      ctx.fill();
-    });
-    ctx.restore();
-  }
+    ctx.fillStyle = rgba(color, 1.0);
 
-  function drawLightRays(ctx, x, y, sw, sh, digit, floorY, color) {
-    const flags = SEGMENTS[digit] || SEGMENTS[8];
-    const thickness = Math.max(3, sw * 0.11);
-    const rects = getSegmentRects(sw, sh, thickness);
-    const rayIndices = [0, 3, 6];
-
-    rayIndices.forEach((index) => {
+    segPointsList.forEach((points, index) => {
       if (!flags[index]) return;
-      const rect = rects[index];
-      const sourceX = x + rect.x + rect.w / 2;
-      const sourceY = y + rect.y + rect.h;
-      const rayTop = Math.max(sourceY + 2, y + sh * 0.72);
-      const rayBottom = floorY;
-      const topHalf = rect.w * 0.34;
-      const bottomHalf = rect.w * 1.05;
-      const grad = ctx.createLinearGradient(0, rayTop, 0, rayBottom);
-      grad.addColorStop(0, rgba(color, 0.2));
-      grad.addColorStop(0.35, rgba(color, 0.08));
-      grad.addColorStop(1, rgba(color, 0));
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(sourceX - topHalf, rayTop);
-      ctx.lineTo(sourceX + topHalf, rayTop);
-      ctx.lineTo(sourceX + bottomHalf, rayBottom);
-      ctx.lineTo(sourceX - bottomHalf, rayBottom);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.filter = "blur(14px)";
-      ctx.fill();
-      ctx.restore();
+      drawPolygon(ctx, points, x, y);
     });
 
-    flags.forEach((on, index) => {
-      if (!on || rayIndices.includes(index)) return;
-      const rect = rects[index];
-      const sourceX = x + rect.x + rect.w / 2;
-      const sourceY = y + rect.y + rect.h;
-      const rayTop = sourceY;
-      const rayBottom = floorY;
-      const topHalf = thickness * 0.55;
-      const bottomHalf = thickness * 1.8;
-      const grad = ctx.createLinearGradient(0, rayTop, 0, rayBottom);
-      grad.addColorStop(0, rgba(color, 0.12));
-      grad.addColorStop(1, rgba(color, 0));
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(sourceX - topHalf, rayTop);
-      ctx.lineTo(sourceX + topHalf, rayTop);
-      ctx.lineTo(sourceX + bottomHalf, rayBottom);
-      ctx.lineTo(sourceX - bottomHalf, rayBottom);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.filter = "blur(10px)";
-      ctx.fill();
-      ctx.restore();
-    });
-  }
-
-  function drawReflection(ctx, x, y, sw, sh, digit, floorY, color) {
-    const flags = SEGMENTS[digit] || SEGMENTS[8];
-    const thickness = Math.max(3, sw * 0.11);
-    const radius = thickness * 0.42;
-    const rects = getSegmentRects(sw, sh, thickness);
-    const reflectionH = sh * 0.48;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x - sw * 0.22, floorY - 2, sw * 1.44, reflectionH);
-    ctx.clip();
-    ctx.translate(x + sw / 2, floorY);
-    ctx.scale(1.08, -0.42);
-    ctx.translate(-(x + sw / 2), -(y + sh));
-    ctx.globalAlpha = 0.2;
-    ctx.filter = "blur(7px)";
-    ctx.fillStyle = rgba(color, 0.72);
-    flags.forEach((on, index) => {
-      if (!on) return;
-      const rect = rects[index];
-      drawRoundedSegment(ctx, x + rect.x, y + rect.y, rect.w, rect.h, radius);
-      ctx.fill();
-    });
     ctx.restore();
   }
 
   function drawColon(ctx, x, y, size, color) {
-    const dotR = size * 0.11;
-    const gap = size * 0.18;
+    const dotR = size * 0.05;
+    const gap = size * 0.16;
+
     ctx.save();
-    ctx.fillStyle = rgba(color, 1);
+    ctx.fillStyle = rgba(color, 1.0);
     ctx.beginPath();
     ctx.arc(x, y - gap, dotR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
     ctx.arc(x, y + gap, dotR, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
@@ -183,39 +157,51 @@
     const hh = String(now.getHours()).padStart(2, "0");
     const mm = String(now.getMinutes()).padStart(2, "0");
     const ss = String(now.getSeconds()).padStart(2, "0");
-    const chars = `${hh}:${mm}:${ss}`.split("");
+    const digits = `${hh}${mm}${ss}`;
 
     let digitColor = "#ffffff";
     try {
-      ctx.fillStyle = paint;
-      digitColor = paint;
+      digitColor = typeof paint === "string" && paint.trim() ? paint : "#ffffff";
     } catch (_) {
       digitColor = "#ffffff";
     }
 
     ctx.clearRect(0, 0, w, h);
-
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, w, h);
 
-    const margin = Math.max(16, Math.min(w, h) * 0.04);
+    const margin = Math.max(16, Math.min(w, h) * 0.05);
     const usableW = w - margin * 2;
-    const digitW = Math.floor(clamp(size * 0.42, 28, usableW / 9.2));
-    const digitH = Math.floor(digitW * 1.55);
-    const colonW = Math.floor(digitW * 0.34);
-    const totalW = digitW * 6 + colonW * 2;
-    const startX = (w - totalW) / 2;
-    const startY = h * 0.29 - digitH / 2;
 
-    let cursor = startX;
-    chars.forEach((ch) => {
-      if (ch === ":") {
-        drawColon(ctx, cursor + colonW / 2, startY + digitH / 2, digitH, digitColor);
-        cursor += colonW;
-        return;
-      }
-      drawDigitCore(ctx, cursor, startY, digitW, digitH, Number(ch), digitColor);
-      cursor += digitW;
-    });
+    const digitW = Math.floor(clamp(size * 0.38, 24, usableW / 11.0));
+    const digitH = Math.floor(digitW * 1.75); // 画像のスマートな縦長感を再現
+    
+    const spacing = Math.floor(digitW * 0.45); 
+    const colonW = Math.floor(digitW * 0.75);
+    
+    const totalW = (digitW * 6) + (spacing * 3) + (colonW * 2);
+    
+    const startX = (w - totalW) / 2;
+    const startY = (h - digitH) / 2;
+    const colonY = startY + digitH / 2;
+
+    const getX = (i) => {
+      let x = startX + i * (digitW + spacing);
+      if (i >= 2) x += colonW - spacing;
+      if (i >= 4) x += colonW - spacing;
+      return x;
+    };
+
+    // 各桁を描画
+    drawDigitCore(ctx, getX(0), startY, digitW, digitH, Number(digits[0]), digitColor);
+    drawDigitCore(ctx, getX(1), startY, digitW, digitH, Number(digits[1]), digitColor);
+    drawColon(ctx, getX(1) + digitW + colonW / 2, colonY, digitH, digitColor);
+
+    drawDigitCore(ctx, getX(2), startY, digitW, digitH, Number(digits[2]), digitColor);
+    drawDigitCore(ctx, getX(3), startY, digitW, digitH, Number(digits[3]), digitColor);
+    drawColon(ctx, getX(3) + digitW + colonW / 2, colonY, digitH, digitColor);
+
+    drawDigitCore(ctx, getX(4), startY, digitW, digitH, Number(digits[4]), digitColor);
+    drawDigitCore(ctx, getX(5), startY, digitW, digitH, Number(digits[5]), digitColor);
   };
 })();

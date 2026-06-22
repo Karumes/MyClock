@@ -19,7 +19,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "font", "size"],
-      defaultSizeScale: 0.45,
+      defaultSizeScale: 0.50,
     },
     {
       name: "Lumen",
@@ -29,7 +29,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "size"],
-      defaultSizeScale: 0.5,
+      defaultSizeScale: 0.35,
     },
     {
       name: "Reel",
@@ -37,11 +37,11 @@
       size: 120,
       defaultBg: "#090b10",
       defaultAccent: "#eaf6ff",
-      defaultColon: "#77f0ff",
+      defaultColon: "#0011ff",
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "card", "size"],
-      defaultSurface: "#202833",
+      defaultSurface: "#667f8a",
       optionMap: { colon: "circleDigitColor", card: "cardColor" },
       defaultSizeScale: 0.55,
       centerZoom: true,
@@ -53,6 +53,7 @@
       defaultAccent: "#89ffbf",
       hasNumbers: false,
       controls: ["bg", "primary", "size"],
+      defaultSizeScale: 0.55,
     },
     {
       name: "Flip",
@@ -64,6 +65,7 @@
       controls: ["bg", "primary", "card", "size"],
       defaultSurface: "#000000",
       optionMap: { card: "flipBackColor" },
+      defaultSizeScale: 0.55,
     },
     {
       name: "Neon",
@@ -73,6 +75,8 @@
       defaultBg: "#000000",
       hasNumbers: true,
       controls: ["bg", "primary", "size"],
+      defaultSizeScale: 0.95,
+      centerZoom: true,
     },
     {
       name: "Grid",
@@ -82,7 +86,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "font", "size"],
-      defaultSizeScale: 0.55,
+      defaultSizeScale: 0.75,
       centerZoom: true,
     },
   ];
