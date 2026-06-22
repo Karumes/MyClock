@@ -23,8 +23,14 @@
     const sizeFactor = Math.max(0.35, size / 120);
     const cx = w / 2;
     const cy = h / 2;
-    const panelW = (w / 4) * sizeFactor;
+    
+    // 【修正】panelH を基準に高さを決定
     const panelH = h * sizeFactor;
+    
+    // 【修正】横幅(w)に依存せず、縦幅(panelH)に対して常に「1:0.65」などの固定アスペクト比になるよう変更
+    // これにより、画面を横にストレッチしてもパネルや文字の形が崩れません
+    const panelW = panelH * 0.62; 
+    
     const totalW = panelW * 4;
     const startX = cx - totalW / 2;
     const startY = cy - panelH / 2;
@@ -33,6 +39,8 @@
     const family = '"Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif';
     const offset = Math.round(panelH * 0.145);
     const globalDrop = Math.round(panelH * 0.085);
+    
+    // fontSize の計算のベースも、横ストレッチの影響を受けないように固定化
     let fontSize = Math.max(16, Math.floor(Math.min(panelH * 1.55, panelW * 2.4)));
     const allowedH = Math.floor(panelH * 0.94);
     function measureDigitHeight(fs) {
@@ -64,7 +72,9 @@
 
       ctx.save();
       ctx.beginPath();
-      ctx.rect(x0, startY, Math.ceil(panelW), panelH);
+      
+      // 横はパネル幅で厳格にクリップ、縦は無制限
+      ctx.rect(x0, -10000, Math.ceil(panelW), h + 20000);
       ctx.clip();
 
       ctx.fillText(digits[i], xCenter, yCenter);
