@@ -125,7 +125,7 @@
     }
     
     // 【修正】位置を少し下にずらすため、height * 0.035 の下方向オフセットを追加
-    const nudgeDown = Math.floor(height * 0.065);
+    const nudgeDown = Math.floor(height * 0.055);
     
     ctx.fillText(pairText, width / 2, actualCenterY + (visualOffset * 0.15) + nudgeDown);
     return canvas;
