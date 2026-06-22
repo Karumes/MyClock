@@ -27,7 +27,6 @@
   }
 
   function drawPanelMidline(ctx, x, y, width, height, panelColor, glassOnly) {
-    // Draw after all card faces so this line stays on the front-most layer.
     ctx.save();
     ctx.strokeStyle = glassOnly ? "rgb(0, 0, 0)" : panelColor;
     ctx.lineWidth = glassOnly ? Math.max(1, Math.floor(height * 0.009)) : Math.max(2, Math.floor(height * 0.018));
@@ -95,14 +94,17 @@
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     const scale = Math.max(0.7, Math.min(1.35, Number(fontSizeScale) || 1));
-    let fontSize = Math.floor(height * 0.78 * scale);
+    
+    let fontSize = Math.floor(height * 0.90 * scale);
 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
-    const maxTextWidth = width * 0.84;
-    const maxTextHeight = height * 0.78;
+    
+    const maxTextWidth = width * 0.94;
+    const maxTextHeight = height * 0.88;
+    
     let metrics = ctx.measureText(pairText);
     let textHeight = (metrics.actualBoundingBoxAscent || fontSize * 0.76) + (metrics.actualBoundingBoxDescent || fontSize * 0.18);
     while ((metrics.width > maxTextWidth || textHeight > maxTextHeight) && fontSize > 10) {
@@ -116,8 +118,16 @@
       ctx.shadowBlur = Math.max(10, Math.floor(height * 0.08));
     }
 
-    // render text centered exactly in the panel bitmap
-    ctx.fillText(pairText, width / 2, height / 2 + Math.floor(height * 0.04));
+    const actualCenterY = height / 2;
+    let visualOffset = 0;
+    if (metrics.actualBoundingBoxAscent != null && metrics.actualBoundingBoxDescent != null) {
+      visualOffset = (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+    }
+    
+    // 【修正】位置を少し下にずらすため、height * 0.035 の下方向オフセットを追加
+    const nudgeDown = Math.floor(height * 0.065);
+    
+    ctx.fillText(pairText, width / 2, actualCenterY + (visualOffset * 0.15) + nudgeDown);
     return canvas;
   }
 
@@ -187,7 +197,7 @@
     const mm = String(now.getMinutes()).padStart(2, "0");
     const pairs = [hh, mm];
     const family = (opts && opts.fontFamily) || '"Roboto Condensed", "Segoe UI", sans-serif';
-let baseColor = "#ffffff";
+    let baseColor = "#ffffff";
     try {
       ctx.fillStyle = paint;
       baseColor = paint;
