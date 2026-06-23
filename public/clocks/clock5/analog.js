@@ -79,30 +79,44 @@
       ctx.fillStyle = basePaint;
     }
 
-    ctx.save();
     const ringR = r * 0.85;
-    const rectW = Math.max(6, Math.round(r * 0.15));
-    const rectH = Math.max(3, Math.round(r * 0.05));
-    const dotR  = Math.max(3, Math.round(r * 0.03));
-    const circleIdx = new Set([1,2,4,5,7,8,10,11]);
-    for (let i=0;i<12;i++){
-      const ang = (i * Math.PI) / 6 - Math.PI/2;
+
+    // 1. 文字盤の背景装飾（チャプターリング）
+    if (opts && !opts.suppressBg) {
+      ctx.save();
+      ctx.strokeStyle = basePaint;
+      ctx.globalAlpha = 0.12;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. インデックスの描画（円から数字に変更、ドロップシャドウ付き）
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1.5;
+
+    // 時計全体のサイズ(r)に応じて数字のフォントサイズを動的に調整
+    const fontSize = Math.max(12, Math.round(r * 0.125));
+    const family = opts.fontFamily || '"Arial Rounded MT Bold", "Nunito", "Segoe UI Rounded", "Helvetica Neue", sans-serif';
+    ctx.font = `bold ${fontSize}px ${family}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (let i = 0; i < 12; i++) {
+      const ang = (i * Math.PI) / 6 - Math.PI / 2;
       const x = cx + Math.cos(ang) * ringR;
       const y = cy + Math.sin(ang) * ringR;
 
-      if (circleIdx.has(i)) {
-        ctx.fillStyle = colorAt(x, y, basePaint);
-        ctx.beginPath();
-        ctx.arc(Math.round(x), Math.round(y), dotR, 0, Math.PI*2);
-        ctx.fill();
-      } else {
-        ctx.save();
-        ctx.fillStyle = colorAt(x, y, basePaint);
-        ctx.translate(x, y);
-        ctx.rotate(ang);
-        ctx.fillRect(-rectW/2, -rectH/2, rectW, rectH);
-        ctx.restore();
-      }
+      // i=0 の時は 12 に、それ以外は i そのままを数字にします
+      const numStr = String(i === 0 ? 12 : i);
+
+      ctx.fillStyle = colorAt(x, y, basePaint);
+      ctx.fillText(numStr, x, y);
     }
     ctx.restore();
 
@@ -110,12 +124,65 @@
     const min = now.getMinutes() + sec/60;
     const hr  = (now.getHours()%12) + min/60;
 
-    function drawStick(angle, length, thickness, color) {
+    // 3. 先細り（テーパード）形状の時針・分針用関数
+    function drawTaperedHand(angle, length, baseWidth, tipWidth, color) {
       ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 1.5;
+      ctx.shadowOffsetY = 2.5;
+
       ctx.translate(cx, cy);
       ctx.rotate(angle);
       ctx.fillStyle = color;
-      ctx.fillRect(0, -thickness/2, length, thickness);
+
+      // 後方にわずかに突き出すことで立体感を出す
+      const backLength = length * 0.12; 
+      ctx.beginPath();
+      ctx.moveTo(-backLength, -baseWidth / 2);
+      ctx.lineTo(length, -tipWidth / 2);
+      ctx.lineTo(length, tipWidth / 2);
+      ctx.lineTo(-backLength, baseWidth / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 4. カウンターウェイト付きの秒針用関数
+    function drawSecondHand(angle, length, thickness, color) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetX = 1.5;
+      ctx.shadowOffsetY = 2.5;
+
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+
+      // メイン秒針
+      ctx.beginPath();
+      ctx.moveTo(0, -thickness / 2);
+      ctx.lineTo(length, -thickness / 4);
+      ctx.lineTo(length, thickness / 4);
+      ctx.lineTo(0, thickness / 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // カウンターウェイト
+      const backLength = length * 0.25;
+      ctx.beginPath();
+      ctx.moveTo(0, -thickness);
+      ctx.lineTo(-backLength, -thickness / 2);
+      ctx.lineTo(-backLength, thickness / 2);
+      ctx.lineTo(0, thickness);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(-backLength, 0, Math.max(3, thickness * 2), 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.restore();
     }
 
@@ -124,7 +191,7 @@
     const secAng  = (sec * Math.PI)/30 - Math.PI/2;
 
     const hourLen = r * 0.50, hourTh = Math.max(6, Math.round(r * 0.05));
-    const minLen  = r * 0.78, minTh  = Math.max(4, Math.round(r * 0.02));
+    const minLen  = r * 0.78, minTh  = Math.max(4, Math.round(r * 0.022));
     const secLen  = r * 0.82, secTh  = Math.max(2, Math.round(r * 0.0035));
 
     const hourTipX = cx + Math.cos(hourAng) * hourLen;
@@ -134,13 +201,33 @@
     const secTipX = cx + Math.cos(secAng) * secLen;
     const secTipY = cy + Math.sin(secAng) * secLen;
 
-    drawStick(hourAng, hourLen, hourTh, colorAt(hourTipX, hourTipY, basePaint));
-    drawStick(minAng,  minLen,  minTh,  colorAt(minTipX, minTipY, basePaint));
-    drawStick(secAng,  secLen,  secTh,  colorAt(secTipX, secTipY, basePaint));
+    // 時針・分針・秒針の描画
+    drawTaperedHand(hourAng, hourLen, hourTh, Math.max(2, Math.round(hourTh * 0.35)), colorAt(hourTipX, hourTipY, basePaint));
+    drawTaperedHand(minAng,  minLen,  minTh,  Math.max(1.5, Math.round(minTh * 0.35)), colorAt(minTipX, minTipY, basePaint));
+    drawSecondHand(secAng,  secLen,  secTh,  colorAt(secTipX, secTipY, basePaint));
 
+    // 5. 真ん中の円（センターキャップ、立体的に配置）
+    const centerR = Math.max(4, Math.round(r * 0.042));
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+    
+    // ベース円
     ctx.fillStyle = colorAt(cx, cy, basePaint);
     ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(4, Math.round(r * 0.04)), 0, Math.PI*2);
+    ctx.arc(cx, cy, centerR, 0, Math.PI * 2);
     ctx.fill();
+    
+    // 内側の小円（ピボット風の金属感装飾）
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#ffffff00';
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.arc(cx, cy, centerR * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
   };
 })();

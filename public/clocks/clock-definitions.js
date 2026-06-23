@@ -41,7 +41,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "card", "font", "size"],
-      defaultSurface: "#667f8a",
+      defaultSurface: "#b3b3b3a4",
       optionMap: { colon: "circleDigitColor", card: "cardColor" },
       defaultSizeScale: 0.55,
       centerZoom: true,
