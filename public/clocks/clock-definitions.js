@@ -8,7 +8,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "font", "size"],
-      defaultSizeScale: 0.75,
+      defaultSizeScale: 1.55,
       centerZoom: true,
     },
     {

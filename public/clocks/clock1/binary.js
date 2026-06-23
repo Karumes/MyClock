@@ -10,8 +10,9 @@
     return Array.from({ length: 4 }, () => (Math.random() * 10 - 5) * Math.PI / 180);
   }
 
-  function easeOutCubic(t) {
-    return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
+  // 【修正】より滑らかに減速する「easeOutQuart」に変更
+  function easeOutQuart(t) {
+    return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 4);
   }
 
   function parseColor(color) {
@@ -49,8 +50,7 @@
     return typeof color === "string" && color.trim() ? color : fallback;
   }
 
-  // 単一スロット（数字）を描画する（アニメーション対応）
-  function renderSlot(ctx, index, char, anim, x, y, fontSpec, fontSize, nowMs) {
+  function renderSlot(ctx, index, char, anim, x, y, fontSpec, viewH, nowMs) {
     ctx.save();
     ctx.font = fontSpec;
     ctx.textAlign = "center";
@@ -58,22 +58,23 @@
 
     if (anim) {
       const t = Math.min(1, (nowMs - anim.startedAt) / anim.duration);
-      const eased = easeOutCubic(t);
-      const travel = fontSize * 1.45;
+      const eased = easeOutQuart(t); // 新しいイージングを適用
+      
+      const travel = viewH * 0.75; 
 
-      // 退場する数字
+      // 退場する数字（フェードアウトを滑らかに）
       ctx.save();
       ctx.translate(x, y + eased * travel);
       ctx.rotate(state.rotations[index]);
-      ctx.globalAlpha = 1 - eased * 0.2;
+      ctx.globalAlpha = Math.max(0, Math.min(1, 1 - eased)); 
       ctx.fillText(anim.from, 0, 0);
       ctx.restore();
 
-      // 入場する数字
+      // 入場する数字（フェードインを滑らかに）
       ctx.save();
       ctx.translate(x, y - travel + eased * travel);
       ctx.rotate(state.rotations[index]);
-      ctx.globalAlpha = 0.25 + eased * 0.75;
+      ctx.globalAlpha = Math.max(0, Math.min(1, eased));
       ctx.fillText(anim.to, 0, 0);
       ctx.restore();
 
@@ -82,7 +83,6 @@
         state.anims[index] = null;
       }
     } else {
-      // 静止状態
       ctx.translate(x, y);
       ctx.rotate(state.rotations[index]);
       ctx.fillText(char, 0, 0);
@@ -120,7 +120,7 @@
           from: state.chars[index],
           to: ch,
           startedAt: nowMs,
-          duration: 620,
+          duration: 650, // 動的な緩急が映えるよう、少しだけ時間を最適化（620ms -> 650ms）
         };
       }
     });
@@ -129,9 +129,8 @@
     const weight = 850;
     const primary = safeColor(paint, "#69f7ff");
     
-    // 左から2番目と一番右（スロット1, 3）の明るさ調整
     const secondary = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(primary) ? lightenHex(primary, 0.55) : primary;
-    const colonColor = safeColor(opts.colonColor, "rgba(255,255,255,0.72)");
+    const colonColor = safeColor(opts.colonColor, "rgba(255,255,255,1.0)");
     const margin = Math.max(12, Math.floor(Math.min(w, h) * 0.035));
     const usableW = w - margin * 2;
     const usableH = h - margin * 2;
@@ -168,9 +167,8 @@
 
     const slotColors = [primary, secondary, primary, secondary];
     
-    // 【調整】左右それぞれの「重なり部分」の超明るい色
     const blend01 = lightenHex(slotColors[1], 0.85);
-    const blend23 = lightenHex(slotColors[3], 0.85); // 右側も左と同じく明るい発光色に設定
+    const blend23 = lightenHex(slotColors[3], 0.85);
 
     const bw = w * dpr;
     const bh = h * dpr;
@@ -188,12 +186,12 @@
     const lctx = leftLayer.getContext("2d");
 
     lctx.fillStyle = "#ffffff";
-    renderSlot(lctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(lctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
 
     lctx.save();
     lctx.globalCompositeOperation = "source-in";
     lctx.fillStyle = blend01;
-    renderSlot(lctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(lctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
     lctx.restore();
 
     const leftBaseLayer = document.createElement("canvas");
@@ -202,9 +200,9 @@
     const lbctx = leftBaseLayer.getContext("2d");
     
     lbctx.fillStyle = slotColors[0];
-    renderSlot(lbctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(lbctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
     lbctx.fillStyle = slotColors[1];
-    renderSlot(lbctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(lbctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
 
     lctx.save();
     lctx.globalCompositeOperation = "destination-over";
@@ -213,21 +211,19 @@
 
     mctx.drawImage(leftLayer, 0, 0);
 
-    // --- 2. 右側2つの数字（スロット2, 3）の合成処理（新規追加） ---
+    // --- 2. 右側2つの数字（スロット2, 3）の合成処理 ---
     const rightLayer = document.createElement("canvas");
     rightLayer.width = bw;
     rightLayer.height = bh;
     const rctx = rightLayer.getContext("2d");
 
-    // スロット2の形状を書き込む
     rctx.fillStyle = "#ffffff";
-    renderSlot(rctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(rctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
 
-    // スロット3の形状を「重なった部分だけ」抽出して blend23 で塗る
     rctx.save();
     rctx.globalCompositeOperation = "source-in";
     rctx.fillStyle = blend23;
-    renderSlot(rctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(rctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
     rctx.restore();
 
     const rightBaseLayer = document.createElement("canvas");
@@ -236,30 +232,28 @@
     const rbctx = rightBaseLayer.getContext("2d");
     
     rbctx.fillStyle = slotColors[2];
-    renderSlot(rbctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(rbctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
     rbctx.fillStyle = slotColors[3];
-    renderSlot(rbctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    renderSlot(rbctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
 
-    // 通常文字レイヤーの上に重なりハイライトを合成
     rctx.save();
     rctx.globalCompositeOperation = "destination-over";
     rctx.drawImage(rightBaseLayer, 0, 0);
-    rctx.restore();
+    lctx.restore();
 
     mctx.drawImage(rightLayer, 0, 0);
 
-    // メインキャンバスへ高品質転記
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(mainLayer, 0, 0, w, h);
 
-    // コロンの描画
+    // --- 3. コロンの描画 ---
     ctx.font = `${weight} ${fontSize}px ${family}`;
     const cx = (positions[1] + positions[2]) / 2;
     const dotR = Math.max(6, fontSize * 0.07);
     ctx.save();
     ctx.fillStyle = colonColor;
-    ctx.globalAlpha = 0.78;
+    ctx.globalAlpha = 1.0;
     ctx.beginPath();
     ctx.arc(cx, centerY - fontSize * 0.16, dotR, 0, Math.PI * 2);
     ctx.fill();
