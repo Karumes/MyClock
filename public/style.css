@@ -98,10 +98,39 @@ button {
 }
 
 .brand-mark {
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font-weight: 700;
+  background: transparent !important; /* 背景を完全に透明に */
+  border: none !important;             /* 枠線を消す */
+  padding: 0 !important;              /* 内側の余白をゼロに */
+  height: 54px;                       /* ヘッダーに合わせる高さ */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  box-shadow: none !important;        /* 影を消す */
+  backdrop-filter: none !important;   /* 後ろのぼかし効果を消す */
+  -webkit-backdrop-filter: none !important;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+/* ボタンの中に入れるロゴ画像のサイズ指定 */
+.brand-mark img {
+  height: 100% !important;    /* ボタンの高さ（上の54px）いっぱいに画像を広げる */
+  width: auto !important;     /* 横幅は比率を崩さず自動調整 */
+  max-width: 180px;           /* 2. 横長ロゴの場合、ここで最大横幅を制限（必要に応じて調整） */
+  object-fit: contain;
+}
+
+.brand-mark:hover {
+  transform: translateY(0) !important; /* 上にひょこっと浮き上がるのを防ぐ */
+  background: transparent !important;   /* 背景が白くなるのを完全に防す */
+  box-shadow: none !important;         /* 光る影を出さない */
+  opacity: 0.8;                        /* ほんのり透明にする */
+}
+
+/* ロゴボタンをクリックした瞬間、少しだけ小さく凹む（クリック感） */
+.brand-mark:active {
+  transform: scale(0.96) !important;
 }
 
 .mode-tabs {
