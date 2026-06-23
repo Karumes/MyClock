@@ -262,8 +262,6 @@ window.renderClock5=function(
   const secondary =
     lighten(primary,0.55);
 
-
-
   let fontSize =
     Math.min(
       h*0.75,
@@ -271,16 +269,10 @@ window.renderClock5=function(
       size*1.35
     );
 
-
   fontSize=Math.floor(fontSize);
-
-
 
   const font =
     `${weight} ${fontSize}px ${family}`;
-
-
-
   ctx.font=font;
 
 
@@ -291,7 +283,7 @@ window.renderClock5=function(
 
   const gap=fontSize*0.18;
 
-  const overlap=fontSize*0.12;
+  const overlap=fontSize*0.18;
 
 
   const total =
@@ -310,7 +302,6 @@ window.renderClock5=function(
 
 
   const positions=[];
-
 
   for(let i=0;i<4;i++){
 
