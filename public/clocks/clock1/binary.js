@@ -244,10 +244,10 @@ window.renderClock5=function(
   });
 
 
-
   const family =
+    (typeof fontFamilies !== "undefined" && fontFamilies[opts.font]) ||
     opts.fontFamily ||
-    '"Arial Rounded MT Bold","Nunito","Segoe UI Rounded",sans-serif';
+    '"Fredoka","M PLUS Rounded 1c","Nunito",sans-serif';
 
 
   const weight=850;
@@ -394,7 +394,8 @@ window.renderClock5=function(
     }
   }
 
-  const overlapColor = lighten(primary, 0.8);
+  // 💡 【重要修正】左側の重なりも、右側と同じ「一番明るい色（0.85）」で統一しました
+  const unifiedOverlapColor = lighten(primary, 0.85);
 
   function drawOverlap(idxA, idxB, overlapKey) {
     const overlap = getOffscreen(overlapKey, w, h, ratio);
@@ -407,12 +408,13 @@ window.renderClock5=function(
     oCtx.globalCompositeOperation = "source-in";
     oCtx.drawImage(charOffscreens[idxB].canvas, 0, 0);
 
-    oCtx.fillStyle = overlapColor;
+    oCtx.fillStyle = unifiedOverlapColor;
     oCtx.fillRect(0, 0, Math.round(w * ratio), Math.round(h * ratio));
 
     return overlap.canvas;
   }
 
+  // 左右どちらの重なりパーツにも、統一された超高輝度カラーを適用
   const overlap01 = drawOverlap(0, 1, "overlap01");
   const overlap23 = drawOverlap(2, 3, "overlap23");
 
@@ -438,11 +440,10 @@ window.renderClock5=function(
 
   ctx.beginPath();
 
-  // コロン（：）の大きさを調整しました
   const r=
     Math.max(
-      7,             // 最低サイズを5から7に変更
-      fontSize*0.08  // 比率を0.06から0.08に変更して大きく
+      7,             
+      fontSize*0.08  
     );
 
 

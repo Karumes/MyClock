@@ -4,7 +4,7 @@
       name: "Binary",
       renderer: "renderClock5",
       size: 240,
-      defaultAccent: "#69f7ff",
+      defaultAccent: "#2568f8",
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "font", "size"],

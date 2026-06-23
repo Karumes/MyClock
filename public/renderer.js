@@ -1,5 +1,5 @@
 const fontFamilies = {
-  rounded: '"Nunito"',
+  rounded: '"Quicksand"',
   modern: '"Segoe UI"',
   mono: '"Arial Narrow"',
   condensed: '"Roboto Condensed"',
