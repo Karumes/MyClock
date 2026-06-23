@@ -36,7 +36,7 @@
     const startY = cy - panelH / 2;
 
     const weight = 760;
-    const family = '"Arial Rounded MT Bold", "Nunito", "Segoe UI", system-ui, sans-serif';
+    const family = '"Segoe UI"';
     const offset = Math.round(panelH * 0.145);
     const globalDrop = Math.round(panelH * 0.085);
     

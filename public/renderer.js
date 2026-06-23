@@ -1,9 +1,9 @@
 const fontFamilies = {
-  rounded: '"Arial Rounded MT Bold", "Nunito", "Avenir Next Rounded", "Segoe UI Rounded", "Segoe UI", sans-serif',
-  modern: '"SF Pro Display", "Inter", "Segoe UI", sans-serif',
-  mono: '"Cascadia Code", "JetBrains Mono", "SFMono-Regular", monospace',
-  condensed: '"Roboto Condensed", "Oswald", "Arial Narrow", sans-serif',
-  serif: '"Georgia", "Times New Roman", serif',
+  rounded: '"Nunito"',
+  modern: '"Segoe UI"',
+  mono: '"Arial Narrow"',
+  condensed: '"Roboto Condensed"',
+  serif: '"Georgia"',
 };
 
 const colorPresets = {
