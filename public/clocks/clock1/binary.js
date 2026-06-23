@@ -6,6 +6,31 @@
     anims: [null, null, null, null],
   };
 
+  const offscreenCache = {};
+
+  function getOffscreen(key, w, h, ratio) {
+    if (!offscreenCache[key]) {
+      const canvas = document.createElement("canvas");
+      offscreenCache[key] = canvas;
+    }
+    const canvas = offscreenCache[key];
+    const physicalWidth = Math.round(w * ratio);
+    const physicalHeight = Math.round(h * ratio);
+
+    if (canvas.width !== physicalWidth || canvas.height !== physicalHeight) {
+      canvas.width = physicalWidth;
+      canvas.height = physicalHeight;
+    }
+    const ctx = canvas.getContext("2d");
+    ctx.globalCompositeOperation = "source-over";
+    ctx.clearRect(0, 0, physicalWidth, physicalHeight);
+    
+    // スケールを適用して論理座標で描画できるようにする
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    return { canvas, ctx };
+  }
+
   function easeOutQuart(t) {
     return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 4);
   }
@@ -311,13 +336,18 @@ window.renderClock5=function(
   ];
 
 
+  // -------------------------------------------------------------
+  // 画質改善のための修正箇所ここから
+  // -------------------------------------------------------------
 
+  // 1. デバイス比またはキャンバス比から高解像度の比率（ratio）を取得します
+  const ratio = Math.max(window.devicePixelRatio || 1, ctx.canvas.width / w);
+
+  // 2. まず数字本体を【メインのCanvas】にテキストとして直接描画します（本来のクッキリした画質を維持）
   for(let i=0;i<4;i++){
-
     if(state.anims[i]){
-
       drawAnimatedDigit(
-        ctx,
+        ctx, // メインのctxに直接描画
         i,
         positions[i],
         y,
@@ -327,12 +357,10 @@ window.renderClock5=function(
         h,
         nowMs
       );
-
     }
     else{
-
       drawDigit(
-        ctx,
+        ctx, // メインのctxに直接描画
         positions[i],
         y,
         state.chars[i],
@@ -340,11 +368,74 @@ window.renderClock5=function(
         colors[i],
         font
       );
-
     }
-
   }
 
+  // 3. 重なり部分を計算するためだけに一時的にオフスクリーンキャンバスを使用します
+  const charOffscreens = [
+    getOffscreen("char0", w, h, ratio),
+    getOffscreen("char1", w, h, ratio),
+    getOffscreen("char2", w, h, ratio),
+    getOffscreen("char3", w, h, ratio)
+  ];
+
+  for(let i=0;i<4;i++){
+    const charCtx = charOffscreens[i].ctx;
+    if(state.anims[i]){
+      drawAnimatedDigit(
+        charCtx,
+        i,
+        positions[i],
+        y,
+        state.anims[i],
+        colors[i],
+        font,
+        h,
+        nowMs
+      );
+    }
+    else{
+      drawDigit(
+        charCtx,
+        positions[i],
+        y,
+        state.chars[i],
+        state.rotations[i],
+        colors[i],
+        font
+      );
+    }
+  }
+
+  const overlapColor = lighten(primary, 0.8);
+
+  function drawOverlap(idxA, idxB, overlapKey) {
+    const overlap = getOffscreen(overlapKey, w, h, ratio);
+    const oCtx = overlap.ctx;
+
+    // ピクセル等倍で合成するため、一時的にスケールを解除
+    oCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+    oCtx.drawImage(charOffscreens[idxA].canvas, 0, 0);
+    oCtx.globalCompositeOperation = "source-in";
+    oCtx.drawImage(charOffscreens[idxB].canvas, 0, 0);
+
+    oCtx.fillStyle = overlapColor;
+    oCtx.fillRect(0, 0, Math.round(w * ratio), Math.round(h * ratio));
+
+    return overlap.canvas;
+  }
+
+  const overlap01 = drawOverlap(0, 1, "overlap01");
+  const overlap23 = drawOverlap(2, 3, "overlap23");
+
+  // 4. 重なり部分（overlap01, overlap23）だけを、メインCanvasに上書きして重ねます
+  ctx.drawImage(overlap01, 0, 0, w, h);
+  ctx.drawImage(overlap23, 0, 0, w, h);
+
+  // -------------------------------------------------------------
+  // 画質改善のための修正箇所ここまで
+  // -------------------------------------------------------------
 
 
   // colon
