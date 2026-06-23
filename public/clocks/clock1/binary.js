@@ -6,260 +6,394 @@
     anims: [null, null, null, null],
   };
 
-  function randomRotations() {
-    return Array.from({ length: 4 }, () => (Math.random() * 10 - 5) * Math.PI / 180);
-  }
-
-  // 【修正】より滑らかに減速する「easeOutQuart」に変更
   function easeOutQuart(t) {
     return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 4);
   }
 
+  function randomRotations() {
+    return Array.from(
+      { length: 4 },
+      () => (Math.random() * 10 - 5) * Math.PI / 180
+    );
+  }
+
+
   function parseColor(color) {
-    if (typeof color !== "string") return { r: 105, g: 247, b: 255 };
+    if (typeof color !== "string") {
+      return {r:105,g:247,b:255};
+    }
+
     const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
-    if (hex) {
-      const raw = hex[1];
-      const full = raw.length === 3 ? raw.split("").map((ch) => ch + ch).join("") : raw;
+
+    if(hex){
+      let raw = hex[1];
+
+      if(raw.length===3){
+        raw = raw.split("").map(x=>x+x).join("");
+      }
+
       return {
-        r: parseInt(full.slice(0, 2), 16),
-        g: parseInt(full.slice(2, 4), 16),
-        b: parseInt(full.slice(4, 6), 16),
+        r:parseInt(raw.slice(0,2),16),
+        g:parseInt(raw.slice(2,4),16),
+        b:parseInt(raw.slice(4,6),16)
       };
     }
-    const rgb = /^rgba?\(([^)]+)\)$/i.exec(color.trim());
-    if (rgb) {
-      const parts = rgb[1].split(",").map((part) => Number(part.trim()));
-      return { r: parts[0] || 0, g: parts[1] || 0, b: parts[2] || 0 };
-    }
-    return { r: 105, g: 247, b: 255 };
+
+    return {r:105,g:247,b:255};
   }
 
-  function lightenColor(color, amount) {
-    const c = parseColor(color);
-    const next = (channel) => Math.min(255, Math.round(channel + (255 - channel) * amount));
-    return { r: next(c.r), g: next(c.g), b: next(c.b) };
+
+  function lighten(hex, amount){
+
+    const c=parseColor(hex);
+
+    return `rgb(
+      ${Math.round(c.r+(255-c.r)*amount)},
+      ${Math.round(c.g+(255-c.g)*amount)},
+      ${Math.round(c.b+(255-c.b)*amount)}
+    )`;
   }
 
-  function lightenHex(hex, amount) {
-    const c = lightenColor(hex, amount);
-    return `rgb(${c.r}, ${c.g}, ${c.b})`;
-  }
 
-  function safeColor(color, fallback) {
-    return typeof color === "string" && color.trim() ? color : fallback;
-  }
 
-  function renderSlot(ctx, index, char, anim, x, y, fontSpec, viewH, nowMs) {
+  function drawDigit(
+    ctx,
+    x,
+    y,
+    value,
+    rotation,
+    color,
+    font,
+    alpha=1
+  ){
+
     ctx.save();
-    ctx.font = fontSpec;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
 
-    if (anim) {
-      const t = Math.min(1, (nowMs - anim.startedAt) / anim.duration);
-      const eased = easeOutQuart(t); // 新しいイージングを適用
-      
-      const travel = viewH * 0.75; 
+    ctx.translate(x,y);
+    ctx.rotate(rotation);
 
-      // 退場する数字（フェードアウトを滑らかに）
-      ctx.save();
-      ctx.translate(x, y + eased * travel);
-      ctx.rotate(state.rotations[index]);
-      ctx.globalAlpha = Math.max(0, Math.min(1, 1 - eased)); 
-      ctx.fillText(anim.from, 0, 0);
-      ctx.restore();
+    ctx.globalAlpha=alpha;
 
-      // 入場する数字（フェードインを滑らかに）
-      ctx.save();
-      ctx.translate(x, y - travel + eased * travel);
-      ctx.rotate(state.rotations[index]);
-      ctx.globalAlpha = Math.max(0, Math.min(1, eased));
-      ctx.fillText(anim.to, 0, 0);
-      ctx.restore();
+    ctx.font=font;
+    ctx.fillStyle=color;
 
-      if (t >= 1) {
-        state.chars[index] = anim.to;
-        state.anims[index] = null;
-      }
-    } else {
-      ctx.translate(x, y);
-      ctx.rotate(state.rotations[index]);
-      ctx.fillText(char, 0, 0);
-    }
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+
+    ctx.fillText(value,0,0);
+
     ctx.restore();
   }
 
-  window.renderClock5 = function (ctx, w, h, paint, size, now, opts) {
-    now = now || new Date();
-    opts = opts || {};
-    
-    const dpr = window.devicePixelRatio || 1;
-    ctx.clearRect(0, 0, w, h);
 
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
-    const chars = [hh[0], hh[1], mm[0], mm[1]];
-    const minuteKey = `${hh}:${mm}`;
-    const nowMs = now.getTime();
 
-    if (!state.chars) {
-      state.chars = chars.slice();
-      state.minuteKey = minuteKey;
-      state.rotations = randomRotations();
+  function drawAnimatedDigit(
+    ctx,
+    index,
+    x,
+    y,
+    anim,
+    color,
+    font,
+    height,
+    now
+  ){
+
+    const progress=Math.min(
+      1,
+      (now-anim.startedAt)/650
+    );
+
+
+    const t=easeOutQuart(progress);
+
+
+    const distance=height*0.75;
+
+
+    // old
+    drawDigit(
+      ctx,
+      x,
+      y+t*distance,
+      anim.from,
+      state.rotations[index],
+      color,
+      font,
+      1-t
+    );
+
+
+    // new
+    drawDigit(
+      ctx,
+      x,
+      y-distance+t*distance,
+      anim.to,
+      state.rotations[index],
+      color,
+      font,
+      t
+    );
+
+
+    if(progress>=1){
+      state.chars[index]=anim.to;
+      state.anims[index]=null;
     }
 
-    if (state.minuteKey !== minuteKey) {
-      state.minuteKey = minuteKey;
-      state.rotations = randomRotations();
+  }
+
+
+
+
+window.renderClock5=function(
+  ctx,
+  w,
+  h,
+  paint,
+  size,
+  now,
+  opts
+){
+
+  now=now||new Date();
+  opts=opts||{};
+
+
+  ctx.clearRect(0,0,w,h);
+
+
+
+  const hh=String(now.getHours()).padStart(2,"0");
+  const mm=String(now.getMinutes()).padStart(2,"0");
+
+  const chars=[
+    hh[0],
+    hh[1],
+    mm[0],
+    mm[1]
+  ];
+
+
+  const minuteKey=`${hh}:${mm}`;
+
+  const nowMs=now.getTime();
+
+
+
+  if(!state.chars){
+
+    state.chars=chars.slice();
+    state.minuteKey=minuteKey;
+    state.rotations=randomRotations();
+
+  }
+
+
+
+  if(state.minuteKey!==minuteKey){
+
+    state.minuteKey=minuteKey;
+    state.rotations=randomRotations();
+
+  }
+
+
+
+  chars.forEach((c,i)=>{
+
+    if(
+      state.chars[i]!==c &&
+      !state.anims[i]
+    ){
+
+      state.anims[i]={
+        from:state.chars[i],
+        to:c,
+        startedAt:nowMs
+      };
+
     }
 
-    chars.forEach((ch, index) => {
-      if (state.chars[index] !== ch && !state.anims[index]) {
-        state.anims[index] = {
-          from: state.chars[index],
-          to: ch,
-          startedAt: nowMs,
-          duration: 650, // 動的な緩急が映えるよう、少しだけ時間を最適化（620ms -> 650ms）
-        };
-      }
-    });
+  });
 
-    const family = opts.fontFamily || '"Arial Rounded MT Bold", "Nunito", "Segoe UI Rounded", sans-serif';
-    const weight = 850;
-    const primary = safeColor(paint, "#69f7ff");
-    
-    const secondary = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(primary) ? lightenHex(primary, 0.55) : primary;
-    const colonColor = safeColor(opts.colonColor, "rgba(255,255,255,1.0)");
-    const margin = Math.max(12, Math.floor(Math.min(w, h) * 0.035));
-    const usableW = w - margin * 2;
-    const usableH = h - margin * 2;
-    let fontSize = Math.floor(Math.min(usableH * 0.9, usableW * 0.32, size * 1.35));
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
 
-    function measure(fs) {
-      ctx.font = `${weight} ${fs}px ${family}`;
-      const widths = chars.map((ch) => ctx.measureText(ch).width);
-      const avg = widths.reduce((sum, value) => sum + value, 0) / widths.length;
-      const overlap = avg * 0.3;
-      const groupGap = fs * 0.18;
-      const total = widths.reduce((sum, value) => sum + value, 0) - overlap * 3 + groupGap;
-      return { widths, overlap, groupGap, total };
+  const family =
+    opts.fontFamily ||
+    '"Arial Rounded MT Bold","Nunito","Segoe UI Rounded",sans-serif';
+
+
+  const weight=850;
+
+
+  const primary =
+    typeof paint==="string"
+    ? paint
+    : "#69f7ff";
+
+
+  const secondary =
+    lighten(primary,0.55);
+
+
+
+  let fontSize =
+    Math.min(
+      h*0.75,
+      w*0.22,
+      size*1.35
+    );
+
+
+  fontSize=Math.floor(fontSize);
+
+
+
+  const font =
+    `${weight} ${fontSize}px ${family}`;
+
+
+
+  ctx.font=font;
+
+
+  const widths=chars.map(
+    c=>ctx.measureText(c).width
+  );
+
+
+  const gap=fontSize*0.18;
+
+  const overlap=fontSize*0.12;
+
+
+  const total =
+    widths[0]+widths[1]+
+    widths[2]+widths[3]
+    - overlap*3
+    + gap;
+
+
+
+  let x=(w-total)/2;
+
+
+  const y=h/2;
+
+
+
+  const positions=[];
+
+
+  for(let i=0;i<4;i++){
+
+    positions[i]=
+      x+widths[i]/2;
+
+    x+=
+      widths[i]
+      -overlap;
+
+    if(i===1)
+      x+=gap;
+
+  }
+
+
+
+  const colors=[
+    primary,
+    secondary,
+    primary,
+    secondary
+  ];
+
+
+
+  for(let i=0;i<4;i++){
+
+    if(state.anims[i]){
+
+      drawAnimatedDigit(
+        ctx,
+        i,
+        positions[i],
+        y,
+        state.anims[i],
+        colors[i],
+        font,
+        h,
+        nowMs
+      );
+
+    }
+    else{
+
+      drawDigit(
+        ctx,
+        positions[i],
+        y,
+        state.chars[i],
+        state.rotations[i],
+        colors[i],
+        font
+      );
+
     }
 
-    let metrics = measure(fontSize);
-    while ((metrics.total > usableW || fontSize * 1.08 > usableH) && fontSize > 20) {
-      fontSize -= 1;
-      metrics = measure(fontSize);
-    }
+  }
 
-    const startX = (w - metrics.total) / 2;
-    const centerY = h / 2;
-    const positions = [];
-    let cursor = startX;
-    for (let i = 0; i < chars.length; i += 1) {
-      const width = metrics.widths[i];
-      positions[i] = cursor + width / 2;
-      cursor += width - metrics.overlap + (i === 1 ? metrics.groupGap : 0);
-    }
 
-    const slotColors = [primary, secondary, primary, secondary];
-    
-    const blend01 = lightenHex(slotColors[1], 0.85);
-    const blend23 = lightenHex(slotColors[3], 0.85);
 
-    const bw = w * dpr;
-    const bh = h * dpr;
-    const fontSpecDpr = `${weight} ${fontSize * dpr}px ${family}`;
+  // colon
 
-    const mainLayer = document.createElement("canvas");
-    mainLayer.width = bw;
-    mainLayer.height = bh;
-    const mctx = mainLayer.getContext("2d");
+  const cx=
+    (positions[1]+positions[2])/2;
 
-    // --- 1. 左側2つの数字（スロット0, 1）の合成処理 ---
-    const leftLayer = document.createElement("canvas");
-    leftLayer.width = bw;
-    leftLayer.height = bh;
-    const lctx = leftLayer.getContext("2d");
 
-    lctx.fillStyle = "#ffffff";
-    renderSlot(lctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
+  ctx.save();
 
-    lctx.save();
-    lctx.globalCompositeOperation = "source-in";
-    lctx.fillStyle = blend01;
-    renderSlot(lctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
-    lctx.restore();
+  ctx.fillStyle=
+    opts.colonColor ||
+    "white";
 
-    const leftBaseLayer = document.createElement("canvas");
-    leftBaseLayer.width = bw;
-    leftBaseLayer.height = bh;
-    const lbctx = leftBaseLayer.getContext("2d");
-    
-    lbctx.fillStyle = slotColors[0];
-    renderSlot(lbctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
-    lbctx.fillStyle = slotColors[1];
-    renderSlot(lbctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
+  ctx.globalAlpha = 0.85;
 
-    lctx.save();
-    lctx.globalCompositeOperation = "destination-over";
-    lctx.drawImage(leftBaseLayer, 0, 0);
-    lctx.restore();
 
-    mctx.drawImage(leftLayer, 0, 0);
+  ctx.beginPath();
 
-    // --- 2. 右側2つの数字（スロット2, 3）の合成処理 ---
-    const rightLayer = document.createElement("canvas");
-    rightLayer.width = bw;
-    rightLayer.height = bh;
-    const rctx = rightLayer.getContext("2d");
+  const r=
+    Math.max(
+      5,
+      fontSize*0.06
+    );
 
-    rctx.fillStyle = "#ffffff";
-    renderSlot(rctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
 
-    rctx.save();
-    rctx.globalCompositeOperation = "source-in";
-    rctx.fillStyle = blend23;
-    renderSlot(rctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
-    rctx.restore();
+  ctx.arc(
+    cx,
+    y-fontSize*0.18,
+    r,
+    0,
+    Math.PI*2
+  );
 
-    const rightBaseLayer = document.createElement("canvas");
-    rightBaseLayer.width = bw;
-    rightBaseLayer.height = bh;
-    const rbctx = rightBaseLayer.getContext("2d");
-    
-    rbctx.fillStyle = slotColors[2];
-    renderSlot(rbctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
-    rbctx.fillStyle = slotColors[3];
-    renderSlot(rbctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, bh, nowMs);
+  ctx.arc(
+    cx,
+    y+fontSize*0.18,
+    r,
+    0,
+    Math.PI*2
+  );
 
-    rctx.save();
-    rctx.globalCompositeOperation = "destination-over";
-    rctx.drawImage(rightBaseLayer, 0, 0);
-    lctx.restore();
 
-    mctx.drawImage(rightLayer, 0, 0);
+  ctx.fill();
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(mainLayer, 0, 0, w, h);
+  ctx.restore();
 
-    // --- 3. コロンの描画 ---
-    ctx.font = `${weight} ${fontSize}px ${family}`;
-    const cx = (positions[1] + positions[2]) / 2;
-    const dotR = Math.max(6, fontSize * 0.07);
-    ctx.save();
-    ctx.fillStyle = colonColor;
-    ctx.globalAlpha = 1.0;
-    ctx.beginPath();
-    ctx.arc(cx, centerY - fontSize * 0.16, dotR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx, centerY + fontSize * 0.16, dotR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  };
+
+};
+
+
 })();
