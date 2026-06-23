@@ -26,10 +26,14 @@
     roundRectFill(ctx, x, y, width, height, Math.floor(width * 0.08), panelColor);
   }
 
+  // 【修正】中央の線を「若干太く」調整
   function drawPanelMidline(ctx, x, y, width, height, panelColor, glassOnly) {
     ctx.save();
     ctx.strokeStyle = glassOnly ? "rgb(0, 0, 0)" : panelColor;
-    ctx.lineWidth = glassOnly ? Math.max(1, Math.floor(height * 0.009)) : Math.max(2, Math.floor(height * 0.018));
+    
+    // 細すぎず太すぎない、中間のちょうどいい存在感（高さの約1.3%）に設定
+    ctx.lineWidth = glassOnly ? Math.max(1, Math.floor(height * 0.007)) : Math.max(1.5, Math.floor(height * 0.013));
+    
     ctx.beginPath();
     ctx.moveTo(x + 1, y + height / 2);
     ctx.lineTo(x + width - 1, y + height / 2);
@@ -124,7 +128,6 @@
       visualOffset = (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
     }
     
-    // 【修正】位置を少し下にずらすため、height * 0.035 の下方向オフセットを追加
     const nudgeDown = Math.floor(height * 0.055);
     
     ctx.fillText(pairText, width / 2, actualCenterY + (visualOffset * 0.15) + nudgeDown);

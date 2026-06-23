@@ -49,80 +49,52 @@
     return typeof color === "string" && color.trim() ? color : fallback;
   }
 
-  function renderGlyphMask(ctx, text, x, y, angle, alpha, travelY) {
+  // 単一スロット（数字）を描画する（アニメーション対応）
+  function renderSlot(ctx, index, char, anim, x, y, fontSpec, fontSize, nowMs) {
     ctx.save();
-    ctx.translate(x, y + travelY);
-    ctx.rotate(angle);
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(text, 0, 0);
-    ctx.restore();
-  }
+    ctx.font = fontSpec;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-  function buildSlotMaskCanvas(w, h, font, weight, family, entries) {
-    const mask = document.createElement("canvas");
-    mask.width = w;
-    mask.height = h;
-    const mctx = mask.getContext("2d");
-    mctx.imageSmoothingEnabled = true;
-    mctx.imageSmoothingQuality = "high";
-    if ("fontKerning" in mctx) mctx.fontKerning = "normal";
-    if ("textRendering" in mctx) mctx.textRendering = "geometricPrecision";
-    mctx.textAlign = "center";
-    mctx.textBaseline = "middle";
-    mctx.font = `${weight} ${font}px ${family}`;
-    entries.forEach((entry) => {
-      renderGlyphMask(mctx, entry.text, entry.x, entry.y, entry.angle, entry.alpha, entry.travelY);
-    });
-    return mask;
-  }
+    if (anim) {
+      const t = Math.min(1, (nowMs - anim.startedAt) / anim.duration);
+      const eased = easeOutCubic(t);
+      const travel = fontSize * 1.45;
 
-  function compositeSlots(ctx, w, h, slotMasks, slotColors) {
-    const maskData = slotMasks.map((mask) => mask.getContext("2d").getImageData(0, 0, w, h).data);
-    const colors = slotColors.map(parseColor);
-    const blend01 = lightenColor(slotColors[1], 0.58);
-    const blend23 = lightenColor(slotColors[3], 0.58);
-    const output = ctx.createImageData(w, h);
-    const out = output.data;
+      // 退場する数字
+      ctx.save();
+      ctx.translate(x, y + eased * travel);
+      ctx.rotate(state.rotations[index]);
+      ctx.globalAlpha = 1 - eased * 0.2;
+      ctx.fillText(anim.from, 0, 0);
+      ctx.restore();
 
-    for (let i = 0; i < out.length; i += 4) {
-      const alphas = maskData.map((data) => data[i + 3]);
-      const active = alphas.map((alpha, index) => (alpha > 1 ? index : -1)).filter((index) => index >= 0);
-      if (!active.length) continue;
+      // 入場する数字
+      ctx.save();
+      ctx.translate(x, y - travel + eased * travel);
+      ctx.rotate(state.rotations[index]);
+      ctx.globalAlpha = 0.25 + eased * 0.75;
+      ctx.fillText(anim.to, 0, 0);
+      ctx.restore();
 
-      let color = colors[active[active.length - 1]];
-      let alpha = Math.max(...active.map((index) => alphas[index]));
-
-      const has01 = active.includes(0) && active.includes(1);
-      const has23 = active.includes(2) && active.includes(3);
-
-      if (has01 && !has23) {
-        color = blend01;
-        alpha = Math.max(alphas[0], alphas[1]);
-      } else if (has23 && !has01) {
-        color = blend23;
-        alpha = Math.max(alphas[2], alphas[3]);
-      } else if (active.length === 1) {
-        color = colors[active[0]];
-        alpha = alphas[active[0]];
-      } else {
-        const top = active[active.length - 1];
-        color = colors[top];
-        alpha = alphas[top];
+      if (t >= 1) {
+        state.chars[index] = anim.to;
+        state.anims[index] = null;
       }
-
-      out[i] = color.r;
-      out[i + 1] = color.g;
-      out[i + 2] = color.b;
-      out[i + 3] = alpha;
+    } else {
+      // 静止状態
+      ctx.translate(x, y);
+      ctx.rotate(state.rotations[index]);
+      ctx.fillText(char, 0, 0);
     }
-
-    ctx.putImageData(output, 0, 0);
+    ctx.restore();
   }
 
   window.renderClock5 = function (ctx, w, h, paint, size, now, opts) {
     now = now || new Date();
     opts = opts || {};
+    
+    const dpr = window.devicePixelRatio || 1;
     ctx.clearRect(0, 0, w, h);
 
     const hh = String(now.getHours()).padStart(2, "0");
@@ -156,7 +128,9 @@
     const family = opts.fontFamily || '"Arial Rounded MT Bold", "Nunito", "Segoe UI Rounded", sans-serif';
     const weight = 850;
     const primary = safeColor(paint, "#69f7ff");
-    const secondary = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(primary) ? lightenHex(primary, 0.34) : primary;
+    
+    // 左から2番目と一番右（スロット1, 3）の明るさ調整
+    const secondary = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(primary) ? lightenHex(primary, 0.55) : primary;
     const colonColor = safeColor(opts.colonColor, "rgba(255,255,255,0.72)");
     const margin = Math.max(12, Math.floor(Math.min(w, h) * 0.035));
     const usableW = w - margin * 2;
@@ -165,11 +139,6 @@
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.lineJoin = "round";
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    if ("fontKerning" in ctx) ctx.fontKerning = "normal";
-    if ("textRendering" in ctx) ctx.textRendering = "geometricPrecision";
 
     function measure(fs) {
       ctx.font = `${weight} ${fs}px ${family}`;
@@ -187,8 +156,6 @@
       metrics = measure(fontSize);
     }
 
-    const fontSpec = `${weight} ${fontSize}px ${family}`;
-    ctx.font = fontSpec;
     const startX = (w - metrics.total) / 2;
     const centerY = h / 2;
     const positions = [];
@@ -199,63 +166,95 @@
       cursor += width - metrics.overlap + (i === 1 ? metrics.groupGap : 0);
     }
 
-    const slotEntries = [[], [], [], []];
     const slotColors = [primary, secondary, primary, secondary];
+    
+    // 【調整】左右それぞれの「重なり部分」の超明るい色
+    const blend01 = lightenHex(slotColors[1], 0.85);
+    const blend23 = lightenHex(slotColors[3], 0.85); // 右側も左と同じく明るい発光色に設定
 
-    for (let i = 0; i < chars.length; i += 1) {
-      const anim = state.anims[i];
-      if (anim) {
-        const t = Math.min(1, (nowMs - anim.startedAt) / anim.duration);
-        const eased = easeOutCubic(t);
-        const travel = fontSize * 1.45;
-        slotEntries[i].push({
-          text: anim.from,
-          x: positions[i],
-          y: centerY,
-          angle: state.rotations[i],
-          alpha: 1 - eased * 0.2,
-          travelY: eased * travel,
-        });
-        slotEntries[i].push({
-          text: anim.to,
-          x: positions[i],
-          y: centerY,
-          angle: state.rotations[i],
-          alpha: 0.25 + eased * 0.75,
-          travelY: -travel + eased * travel,
-        });
-        if (t >= 1) {
-          state.chars[i] = anim.to;
-          state.anims[i] = null;
-        }
-      } else {
-        slotEntries[i].push({
-          text: state.chars[i],
-          x: positions[i],
-          y: centerY,
-          angle: state.rotations[i],
-          alpha: 1,
-          travelY: 0,
-        });
-      }
-    }
+    const bw = w * dpr;
+    const bh = h * dpr;
+    const fontSpecDpr = `${weight} ${fontSize * dpr}px ${family}`;
 
-    const layer = document.createElement("canvas");
-    layer.width = w;
-    layer.height = h;
-    const lctx = layer.getContext("2d");
-    lctx.textAlign = "center";
-    lctx.textBaseline = "middle";
-    lctx.font = fontSpec;
-    lctx.imageSmoothingEnabled = true;
-    lctx.imageSmoothingQuality = "high";
-    if ("fontKerning" in lctx) lctx.fontKerning = "normal";
-    if ("textRendering" in lctx) lctx.textRendering = "geometricPrecision";
+    const mainLayer = document.createElement("canvas");
+    mainLayer.width = bw;
+    mainLayer.height = bh;
+    const mctx = mainLayer.getContext("2d");
 
-    const slotMasks = slotEntries.map((entries) => buildSlotMaskCanvas(w, h, fontSize, weight, family, entries));
-    compositeSlots(lctx, w, h, slotMasks, slotColors);
-    ctx.drawImage(layer, 0, 0);
+    // --- 1. 左側2つの数字（スロット0, 1）の合成処理 ---
+    const leftLayer = document.createElement("canvas");
+    leftLayer.width = bw;
+    leftLayer.height = bh;
+    const lctx = leftLayer.getContext("2d");
 
+    lctx.fillStyle = "#ffffff";
+    renderSlot(lctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+
+    lctx.save();
+    lctx.globalCompositeOperation = "source-in";
+    lctx.fillStyle = blend01;
+    renderSlot(lctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    lctx.restore();
+
+    const leftBaseLayer = document.createElement("canvas");
+    leftBaseLayer.width = bw;
+    leftBaseLayer.height = bh;
+    const lbctx = leftBaseLayer.getContext("2d");
+    
+    lbctx.fillStyle = slotColors[0];
+    renderSlot(lbctx, 0, state.chars[0], state.anims[0], positions[0] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    lbctx.fillStyle = slotColors[1];
+    renderSlot(lbctx, 1, state.chars[1], state.anims[1], positions[1] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+
+    lctx.save();
+    lctx.globalCompositeOperation = "destination-over";
+    lctx.drawImage(leftBaseLayer, 0, 0);
+    lctx.restore();
+
+    mctx.drawImage(leftLayer, 0, 0);
+
+    // --- 2. 右側2つの数字（スロット2, 3）の合成処理（新規追加） ---
+    const rightLayer = document.createElement("canvas");
+    rightLayer.width = bw;
+    rightLayer.height = bh;
+    const rctx = rightLayer.getContext("2d");
+
+    // スロット2の形状を書き込む
+    rctx.fillStyle = "#ffffff";
+    renderSlot(rctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+
+    // スロット3の形状を「重なった部分だけ」抽出して blend23 で塗る
+    rctx.save();
+    rctx.globalCompositeOperation = "source-in";
+    rctx.fillStyle = blend23;
+    renderSlot(rctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    rctx.restore();
+
+    const rightBaseLayer = document.createElement("canvas");
+    rightBaseLayer.width = bw;
+    rightBaseLayer.height = bh;
+    const rbctx = rightBaseLayer.getContext("2d");
+    
+    rbctx.fillStyle = slotColors[2];
+    renderSlot(rbctx, 2, state.chars[2], state.anims[2], positions[2] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+    rbctx.fillStyle = slotColors[3];
+    renderSlot(rbctx, 3, state.chars[3], state.anims[3], positions[3] * dpr, centerY * dpr, fontSpecDpr, fontSize * dpr, nowMs);
+
+    // 通常文字レイヤーの上に重なりハイライトを合成
+    rctx.save();
+    rctx.globalCompositeOperation = "destination-over";
+    rctx.drawImage(rightBaseLayer, 0, 0);
+    rctx.restore();
+
+    mctx.drawImage(rightLayer, 0, 0);
+
+    // メインキャンバスへ高品質転記
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(mainLayer, 0, 0, w, h);
+
+    // コロンの描画
+    ctx.font = `${weight} ${fontSize}px ${family}`;
     const cx = (positions[1] + positions[2]) / 2;
     const dotR = Math.max(6, fontSize * 0.07);
     ctx.save();
