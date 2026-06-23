@@ -19,7 +19,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "font", "size"],
-      defaultSizeScale: 0.50,
+      defaultSizeScale: 0.75,
     },
     {
       name: "Lumen",
@@ -43,7 +43,7 @@
       controls: ["bg", "primary", "colon", "card", "font", "size"],
       defaultSurface: "#b3b3b3a4",
       optionMap: { colon: "circleDigitColor", card: "cardColor" },
-      defaultSizeScale: 0.55,
+      defaultSizeScale: 0.8,
       centerZoom: true,
     },
     {
@@ -53,7 +53,7 @@
       defaultAccent: "#89ffbf",
       hasNumbers: false,
       controls: ["bg", "primary", "font", "size"],
-      defaultSizeScale: 0.55,
+      defaultSizeScale: 1.05,
     },
     {
       name: "Flip",
@@ -65,7 +65,7 @@
       controls: ["bg", "primary", "card", "font","size"],
       defaultSurface: "#000000",
       optionMap: { card: "flipBackColor" },
-      defaultSizeScale: 0.55,
+      defaultSizeScale: 1.4,
     },
     {
       name: "Neon",
@@ -75,7 +75,7 @@
       defaultBg: "#000000",
       hasNumbers: true,
       controls: ["bg", "primary", "size"],
-      defaultSizeScale: 0.95,
+      defaultSizeScale: 1.2,
       centerZoom: true,
     },
     {
@@ -86,7 +86,7 @@
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "font", "size"],
-      defaultSizeScale: 0.75,
+      defaultSizeScale: 0.85,
       centerZoom: true,
     },
   ];

@@ -52,6 +52,7 @@ const launchBtn = document.getElementById("launch-btn");
 const dashboardSettingsBtn = document.getElementById("dashboard-settings-btn");
 const previewCanvases = [];
 const renderErrors = new Set();
+let previewOffscreenCanvas = null;
 
 const revealObserver = "IntersectionObserver" in window
   ? new IntersectionObserver((entries) => {
@@ -334,21 +335,33 @@ function renderPreviews(now) {
 }
 
 function renderScaledScreenPreview(ctx, canvas, index, now) {
-  const ratio = window.innerHeight / Math.max(1, window.innerWidth);
-  const screenW = Math.max(480, Math.min(1100, Math.floor(canvas.width * 2.2)));
-  const screenH = Math.max(270, Math.floor(screenW * ratio));
-  const offscreen = document.createElement("canvas");
-  offscreen.width = screenW;
-  offscreen.height = screenH;
-  renderClock(offscreen.getContext("2d"), offscreen, index, now);
+  // 1. 実際に時計を起動したとき（mainCanvas）と1ピクセル単位で同じ解像度を取得します
+  const screenW = mainCanvas.width;
+  const screenH = mainCanvas.height;
 
+  // 2. 毎フレームのキャンバス新規作成を避け、既存のオフスクリーンキャンバスを再利用します
+  if (!previewOffscreenCanvas) {
+    previewOffscreenCanvas = document.createElement("canvas");
+  }
+  if (previewOffscreenCanvas.width !== screenW || previewOffscreenCanvas.height !== screenH) {
+    previewOffscreenCanvas.width = screenW;
+    previewOffscreenCanvas.height = screenH;
+  }
+
+  // 3. 起動時と全く同じサイズで時計を描画します（これで見た目の比率が揃います）
+  renderClock(previewOffscreenCanvas.getContext("2d"), previewOffscreenCanvas, index, now);
+
+  // 4. プレビュー用キャンバスの背景を塗りつぶします
   fillPureBlack(ctx, canvas.width, canvas.height, state.profiles[index].bgColor);
+
+  // 5. アスペクト比を保ったまま、プレビュー用キャンバスにきれいに収まるように縮小描画します
   const scale = Math.min(canvas.width / screenW, canvas.height / screenH);
   const drawW = Math.floor(screenW * scale);
   const drawH = Math.floor(screenH * scale);
   const x = Math.floor((canvas.width - drawW) / 2);
   const y = Math.floor((canvas.height - drawH) / 2);
-  ctx.drawImage(offscreen, x, y, drawW, drawH);
+  
+  ctx.drawImage(previewOffscreenCanvas, x, y, drawW, drawH);
 }
 
 function renderMain(now) {
