@@ -3,7 +3,7 @@
     {
       name: "Binary",
       renderer: "renderClock5",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock1.png",
       size: 240,
       defaultAccent: "#29adff",
       defaultFont: "rounded",
@@ -15,7 +15,7 @@
     {
       name: "Rolling",
       renderer: "renderClock6",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock2.png",
       size: 310,
       defaultAccent: "#ffffff",
       defaultFont: "modern",
@@ -26,7 +26,7 @@
     {
       name: "Lumen",
       renderer: "renderClock8",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock3.png",
       size: 120,
       defaultAccent: "#ffffff",
       defaultFont: "modern",
@@ -37,7 +37,7 @@
     {
       name: "Reel",
       renderer: "renderClock1",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock4.png",
       size: 120,
       defaultBg: "#090b10",
       defaultAccent: "#eaf6ff",
@@ -53,7 +53,7 @@
     {
       name: "Orbit",
       renderer: "renderClock2",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock5.png",
       size: 320,
       defaultAccent: "#c4d4ff",
       defaultFont: "modern",
@@ -64,7 +64,7 @@
     {
       name: "Flip",
       renderer: "renderClock3",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock6.png",
       size: 310,
       defaultAccent: "#ffffff",
       defaultFont: "modern",
@@ -77,7 +77,7 @@
     {
       name: "Neon",
       renderer: "renderClock4",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock7.png",
       size: 320,
       defaultAccent: "#ffffff",
       defaultBg: "#000000",
@@ -89,7 +89,7 @@
     {
       name: "Grid",
       renderer: "renderClock7",
-      previewImage: "Karumes Logo.png",
+      previewImage: "clock8.png",
       size: 130,
       defaultAccent: "#f8fbff",
       defaultFont: "modern",
