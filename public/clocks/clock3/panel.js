@@ -20,15 +20,15 @@
     const mm = String(now.getMinutes()).padStart(2, '0');
     const digits = [hh[0], hh[1], mm[0], mm[1]];
 
-    const sizeFactor = Math.max(0.35, size / 120);
     const cx = w / 2;
     const cy = h / 2;
     
-    // 【修正】panelH を基準に高さを決定
-    const panelH = h * sizeFactor;
+    // 【巨大化の完全解決】
+    // 画面全体の高さ(h)に依存させるのをやめ、外側から渡される絶対サイズ(size)をそのままパネルの高さの基準にします。
+    // これにより、プレビュー画面用の小さなサイズが渡されたときも、その中に綺麗に収まるようになります。
+    const panelH = size; 
     
-    // 【修正】横幅(w)に依存せず、縦幅(panelH)に対して常に「1:0.65」などの固定アスペクト比になるよう変更
-    // これにより、画面を横にストレッチしてもパネルや文字の形が崩れません
+    // 縦幅(panelH)に対して常に「1:0.62」の固定アスペクト比を維持
     const panelW = panelH * 0.62; 
     
     const totalW = panelW * 4;
@@ -40,7 +40,6 @@
     const offset = Math.round(panelH * 0.145);
     const globalDrop = Math.round(panelH * 0.085);
     
-    // fontSize の計算のベースも、横ストレッチの影響を受けないように固定化
     let fontSize = Math.max(16, Math.floor(Math.min(panelH * 1.55, panelW * 2.4)));
     const allowedH = Math.floor(panelH * 0.94);
     function measureDigitHeight(fs) {

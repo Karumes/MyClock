@@ -86,9 +86,7 @@ const fontSizeScaleInput = document.getElementById("text-size-scale");
 const panelSizeScaleInput = document.getElementById("panel-size-scale");
 const launchBtn = document.getElementById("launch-btn");
 const dashboardSettingsBtn = document.getElementById("dashboard-settings-btn");
-const previewCanvases = [];
 const renderErrors = new Set();
-let previewOffscreenCanvas = null;
 
 const revealObserver = "IntersectionObserver" in window
   ? new IntersectionObserver((entries) => {
@@ -113,16 +111,6 @@ function drawClockFallback(ctx, w, h, clockName) {
   ctx.font = `700 ${Math.max(18, Math.floor(Math.min(w, h) * 0.055))}px ${fontFamilies.modern}`;
   ctx.fillText(clockName || "Clock", w / 2, h / 2);
   ctx.restore();
-}
-
-function resizeCanvasToDisplaySize(canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(2, Math.floor(rect.width * window.devicePixelRatio));
-  const height = Math.max(2, Math.floor(rect.height * window.devicePixelRatio));
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
 }
 
 function getClockControls(index) {
@@ -154,13 +142,31 @@ function buildRendererOptions(clock, profile) {
   return options;
 }
 
+function executeRenderer(renderer, ctx, w, h, clock, profile, baseSize, sizeScale, now, options) {
+  if (typeof renderer !== "function") throw new Error("Renderer is not a function");
+
+  // 1. 物理サイズ計算（乗算）が必要な時計（Neon: renderClock4, Clock7: renderClock8）
+  //    これらは内部で baseSize を使って配置計算をしているため、scale をかけるとズレます。
+  if (clock.renderer === "renderClock5" ) {
+    renderer(ctx, w, h, profile.color, baseSize * sizeScale, now, options);
+  } 
+  // 2. それ以外の時計は、外側からのカメラズーム（scale）で綺麗に拡大する
+  else {
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(sizeScale, sizeScale);
+    ctx.translate(-w / 2, -h / 2);
+    renderer(ctx, w, h, profile.color, baseSize, now, options);
+    ctx.restore();
+  }
+}
+
 function renderClock(ctx, canvas, index, now) {
   const clock = clocks[index];
   const profile = state.profiles[index];
   const w = canvas.width;
   const h = canvas.height;
   
-  // ぼかしを完全カット
   ctx.imageSmoothingEnabled = false;
   fillPureBlack(ctx, w, h, profile.bgColor);
 
@@ -169,23 +175,18 @@ function renderClock(ctx, canvas, index, now) {
   const baseSize = clock.size * window.devicePixelRatio;
   const options = buildRendererOptions(clock, profile);
 
-  // 【最重要修正】27インチでのボケを無くすため、外側での scale() 処理を完全撤廃し、
-  // サイズ変更（sizeScale）の数値をそのまま描画エンジンにダイレクトに伝えるように変更
-  if (typeof renderer === "function") {
-    try {
-      renderer(ctx, w, h, profile.color, baseSize * sizeScale, now, options);
-    } catch (error) {
-      if (!renderErrors.has(clock.renderer)) {
-        console.error(`Failed to render ${clock.name}`, error);
-        renderErrors.add(clock.renderer);
-      }
-      drawClockFallback(ctx, w, h, clock.name);
+  try {
+    executeRenderer(renderer, ctx, w, h, clock, profile, baseSize, sizeScale, now, options);
+  } catch (error) {
+    if (!renderErrors.has(clock.renderer)) {
+      console.error(`Failed to render ${clock.name}`, error);
+      renderErrors.add(clock.renderer);
     }
-  } else {
     drawClockFallback(ctx, w, h, clock.name);
   }
 }
 
+// ★ 静止画像（img）をカード内に配置して超軽量化
 function createClockCard(clock, index) {
   const card = document.createElement("button");
   card.className = "clock-card";
@@ -193,12 +194,19 @@ function createClockCard(clock, index) {
   card.setAttribute("aria-label", `${clock.name} clock`);
   card.addEventListener("click", () => launchClock(index));
 
-  const canvas = document.createElement("canvas");
+  // Canvasを丸ごと廃止し、軽量なimgタグを作成
+  const img = document.createElement("img");
+  img.className = "clock-preview-image";
+  img.src = clock.previewImage || ""; 
+  img.alt = `${clock.name} preview`;
+  img.style.width = "100%";
+  img.style.height = "100%";
+  img.style.objectFit = "contain"; // カード内に綺麗にフィット
+  
   const shine = document.createElement("span");
   shine.className = "card-shine";
-  card.append(canvas, shine);
+  card.append(img, shine);
   clockGrid.appendChild(card);
-  previewCanvases[index] = canvas;
 
   if (revealObserver) revealObserver.observe(card);
   else requestAnimationFrame(() => card.classList.add("revealed"));
@@ -302,6 +310,12 @@ function openSettings() {
   colonInput.value = profile.colonColor;
   cardInput.value = profile.cardColor;
   fontSelect.value = profile.fontFamily;
+  
+  if (sizeScaleInput) {
+    sizeScaleInput.setAttribute("max", "10"); 
+    sizeScaleInput.setAttribute("step", "0.05");
+  }
+
   sizeScaleInput.value = profile.sizeScale;
   fontSizeScaleInput.value = profile.fontSizeScale;
   panelSizeScaleInput.value = profile.panelSizeScale;
@@ -336,42 +350,14 @@ function resizeMainCanvas() {
   mainCanvas.height = Math.floor(window.innerHeight * window.devicePixelRatio);
 }
 
-function renderPreviews(now) {
-  if (platform.classList.contains("hidden")) return;
-  previewCanvases.forEach((canvas, index) => {
-    resizeCanvasToDisplaySize(canvas);
-    const ctx = canvas.getContext("2d");
-    renderScaledScreenPreview(ctx, canvas, index, now);
-  });
-}
-
-function renderScaledScreenPreview(ctx, canvas, index, now) {
-  const screenW = canvas.width;
-  const screenH = canvas.height;
-
-  if (!previewOffscreenCanvas) {
-    previewOffscreenCanvas = document.createElement("canvas");
-  }
-  if (previewOffscreenCanvas.width !== screenW || previewOffscreenCanvas.height !== screenH) {
-    previewOffscreenCanvas.width = screenW;
-    previewOffscreenCanvas.height = screenH;
-  }
-
-  renderClock(previewOffscreenCanvas.getContext("2d"), previewOffscreenCanvas, index, now);
-
-  ctx.imageSmoothingEnabled = false;
-  fillPureBlack(ctx, canvas.width, canvas.height, state.profiles[index].bgColor);
-  ctx.drawImage(previewOffscreenCanvas, 0, 0, canvas.width, canvas.height);
-}
-
 function renderMain(now) {
   if (saver.classList.contains("hidden")) return;
   renderClock(mainCtx, mainCanvas, state.selected, now);
 }
 
+// ★ ループの最適化：プレビューの毎フレーム処理を丸ごと削除し、全画面時計のみを描画
 function loop() {
   const now = new Date();
-  renderPreviews(now);
   renderMain(now);
   requestAnimationFrame(loop);
 }
