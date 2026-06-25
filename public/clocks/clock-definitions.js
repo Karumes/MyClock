@@ -32,7 +32,7 @@
       defaultFont: "modern",
       hasNumbers: true,
       controls: ["bg", "primary", "size"],
-      defaultSizeScale: 0.55,
+      defaultSizeScale: 1.85,
     },
     {
       name: "Reel",

@@ -26,14 +26,10 @@
     roundRectFill(ctx, x, y, width, height, Math.floor(width * 0.08), panelColor);
   }
 
-  // 【修正】中央の線を「若干太く」調整
   function drawPanelMidline(ctx, x, y, width, height, panelColor, glassOnly) {
     ctx.save();
     ctx.strokeStyle = glassOnly ? "rgb(0, 0, 0)" : panelColor;
-    
-    // 細すぎず太すぎない、中間のちょうどいい存在感（高さの約1.3%）に設定
     ctx.lineWidth = glassOnly ? Math.max(1, Math.floor(height * 0.007)) : Math.max(1.5, Math.floor(height * 0.013));
-    
     ctx.beginPath();
     ctx.moveTo(x + 1, y + height / 2);
     ctx.lineTo(x + width - 1, y + height / 2);
@@ -63,7 +59,6 @@
     if (!opts || opts.fontMode !== "gradient" || !Array.isArray(opts.fontGrad)) {
       return fallback;
     }
-
     const c1 = parseHexColor(opts.fontGrad[0]);
     const c2 = parseHexColor(opts.fontGrad[1]);
     if (!c1 || !c2) return fallback;
@@ -92,23 +87,20 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  function renderPairBitmap(width, height, pairText, color, family, glassOnly, fontSizeScale) {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
+  // ★高画質化の核心：一時Canvasを作らず、メインCanvasのコンテキストに直接描画する
+  function drawRawText(ctx, x, y, width, height, pairText, color, family, glassOnly, fontSizeScale) {
+    ctx.save();
     const scale = Math.max(0.7, Math.min(1.35, Number(fontSizeScale) || 1));
-    
     let fontSize = Math.floor(height * 0.90 * scale);
 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
-    
+
     const maxTextWidth = width * 0.94;
     const maxTextHeight = height * 0.88;
-    
+
     let metrics = ctx.measureText(pairText);
     let textHeight = (metrics.actualBoundingBoxAscent || fontSize * 0.76) + (metrics.actualBoundingBoxDescent || fontSize * 0.18);
     while ((metrics.width > maxTextWidth || textHeight > maxTextHeight) && fontSize > 10) {
@@ -117,55 +109,55 @@
       metrics = ctx.measureText(pairText);
       textHeight = (metrics.actualBoundingBoxAscent || fontSize * 0.76) + (metrics.actualBoundingBoxDescent || fontSize * 0.18);
     }
+
     if (glassOnly) {
       ctx.shadowColor = "rgb(0, 0, 0)";
       ctx.shadowBlur = Math.max(10, Math.floor(height * 0.08));
     }
 
-    const actualCenterY = height / 2;
+    const actualCenterY = y + height / 2;
     let visualOffset = 0;
     if (metrics.actualBoundingBoxAscent != null && metrics.actualBoundingBoxDescent != null) {
       visualOffset = (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
     }
-    
+
     const nudgeDown = Math.floor(height * 0.055);
-    
-    ctx.fillText(pairText, width / 2, actualCenterY + (visualOffset * 0.15) + nudgeDown);
-    return canvas;
+    ctx.fillText(pairText, x + width / 2, actualCenterY + (visualOffset * 0.15) + nudgeDown);
+    ctx.restore();
   }
 
   function drawPairTileStatic(ctx, x, y, width, height, pairText, color, family, panelColor, glassOnly, fontSizeScale) {
     drawPlate(ctx, x, y, width, height, panelColor, glassOnly);
-    ctx.drawImage(renderPairBitmap(width, height, pairText, color, family, glassOnly, fontSizeScale), x, y);
+    drawRawText(ctx, x, y, width, height, pairText, color, family, glassOnly, fontSizeScale);
   }
 
   function drawPairTileAnimated(ctx, x, y, width, height, fromPair, toPair, color, progress, family, panelColor, glassOnly, fontSizeScale) {
     drawPlate(ctx, x, y, width, height, panelColor, glassOnly);
 
-    const fromBmp = renderPairBitmap(width, height, fromPair, color, family, glassOnly, fontSizeScale);
-    const toBmp = renderPairBitmap(width, height, toPair, color, family, glassOnly, fontSizeScale);
     const t = Math.max(0, Math.min(1, progress));
     const topProgress = easeInOutSine(Math.min(1, t * 2));
     const bottomProgress = easeInOutSine(Math.max(0, (t - 0.5) * 2));
     const hingeY = y + height / 2;
     const skewMax = 0.12;
 
+    // 後方（土台）の静止部分のクリッピング描画
     if (t < 0.5) {
       ctx.save();
       ctx.beginPath();
       ctx.rect(x, hingeY, width, y + height - hingeY);
       ctx.clip();
-      ctx.drawImage(fromBmp, x, y);
+      drawRawText(ctx, x, y, width, height, fromPair, color, family, glassOnly, fontSizeScale);
       ctx.restore();
     } else {
       ctx.save();
       ctx.beginPath();
       ctx.rect(x, y, width, hingeY - y);
       ctx.clip();
-      ctx.drawImage(toBmp, x, y);
+      drawRawText(ctx, x, y, width, height, toPair, color, family, glassOnly, fontSizeScale);
       ctx.restore();
     }
 
+    // 前方（パタパタ回転する側）の変形クリッピング描画
     if (t < 0.5) {
       const scaleY = Math.max(0.0001, 1 - topProgress);
       const skew = (1 - scaleY) * skewMax;
@@ -173,10 +165,14 @@
       ctx.beginPath();
       ctx.rect(x, y, width, hingeY - y);
       ctx.clip();
-      ctx.translate(0, hingeY);
+      
+      // アニメーション変形を直接メインCanvasのマトリクスに適用
+      ctx.translate(x + width / 2, hingeY);
       ctx.transform(1, 0, skew, 1, 0, 0);
       ctx.scale(1, scaleY);
-      ctx.drawImage(fromBmp, x, -hingeY + y);
+      ctx.translate(-(x + width / 2), -hingeY);
+      
+      drawRawText(ctx, x, y, width, height, fromPair, color, family, glassOnly, fontSizeScale);
       ctx.restore();
     } else {
       const scaleY = Math.max(0.0001, bottomProgress);
@@ -185,10 +181,14 @@
       ctx.beginPath();
       ctx.rect(x, hingeY, width, y + height - hingeY);
       ctx.clip();
-      ctx.translate(0, hingeY);
+      
+      // アニメーション変形を直接メインCanvasのマトリクスに適用
+      ctx.translate(x + width / 2, hingeY);
       ctx.transform(1, 0, skew, 1, 0, 0);
       ctx.scale(1, scaleY);
-      ctx.drawImage(toBmp, x, -hingeY + y);
+      ctx.translate(-(x + width / 2), -hingeY);
+      
+      drawRawText(ctx, x, y, width, height, toPair, color, family, glassOnly, fontSizeScale);
       ctx.restore();
     }
   }
