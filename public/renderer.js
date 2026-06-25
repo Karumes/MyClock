@@ -16,6 +16,7 @@ const colorPresets = {
 const clocks = window.KARUMES_CLOCKS || [];
 const launchParams = new URLSearchParams(window.location.search);
 const isClockMode = launchParams.get("mode") === "clock";
+
 const state = {
   section: "library",
   selected: 0,
@@ -31,6 +32,41 @@ const state = {
     panelSizeScale: 1,
   })),
 };
+
+const STORAGE_KEY = "karumes_saved_clock_settings";
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed.selected === "number" && parsed.selected >= 0 && parsed.selected < clocks.length) {
+        state.selected = parsed.selected;
+      }
+      if (Array.isArray(parsed.profiles)) {
+        parsed.profiles.forEach((profile, index) => {
+          if (state.profiles[index] && profile) {
+            state.profiles[index] = { ...state.profiles[index], ...profile };
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load clock settings:", error);
+  }
+}
+
+function saveSettings() {
+  try {
+    const dataToSave = {
+      selected: state.selected,
+      profiles: state.profiles,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  } catch (error) {
+    console.error("Failed to save clock settings:", error);
+  }
+}
 
 const platform = document.getElementById("platform");
 const librarySection = document.getElementById("library-section");
@@ -123,57 +159,31 @@ function renderClock(ctx, canvas, index, now) {
   const profile = state.profiles[index];
   const w = canvas.width;
   const h = canvas.height;
+  
+  // ぼかしを完全カット
+  ctx.imageSmoothingEnabled = false;
   fillPureBlack(ctx, w, h, profile.bgColor);
 
-  const layer = document.createElement("canvas");
-  layer.width = w;
-  layer.height = h;
-  const lctx = layer.getContext("2d");
   const renderer = window[clock.renderer];
   const sizeScale = Number(profile.sizeScale) || 1;
   const baseSize = clock.size * window.devicePixelRatio;
   const options = buildRendererOptions(clock, profile);
 
-  const drawRenderer = (targetCtx, renderSize) => {
-    if (typeof renderer === "function") {
-      try {
-        renderer(targetCtx, w, h, profile.color, renderSize, now, options);
-      } catch (error) {
-        if (!renderErrors.has(clock.renderer)) {
-          console.error(`Failed to render ${clock.name}`, error);
-          renderErrors.add(clock.renderer);
-        }
-        drawClockFallback(targetCtx, w, h, clock.name);
+  // 【最重要修正】27インチでのボケを無くすため、外側での scale() 処理を完全撤廃し、
+  // サイズ変更（sizeScale）の数値をそのまま描画エンジンにダイレクトに伝えるように変更
+  if (typeof renderer === "function") {
+    try {
+      renderer(ctx, w, h, profile.color, baseSize * sizeScale, now, options);
+    } catch (error) {
+      if (!renderErrors.has(clock.renderer)) {
+        console.error(`Failed to render ${clock.name}`, error);
+        renderErrors.add(clock.renderer);
       }
-      return;
+      drawClockFallback(ctx, w, h, clock.name);
     }
-
-    if (!renderErrors.has(clock.renderer)) {
-      console.error(`Missing renderer: ${clock.renderer}`);
-      renderErrors.add(clock.renderer);
-    }
-    drawClockFallback(targetCtx, w, h, clock.name);
-  };
-
-  if (clock.centerZoom) {
-    lctx.save();
-    lctx.translate(w / 2, h / 2);
-    lctx.scale(sizeScale, sizeScale);
-    lctx.translate(-w / 2, -h / 2);
-    drawRenderer(lctx, baseSize);
-    lctx.restore();
-  } else if (sizeScale < 1) {
-    lctx.save();
-    lctx.translate(w / 2, h / 2);
-    lctx.scale(sizeScale, sizeScale);
-    lctx.translate(-w / 2, -h / 2);
-    drawRenderer(lctx, baseSize);
-    lctx.restore();
   } else {
-    drawRenderer(lctx, baseSize * sizeScale);
+    drawClockFallback(ctx, w, h, clock.name);
   }
-
-  ctx.drawImage(layer, 0, 0);
 }
 
 function createClockCard(clock, index) {
@@ -213,6 +223,7 @@ function setSection(section) {
 
 function launchClock(index) {
   state.selected = index;
+  saveSettings();
   updateSelectionUI();
   platform.classList.add("hidden");
   saver.classList.remove("hidden");
@@ -335,11 +346,9 @@ function renderPreviews(now) {
 }
 
 function renderScaledScreenPreview(ctx, canvas, index, now) {
-  // 1. 実際に時計を起動したとき（mainCanvas）と1ピクセル単位で同じ解像度を取得します
-  const screenW = mainCanvas.width;
-  const screenH = mainCanvas.height;
+  const screenW = canvas.width;
+  const screenH = canvas.height;
 
-  // 2. 毎フレームのキャンバス新規作成を避け、既存のオフスクリーンキャンバスを再利用します
   if (!previewOffscreenCanvas) {
     previewOffscreenCanvas = document.createElement("canvas");
   }
@@ -348,20 +357,11 @@ function renderScaledScreenPreview(ctx, canvas, index, now) {
     previewOffscreenCanvas.height = screenH;
   }
 
-  // 3. 起動時と全く同じサイズで時計を描画します（これで見た目の比率が揃います）
   renderClock(previewOffscreenCanvas.getContext("2d"), previewOffscreenCanvas, index, now);
 
-  // 4. プレビュー用キャンバスの背景を塗りつぶします
+  ctx.imageSmoothingEnabled = false;
   fillPureBlack(ctx, canvas.width, canvas.height, state.profiles[index].bgColor);
-
-  // 5. アスペクト比を保ったまま、プレビュー用キャンバスにきれいに収まるように縮小描画します
-  const scale = Math.min(canvas.width / screenW, canvas.height / screenH);
-  const drawW = Math.floor(screenW * scale);
-  const drawH = Math.floor(screenH * scale);
-  const x = Math.floor((canvas.width - drawW) / 2);
-  const y = Math.floor((canvas.height - drawH) / 2);
-  
-  ctx.drawImage(previewOffscreenCanvas, x, y, drawW, drawH);
+  ctx.drawImage(previewOffscreenCanvas, 0, 0, canvas.width, canvas.height);
 }
 
 function renderMain(now) {
@@ -400,7 +400,11 @@ function initEvents() {
   document.getElementById("home-btn").addEventListener("click", returnHome);
   document.getElementById("settings-btn").addEventListener("click", openSettings);
   document.getElementById("close-settings").addEventListener("click", closeSettings);
-  document.getElementById("apply-btn").addEventListener("click", () => launchClock(state.selected));
+  
+  document.getElementById("apply-btn").addEventListener("click", () => {
+    saveSettings();
+    returnHome();
+  });
 
   [bgInput, fontInput, colonInput, cardInput, fontSelect, sizeScaleInput, fontSizeScaleInput, panelSizeScaleInput].forEach((input) => {
     input.addEventListener("input", updateProfileFromControls);
@@ -418,6 +422,7 @@ function initEvents() {
 }
 
 function init() {
+  loadSettings();
   buildColorSwatches();
   buildGrid();
   initEvents();

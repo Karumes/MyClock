@@ -564,34 +564,29 @@ button {
   display: none;
 }
 
+/* --- style.css の該当箇所を以下に差し替え --- */
+
 .settings-panel select {
-  min-height: 42px;
-  border: 1px solid rgba(105,247,255,0.34);
+  min-height: 38px; /* 他のボタンの高さ 38px に統一 */
+  border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 9px 42px 9px 16px;
-  background:
-    linear-gradient(135deg, rgba(105,247,255,0.18), rgba(255,79,216,0.11)),
-    linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.035)),
-    rgba(3,7,12,0.86);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.18),
-    inset 0 -10px 22px rgba(0,0,0,0.2),
-    0 8px 24px rgba(0,0,0,0.26),
-    0 0 22px rgba(105,247,255,0.12);
-  color: #f8fbff;
+  padding: 0 36px 0 16px; /* 右側の矢印スペースを確保 */
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
   cursor: pointer;
   outline: none;
   appearance: none;
   -webkit-appearance: none;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .settings-row[data-setting="font"] {
   position: relative;
   overflow: hidden;
-  border-color: rgba(105,247,255,0.18);
-  background:
-    linear-gradient(120deg, rgba(105,247,255,0.09), rgba(255,79,216,0.06)),
-    rgba(255,255,255,0.045);
+  border-color: rgba(255, 255, 255, 0.08); /* 他の設定行と同じ枠線に統一 */
+  background: rgba(255, 255, 255, 0.04);   /* 他の設定行と同じプレーンな背景に統一 */
 }
 
 .settings-row[data-setting="font"]::after {
@@ -602,33 +597,31 @@ button {
   width: 8px;
   height: 8px;
   pointer-events: none;
-  border-right: 2px solid rgba(255,255,255,0.88);
-  border-bottom: 2px solid rgba(255,255,255,0.88);
+  border-right: 2px solid rgba(255, 255, 255, 0.88);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.88);
   transform: translateY(-70%) rotate(45deg);
-  filter: drop-shadow(0 0 8px rgba(105,247,255,0.55));
+  /* ネオン発光効果（filter）を除去し、他のUIボタンと調和させました */
 }
 
 .settings-row[data-setting="font"] > span {
-  color: rgba(248,251,255,0.86);
+  color: rgba(248, 251, 255, 0.86);
   font-weight: 700;
 }
 
+/* プルダウンのホバー・フォーカス時の挙動を、他のボタン（.topbar-actions button:hover等）と共通化 */
 .settings-panel select:hover,
 .settings-panel select:focus {
-  border-color: rgba(105,247,255,0.72);
-  background:
-    linear-gradient(135deg, rgba(105,247,255,0.26), rgba(255,79,216,0.16)),
-    linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05)),
-    rgba(4,10,18,0.9);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.24),
-    0 10px 28px rgba(0,0,0,0.3),
-    0 0 30px rgba(105,247,255,0.22);
+  transform: translateY(-1px);
+  border-color: rgba(105, 247, 255, 0.52);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 28px rgba(105, 247, 255, 0.18);
+  color: #ffffff;
 }
 
+/* プルダウン展開時のメニュー項目の視認性確保 */
 .settings-panel select option {
-  color: #081018;
-  background: #f8fbff;
+  color: #f8fbff;
+  background: #11151c;
 }
 
 .settings-actions {
@@ -674,3 +667,5 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+

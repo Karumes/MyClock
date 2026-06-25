@@ -4,11 +4,11 @@
       name: "Binary",
       renderer: "renderClock5",
       size: 240,
-      defaultAccent: "#2568f8",
+      defaultAccent: "#29adff",
       defaultFont: "rounded",
       hasNumbers: true,
       controls: ["bg", "primary", "colon", "font", "size"],
-      defaultSizeScale: 1.55,
+      defaultSizeScale: 1.5,
       centerZoom: true,
     },
     {
