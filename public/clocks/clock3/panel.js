@@ -82,7 +82,7 @@
     }
 
     ctx.save();
-    ctx.strokeStyle = '#000';
+    ctx.strokeStyle = '#00000000';
     ctx.lineWidth = 0.1;
     for (let k = 1; k < 4; k++) {
       const xLine = Math.floor(startX + k * panelW) + 0.5;
