@@ -1,18 +1,59 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const fs = require("fs");
+
+const settingsPath = path.join(app.getPath("userData"), "clock-settings.json");
 
 function getLaunchMode() {
-  const args = process.argv.slice(1).map((arg) => String(arg).toLowerCase());
-  if (args.some((arg) => arg === "/s" || arg.startsWith("/s:"))) return "clock";
-  return "settings";
+  const args = process.argv.slice(1).map((arg) => String(arg).toLowerCase().trim());
+  
+  // 厳格な前方一致判定を行い、インストールパスの「Programs」などの文字列への部分一致を回避します
+  if (args.some(arg => arg === "/s" || arg.startsWith("/s:") || arg.startsWith("/s "))) {
+    return "clock";
+  }
+  if (args.some(arg => arg === "/p" || arg.startsWith("/p:") || arg.startsWith("/p "))) {
+    return "preview";
+  }
+  if (args.some(arg => arg === "/c" || arg.startsWith("/c:") || arg.startsWith("/c "))) {
+    return "settings";
+  }
+  return "settings"; // 通常起動
 }
 
+const mode = getLaunchMode();
+
+if (mode === "preview") {
+  app.quit();
+  process.exit(0);
+}
+
+ipcMain.handle("save-settings", (event, data) => {
+  try {
+    fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch (err) {
+    console.error("Failed to save settings to file:", err);
+    return false;
+  }
+});
+
+ipcMain.handle("load-settings", () => {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const rawData = fs.readFileSync(settingsPath, "utf-8");
+      return JSON.parse(rawData);
+    }
+  } catch (err) {
+    console.error("Failed to load settings from file:", err);
+  }
+  return null;
+});
+
 function createWindow() {
-  const mode = getLaunchMode();
   const isClockMode = mode === "clock";
   const win = new BrowserWindow({
-    width: isClockMode ? undefined : 800,
-    height: isClockMode ? undefined : 600,
+    width: isClockMode ? undefined : 1024,
+    height: isClockMode ? undefined : 768,
     fullscreen: isClockMode,
     frame: !isClockMode,
     alwaysOnTop: isClockMode,

@@ -33,18 +33,16 @@ const state = {
   })),
 };
 
-const STORAGE_KEY = "karumes_saved_clock_settings";
-
-function loadSettings() {
+// メインプロセスを介して物理設定ファイルから非同期で読み込む
+async function loadSettings() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = await window.electronAPI.loadSettings();
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (typeof parsed.selected === "number" && parsed.selected >= 0 && parsed.selected < clocks.length) {
-        state.selected = parsed.selected;
+      if (typeof saved.selected === "number" && saved.selected >= 0 && saved.selected < clocks.length) {
+        state.selected = saved.selected;
       }
-      if (Array.isArray(parsed.profiles)) {
-        parsed.profiles.forEach((profile, index) => {
+      if (Array.isArray(saved.profiles)) {
+        saved.profiles.forEach((profile, index) => {
           if (state.profiles[index] && profile) {
             state.profiles[index] = { ...state.profiles[index], ...profile };
           }
@@ -56,13 +54,14 @@ function loadSettings() {
   }
 }
 
-function saveSettings() {
+// メインプロセスを介して物理設定ファイルへ非同期で書き込む
+async function saveSettings() {
   try {
     const dataToSave = {
       selected: state.selected,
       profiles: state.profiles,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    await window.electronAPI.saveSettings(dataToSave);
   } catch (error) {
     console.error("Failed to save clock settings:", error);
   }
@@ -145,13 +144,9 @@ function buildRendererOptions(clock, profile) {
 function executeRenderer(renderer, ctx, w, h, clock, profile, baseSize, sizeScale, now, options) {
   if (typeof renderer !== "function") throw new Error("Renderer is not a function");
 
-  // 1. 物理サイズ計算（乗算）が必要な時計（Neon: renderClock4, Clock7: renderClock8）
-  //    これらは内部で baseSize を使って配置計算をしているため、scale をかけるとズレます。
-  if (clock.renderer === "renderClock5" ) {
+  if (clock.renderer === "renderClock5") {
     renderer(ctx, w, h, profile.color, baseSize * sizeScale, now, options);
-  } 
-  // 2. それ以外の時計は、外側からのカメラズーム（scale）で綺麗に拡大する
-  else {
+  } else {
     ctx.save();
     ctx.translate(w / 2, h / 2);
     ctx.scale(sizeScale, sizeScale);
@@ -186,7 +181,6 @@ function renderClock(ctx, canvas, index, now) {
   }
 }
 
-// ★ 静止画像（img）をカード内に配置して超軽量化
 function createClockCard(clock, index) {
   const card = document.createElement("button");
   card.className = "clock-card";
@@ -194,14 +188,13 @@ function createClockCard(clock, index) {
   card.setAttribute("aria-label", `${clock.name} clock`);
   card.addEventListener("click", () => launchClock(index));
 
-  // Canvasを丸ごと廃止し、軽量なimgタグを作成
   const img = document.createElement("img");
   img.className = "clock-preview-image";
   img.src = clock.previewImage || ""; 
   img.alt = `${clock.name} preview`;
   img.style.width = "100%";
   img.style.height = "100%";
-  img.style.objectFit = "contain"; // カード内に綺麗にフィット
+  img.style.objectFit = "contain";
   
   const shine = document.createElement("span");
   shine.className = "card-shine";
@@ -231,7 +224,7 @@ function setSection(section) {
 
 function launchClock(index) {
   state.selected = index;
-  saveSettings();
+  saveSettings(); // 設定をファイルに保存
   updateSelectionUI();
   platform.classList.add("hidden");
   saver.classList.remove("hidden");
@@ -355,7 +348,6 @@ function renderMain(now) {
   renderClock(mainCtx, mainCanvas, state.selected, now);
 }
 
-// ★ ループの最適化：プレビューの毎フレーム処理を丸ごと削除し、全画面時計のみを描画
 function loop() {
   const now = new Date();
   renderMain(now);
@@ -387,8 +379,8 @@ function initEvents() {
   document.getElementById("settings-btn").addEventListener("click", openSettings);
   document.getElementById("close-settings").addEventListener("click", closeSettings);
   
-  document.getElementById("apply-btn").addEventListener("click", () => {
-    saveSettings();
+  document.getElementById("apply-btn").addEventListener("click", async () => {
+    await saveSettings();
     returnHome();
   });
 
@@ -407,8 +399,8 @@ function initEvents() {
   });
 }
 
-function init() {
-  loadSettings();
+async function init() {
+  await loadSettings(); // 設定読み込みの完了を待機
   buildColorSwatches();
   buildGrid();
   initEvents();
