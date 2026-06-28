@@ -1,9 +1,12 @@
-const { app, BrowserWindow, ipcMain, screen } = require("electron");
+const { app, BrowserWindow, ipcMain, screen, Menu } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
 const settingsPath = path.join(app.getPath("userData"), "clock-settings.json");
 let windows = [];
+
+// アプリケーションメニューバー（File, Edit, View, Window, Help）を完全に無効化して非表示にします
+Menu.setApplicationMenu(null);
 
 function getLaunchMode() {
   const args = process.argv.slice(1).map((arg) => String(arg).toLowerCase().trim());
@@ -53,7 +56,6 @@ function createWindows() {
   const isClockMode = mode === "clock";
 
   if (isClockMode) {
-    // 接続されているすべてのモニターを取得して個々にウィンドウを生成します
     const displays = screen.getAllDisplays();
     
     displays.forEach((display) => {
@@ -84,7 +86,6 @@ function createWindows() {
 
       windows.push(win);
 
-      // いずれかの画面が閉じられたら、他のすべての画面も閉じ、アプリを終了させます
       win.on("closed", () => {
         windows.forEach((w) => {
           if (!w.isDestroyed()) {
@@ -95,7 +96,7 @@ function createWindows() {
       });
     });
   } else {
-    // 設定カスタマイズ用の単一ウィンドウ
+    // 通常の設定ウィンドウ
     const win = new BrowserWindow({
       width: 1024,
       height: 768,
