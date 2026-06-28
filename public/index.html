@@ -25,7 +25,27 @@
       <div class="hero-copy">
         <p>Clock selection platform</p>
       </div>
+      
       <div id="clock-grid" class="clock-grid" aria-label="Clock previews"></div>
+
+      <!-- ボトムエリア（プロフィール & 各種ボタン） -->
+      <footer class="library-footer">
+        <div id="author-widget" class="author-widget" title="Click to view full profile">
+          <img src="build/icon.ico" alt="Author Icon" class="author-avatar" onerror="this.src='katsu_face.png'"/>
+          <div class="author-info">
+            <span class="author-name">Katsu</span>
+            <span class="author-desc-brief">Designer & Developer of Karumes Clock</span>
+          </div>
+          <div class="author-message">
+          Karumes Clock is built by a solo developer, so your feedback really matters!<br>
+          If you have any feedback or requests, please feel free to reach out via the form!👉
+          </div>
+        </div>
+        <div class="footer-actions">
+          <button id="feedback-btn" type="button">Feedback</button>
+          <button id="history-btn" type="button">Version History</button>          
+        </div>
+      </footer>
     </section>
   </main>
 
@@ -96,6 +116,72 @@
       <button id="apply-btn" type="button">Launch</button>
     </div>
   </aside>
+
+  <!-- モーダル1: 詳細プロフィール -->
+  <div id="author-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="close-author-modal" type="button">&times;</button>
+      <div class="modal-profile">
+        <img src="build/icon.ico" alt="Author Icon" class="modal-avatar" onerror="this.src='katsu_face.png'"/>
+        <h2>Katsu</h2>
+        <p class="modal-subtitle">UI Designer & Screensaver Developer</p>
+        <hr class="modal-divider"/>
+        <p class="modal-description">
+          Hi, I am Katsu, the designer and developer behind Karumes Clock.<br/><br/>
+          I created this platform to bring highly customizable, atmospheric, and visually stunning clocks to your desktop. As a solo developer, I built every clock from scratch with smooth mathematical rendering, responsive layouts, and high-frame-rate rendering techniques.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル2: リリース履歴 (Version History) -->
+  <div id="history-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="close-history-modal" type="button">&times;</button>
+      <h2 class="modal-title">Version History</h2>
+      <hr class="modal-divider"/>
+      <div class="history-list">
+        <div class="history-item">
+          <div class="history-meta">
+            <span class="history-version">v1.0.0</span>
+            <span class="history-date">Initial Release</span>
+          </div>
+          <ul class="history-notes">
+            <ul class="history-notes">
+              <li>Launched 8 distinctive clock designs.</li>
+              <li>Implemented seamless multi-monitor support across all connected displays.</li>
+              <li>Introduced a dynamic settings menu to customize colors, surfaces, and fonts.</li>
+              <li>Provided a native Windows screensaver setup script for effortless installation.</li>
+            </ul>
+          </ul>
+        </div> 
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル3: フィードバックフォーム (Gmail自動送信) -->
+  <div id="feedback-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="close-feedback-modal" type="button">&times;</button>
+      <h2 class="modal-title">Share Your Thoughts!</h2>
+      <p class="modal-subtitle">Whether it's a feature request, a bug report, or just some love for the app, I'd love to hear from you! Your message goes straight to my inbox.</p>
+      <hr class="modal-divider"/>
+      <form id="feedback-form" class="feedback-form">
+        <div class="form-group">
+          <label for="feedback-subject">Subject</label>
+          <input type="text" id="feedback-subject" placeholder="Feature suggestion / Bug report" required />
+        </div> 
+        <div class="form-group">
+          <label for="feedback-message">Message</label>
+          <textarea id="feedback-message" rows="5" placeholder="Write your message here..." required></textarea>
+        </div>
+        <div class="form-actions">
+          <button id="submit-feedback-btn" type="submit">Send Message</button>
+        </div>
+        <div id="feedback-status" class="feedback-status"></div>
+      </form>
+    </div>
+  </div>
 
   <script src="clocks/clock-definitions.js"></script>
   <script src="clocks/clock1/binary.js"></script>

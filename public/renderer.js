@@ -165,8 +165,7 @@ function renderClock(ctx, canvas, index, now) {
   const renderer = window[clock.renderer];
   const sizeScale = Number(profile.sizeScale) || 1;
   
-  // 各クロック個別の設計サイズをベースに、現在の描画領域の高さ(h)に応じて、
-  // アスペクト比を保ったまま最適にスケールするレスポンシブスケーリングを行います。
+  // 各モニターの縦幅を基準にしたレスポンシブな基本サイズ計算
   const referenceHeight = 820;
   const baseSize = clock.size * (h / referenceHeight);
 
@@ -368,6 +367,110 @@ function handleClockModeMouseMove(event) {
   }
 }
 
+// ── 新機能: モーダルの管理とメール送信処理 ──
+
+// Web3Formsを利用したGmailへのダイレクト・非同期送信処理
+// futak1192@gmail.com への安全な送信をお約束します。
+// ※より安全に送信するために、 https://web3forms.com/ で無料発行されるアクセスキーを
+// 下記の「YOUR_ACCESS_KEY」部分に置き換えてご使用いただくこともできます。
+const WEB3FORMS_ACCESS_KEY = "5f0c4abe-c128-4c14-9add-346edee2740c"; // テスト・稼働用キー。置き換えも可能です。
+
+function initModals() {
+  const authorWidget = document.getElementById("author-widget");
+  const authorModal = document.getElementById("author-modal");
+  const closeAuthorModal = document.getElementById("close-author-modal");
+
+  const historyBtn = document.getElementById("history-btn");
+  const historyModal = document.getElementById("history-modal");
+  const closeHistoryModal = document.getElementById("close-history-modal");
+
+  const feedbackBtn = document.getElementById("feedback-btn");
+  const feedbackModal = document.getElementById("feedback-modal");
+  const closeFeedbackModal = document.getElementById("close-feedback-modal");
+  const feedbackForm = document.getElementById("feedback-form");
+  const feedbackStatus = document.getElementById("feedback-status");
+  const submitBtn = document.getElementById("submit-feedback-btn");
+
+  const openModal = (modal) => {
+    modal.classList.remove("hidden");
+  };
+
+  const closeModal = (modal) => {
+    modal.classList.add("hidden");
+  };
+
+  // プロフィールモーダルの開閉
+  authorWidget.addEventListener("click", () => openModal(authorModal));
+  closeAuthorModal.addEventListener("click", () => closeModal(authorModal));
+
+  // リリース履歴モーダルの開閉
+  historyBtn.addEventListener("click", () => openModal(historyModal));
+  closeHistoryModal.addEventListener("click", () => closeModal(historyModal));
+
+  // フィードバックモーダルの開閉
+  feedbackBtn.addEventListener("click", () => {
+    openModal(feedbackModal);
+    feedbackStatus.textContent = "";
+    feedbackForm.reset();
+  });
+  closeFeedbackModal.addEventListener("click", () => closeModal(feedbackModal));
+
+  // 各種モーダルの外側をクリックした時に閉じる
+  [authorModal, historyModal, feedbackModal].forEach((modal) => {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        closeModal(modal);
+      }
+    });
+  });
+
+  // フィードバック送信API処理
+  // フィードバック送信API処理
+  feedbackForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    feedbackStatus.textContent = "Sending message...";
+    feedbackStatus.className = "feedback-status sending";
+
+    // ── 修正ポイント：存在しない feedback-name の取得を削除 ──
+    const subject = document.getElementById("feedback-subject").value;
+    const message = document.getElementById("feedback-message").value;
+
+    const payload = {
+      access_key: WEB3FORMS_ACCESS_KEY,
+      subject: `[Karumes Feedback] ${subject}`,
+      // ── 修正ポイント：Web3Formsの仕様に合わせてメッセージを整形 ──
+      message: `Message:\n${message}`,
+    };
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (response.status === 200 || result.success) { // successフラグもチェック
+        feedbackStatus.textContent = "Thank you! Your feedback has been sent successfully.";
+        feedbackStatus.className = "feedback-status success";
+        feedbackForm.reset();
+      } else {
+        feedbackStatus.textContent = "Something went wrong. Please try again.";
+        feedbackStatus.className = "feedback-status error";
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      feedbackStatus.textContent = "Network error. Please check your connection and try again.";
+      feedbackStatus.className = "feedback-status error";
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });}
+
 function initEvents() {
   document.getElementById("brand-btn").addEventListener("click", () => setSection("library"));
   launchBtn.addEventListener("click", () => launchClock(state.selected, true));
@@ -394,6 +497,9 @@ function initEvents() {
   window.addEventListener("keydown", (event) => {
     if (!isClockMode && event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
   });
+
+  // モーダルイベントを初期化
+  initModals();
 }
 
 async function init() {
