@@ -98,37 +98,35 @@ button {
 }
 
 .brand-mark {
-  background: transparent !important; /* 背景を完全に透明に */
-  border: none !important;             /* 枠線を消す */
-  padding: 0 !important;              /* 内側の余白をゼロに */
-  height: 54px;                       /* ヘッダーに合わせる高さ */
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  height: 54px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   outline: none;
-  box-shadow: none !important;        /* 影を消す */
-  backdrop-filter: none !important;   /* 後ろのぼかし効果を消す */
+  box-shadow: none !important;
+  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   transition: transform 180ms ease, opacity 180ms ease;
 }
 
-/* ボタンの中に入れるロゴ画像のサイズ指定 */
 .brand-mark img {
-  height: 100% !important;    /* ボタンの高さ（上の54px）いっぱいに画像を広げる */
-  width: auto !important;     /* 横幅は比率を崩さず自動調整 */
-  max-width: 180px;           /* 2. 横長ロゴの場合、ここで最大横幅を制限（必要に応じて調整） */
+  height: 100% !important;
+  width: auto !important;
+  max-width: 180px;
   object-fit: contain;
 }
 
 .brand-mark:hover {
-  transform: translateY(0) !important; /* 上にひょこっと浮き上がるのを防ぐ */
-  background: transparent !important;   /* 背景が白くなるのを完全に防す */
-  box-shadow: none !important;         /* 光る影を出さない */
-  opacity: 0.8;                        /* ほんのり透明にする */
+  transform: translateY(0) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 0.8;
 }
 
-/* ロゴボタンをクリックした瞬間、少しだけ小さく凹む（クリック感） */
 .brand-mark:active {
   transform: scale(0.96) !important;
 }
@@ -564,13 +562,11 @@ button {
   display: none;
 }
 
-/* --- style.css の該当箇所を以下に差し替え --- */
-
 .settings-panel select {
-  min-height: 38px; /* 他のボタンの高さ 38px に統一 */
+  min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 0 36px 0 16px; /* 右側の矢印スペースを確保 */
+  padding: 0 36px 0 16px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--ink);
   backdrop-filter: blur(22px);
@@ -585,8 +581,8 @@ button {
 .settings-row[data-setting="font"] {
   position: relative;
   overflow: hidden;
-  border-color: rgba(255, 255, 255, 0.08); /* 他の設定行と同じ枠線に統一 */
-  background: rgba(255, 255, 255, 0.04);   /* 他の設定行と同じプレーンな背景に統一 */
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .settings-row[data-setting="font"]::after {
@@ -600,7 +596,6 @@ button {
   border-right: 2px solid rgba(255, 255, 255, 0.88);
   border-bottom: 2px solid rgba(255, 255, 255, 0.88);
   transform: translateY(-70%) rotate(45deg);
-  /* ネオン発光効果（filter）を除去し、他のUIボタンと調和させました */
 }
 
 .settings-row[data-setting="font"] > span {
@@ -608,7 +603,6 @@ button {
   font-weight: 700;
 }
 
-/* プルダウンのホバー・フォーカス時の挙動を、他のボタン（.topbar-actions button:hover等）と共通化 */
 .settings-panel select:hover,
 .settings-panel select:focus {
   transform: translateY(-1px);
@@ -618,7 +612,6 @@ button {
   color: #ffffff;
 }
 
-/* プルダウン展開時のメニュー項目の視認性確保 */
 .settings-panel select option {
   color: #f8fbff;
   background: #11151c;
@@ -667,5 +660,3 @@ button {
     grid-template-columns: 1fr;
   }
 }
-
-

@@ -20,6 +20,7 @@ const isClockMode = launchParams.get("mode") === "clock";
 const state = {
   section: "library",
   selected: 0,
+  activeSelected: 0,
   pointerStart: null,
   profiles: clocks.map((clock) => ({
     bgColor: clock.defaultBg || "#000000",
@@ -33,13 +34,13 @@ const state = {
   })),
 };
 
-// メインプロセスを介して物理設定ファイルから非同期で読み込む
 async function loadSettings() {
   try {
     const saved = await window.electronAPI.loadSettings();
     if (saved) {
       if (typeof saved.selected === "number" && saved.selected >= 0 && saved.selected < clocks.length) {
         state.selected = saved.selected;
+        state.activeSelected = saved.selected;
       }
       if (Array.isArray(saved.profiles)) {
         saved.profiles.forEach((profile, index) => {
@@ -54,11 +55,10 @@ async function loadSettings() {
   }
 }
 
-// メインプロセスを介して物理設定ファイルへ非同期で書き込む
 async function saveSettings() {
   try {
     const dataToSave = {
-      selected: state.selected,
+      selected: state.activeSelected,
       profiles: state.profiles,
     };
     await window.electronAPI.saveSettings(dataToSave);
@@ -131,19 +131,16 @@ function buildRendererOptions(clock, profile) {
     clock6Speed: 0.42,
     fontMode: "solid",
   };
-
   const optionMap = clock.optionMap || {};
   Object.entries(optionMap).forEach(([profileKey, optionKey]) => {
     if (profileKey === "card") options[optionKey] = profile.cardColor;
     if (profileKey === "colon") options[optionKey] = profile.colonColor;
   });
-
   return options;
 }
 
 function executeRenderer(renderer, ctx, w, h, clock, profile, baseSize, sizeScale, now, options) {
   if (typeof renderer !== "function") throw new Error("Renderer is not a function");
-
   if (clock.renderer === "renderClock5") {
     renderer(ctx, w, h, profile.color, baseSize * sizeScale, now, options);
   } else {
@@ -167,7 +164,12 @@ function renderClock(ctx, canvas, index, now) {
 
   const renderer = window[clock.renderer];
   const sizeScale = Number(profile.sizeScale) || 1;
-  const baseSize = clock.size * window.devicePixelRatio;
+  
+  // 各クロック個別の設計サイズをベースに、現在の描画領域の高さ(h)に応じて、
+  // アスペクト比を保ったまま最適にスケールするレスポンシブスケーリングを行います。
+  const referenceHeight = 820;
+  const baseSize = clock.size * (h / referenceHeight);
+
   const options = buildRendererOptions(clock, profile);
 
   try {
@@ -186,8 +188,7 @@ function createClockCard(clock, index) {
   card.className = "clock-card";
   card.type = "button";
   card.setAttribute("aria-label", `${clock.name} clock`);
-  card.addEventListener("click", () => launchClock(index));
-
+  card.addEventListener("click", () => launchClock(index, false));
   const img = document.createElement("img");
   img.className = "clock-preview-image";
   img.src = clock.previewImage || ""; 
@@ -195,12 +196,10 @@ function createClockCard(clock, index) {
   img.style.width = "100%";
   img.style.height = "100%";
   img.style.objectFit = "contain";
-  
   const shine = document.createElement("span");
   shine.className = "card-shine";
   card.append(img, shine);
   clockGrid.appendChild(card);
-
   if (revealObserver) revealObserver.observe(card);
   else requestAnimationFrame(() => card.classList.add("revealed"));
 }
@@ -212,8 +211,8 @@ function buildGrid() {
 
 function updateSelectionUI() {
   document.querySelectorAll(".clock-card").forEach((card, index) => {
-    card.classList.toggle("selected", index === state.selected);
-    card.setAttribute("aria-pressed", String(index === state.selected));
+    card.classList.toggle("selected", index === state.activeSelected);
+    card.setAttribute("aria-pressed", String(index === state.activeSelected));
   });
 }
 
@@ -222,9 +221,12 @@ function setSection(section) {
   librarySection.classList.toggle("active", section === "library");
 }
 
-function launchClock(index) {
+function launchClock(index, makeActive = false) {
   state.selected = index;
-  saveSettings(); // 設定をファイルに保存
+  if (makeActive) {
+    state.activeSelected = index;
+    saveSettings();
+  }
   updateSelectionUI();
   platform.classList.add("hidden");
   saver.classList.remove("hidden");
@@ -238,6 +240,7 @@ function returnHome() {
   saver.classList.add("hidden");
   settingsPanel.classList.add("hidden");
   platform.classList.remove("hidden");
+  updateSelectionUI();
 }
 
 function setColorInput(input, value) {
@@ -252,7 +255,6 @@ function syncSwatchState() {
     colon: colonInput.value,
     card: cardInput.value,
   };
-
   Object.entries(map).forEach(([key, value]) => {
     document.querySelectorAll(`[data-swatches="${key}"] .color-swatch`).forEach((button) => {
       button.classList.toggle("active", button.dataset.color === value);
@@ -280,7 +282,6 @@ function buildColorSwatches() {
       });
       wrap.appendChild(button);
     });
-
     const custom = document.createElement("button");
     custom.type = "button";
     custom.className = "color-swatch custom";
@@ -296,23 +297,19 @@ function openSettings() {
   const clock = clocks[state.selected];
   const profile = state.profiles[state.selected];
   const controls = getClockControls(state.selected);
-
   settingsTitle.textContent = clock.name;
   bgInput.value = profile.bgColor;
   fontInput.value = profile.color;
   colonInput.value = profile.colonColor;
   cardInput.value = profile.cardColor;
   fontSelect.value = profile.fontFamily;
-  
   if (sizeScaleInput) {
     sizeScaleInput.setAttribute("max", "10"); 
     sizeScaleInput.setAttribute("step", "0.05");
   }
-
   sizeScaleInput.value = profile.sizeScale;
   fontSizeScaleInput.value = profile.fontSizeScale;
   panelSizeScaleInput.value = profile.panelSizeScale;
-
   document.querySelectorAll("[data-setting]").forEach((row) => {
     const visible = controls.has(row.dataset.setting);
     row.classList.toggle("hidden-setting", !visible);
@@ -373,26 +370,26 @@ function handleClockModeMouseMove(event) {
 
 function initEvents() {
   document.getElementById("brand-btn").addEventListener("click", () => setSection("library"));
-  launchBtn.addEventListener("click", () => launchClock(state.selected));
-  dashboardSettingsBtn.addEventListener("click", openSettings);
+  launchBtn.addEventListener("click", () => launchClock(state.selected, true));
+  dashboardSettingsBtn.addEventListener("click", () => {
+    state.selected = state.activeSelected;
+    openSettings();
+  });
   document.getElementById("home-btn").addEventListener("click", returnHome);
   document.getElementById("settings-btn").addEventListener("click", openSettings);
   document.getElementById("close-settings").addEventListener("click", closeSettings);
-  
   document.getElementById("apply-btn").addEventListener("click", async () => {
+    state.activeSelected = state.selected;
     await saveSettings();
     returnHome();
   });
-
   [bgInput, fontInput, colonInput, cardInput, fontSelect, sizeScaleInput, fontSizeScaleInput, panelSizeScaleInput].forEach((input) => {
     input.addEventListener("input", updateProfileFromControls);
     input.addEventListener("change", updateProfileFromControls);
   });
-
   window.addEventListener("mousemove", handleClockModeMouseMove, { passive: true });
   window.addEventListener("mousedown", () => { if (isClockMode) requestCloseApp(); });
   window.addEventListener("keydown", () => { if (isClockMode) requestCloseApp(); });
-
   window.addEventListener("resize", resizeMainCanvas);
   window.addEventListener("keydown", (event) => {
     if (!isClockMode && event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
@@ -400,7 +397,7 @@ function initEvents() {
 }
 
 async function init() {
-  await loadSettings(); // 設定読み込みの完了を待機
+  await loadSettings();
   buildColorSwatches();
   buildGrid();
   initEvents();
@@ -408,7 +405,7 @@ async function init() {
   setSection("library");
   if (isClockMode) {
     document.body.classList.add("clock-mode");
-    launchClock(state.selected);
+    launchClock(state.selected, false);
   }
   requestAnimationFrame(loop);
 }
