@@ -4,6 +4,17 @@
     anim: null,
   }));
 
+  // 各コラム（列）内の数字「0〜9」それぞれに与える固有の傾き角度（初期値）
+  const columnRotations = Array.from({ length: 6 }, () =>
+    Array.from({ length: 10 }, () => getRandomRotation())
+  );
+
+  // -5度から+5度までのランダムな整数（角度）をラジアンに変換して返します
+  function getRandomRotation() {
+    const degrees = Math.floor(Math.random() * 11) - 5; // -5度〜+5度
+    return degrees * (Math.PI / 180);
+  }
+
   function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
   }
@@ -69,9 +80,10 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  function drawContinuousColumn(ctx, x, y, digitHeight, color, fontSize, family, now) {
+  // 常にスクロールする列用の描画関数
+  function drawContinuousColumn(ctx, x, y, digitHeight, color, fontSize, family, now, columnIndex) {
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(x, y); // 列自体の縦軸はまっすぐ直線のまま
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -87,43 +99,73 @@
     for (let r = -half; r <= half; r += 1) {
       let value = (base - r) % 10;
       value = (value + 10) % 10;
-      ctx.fillText(String(value), 0, r * digitHeight + offset);
+      
+      const yPos = r * digitHeight + offset;
+      
+      ctx.save();
+      ctx.translate(0, yPos);
+      const rot = columnRotations[columnIndex][value];
+      ctx.rotate(rot);
+      ctx.fillText(String(value), 0, 0);
+      ctx.restore();
     }
     ctx.restore();
   }
 
-  function drawStaticColumn(ctx, x, y, value, color, fontSize, family) {
+  // 静止している数字用の描画関数
+  function drawStaticColumn(ctx, x, y, value, color, fontSize, family, columnIndex) {
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(x, y); // 列自体の縦軸はまっすぐ直線のまま
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
+
+    ctx.save();
+    const rot = columnRotations[columnIndex][value];
+    ctx.rotate(rot);
     ctx.fillText(String(value), 0, 0);
+    ctx.restore();
+
     ctx.restore();
   }
 
-  function drawDropColumn(ctx, x, y, fromValue, toValue, progress, color, fontSize, family, canvasHeight) {
+  // 数字が落下するアニメーション用の描画関数
+  function drawDropColumn(ctx, x, y, fromValue, toValue, progress, color, fontSize, family, canvasHeight, sizeScale, columnIndex) {
     const eased = easeOutCubic(progress);
-    const topStart = -canvasHeight / 2 - fontSize * 1.2;
-    const bottomEnd = canvasHeight / 2 + fontSize * 1.2;
+    const scaledHeight = canvasHeight / sizeScale;
+    const topStart = -scaledHeight / 2 - fontSize * 1.5;
+    const bottomEnd = scaledHeight / 2 + fontSize * 1.5;
     const incomingY = topStart + (0 - topStart) * eased;
     const outgoingY = 0 + (bottomEnd - 0) * eased;
 
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(x, y); // 列自体の縦軸はまっすぐ直線のまま
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
 
+    // 去りゆく古い数字（落下中も、自分が持っていた元の傾き角度をそのまま保ちます）
     if (fromValue !== null && fromValue !== undefined) {
+      ctx.save();
+      ctx.translate(0, outgoingY);
+      const rotFrom = columnRotations[columnIndex][fromValue];
+      ctx.rotate(rotFrom);
       ctx.globalAlpha = 1 - eased * 0.1;
-      ctx.fillText(String(fromValue), 0, outgoingY);
+      ctx.fillText(String(fromValue), 0, 0);
+      ctx.restore();
     }
 
+    // 新しく入ってくる数字（上から、新しく定義されている固有の傾き角度を保ったまま落ちてきます）
+    ctx.save();
+    ctx.translate(0, incomingY);
+    const rotTo = columnRotations[columnIndex][toValue];
+    ctx.rotate(rotTo);
     ctx.globalAlpha = 0.25 + eased * 0.75;
-    ctx.fillText(String(toValue), 0, incomingY);
+    ctx.fillText(String(toValue), 0, 0);
+    ctx.restore();
+
     ctx.restore();
   }
 
@@ -137,7 +179,7 @@
     ctx.restore();
   }
 
-global.renderClock6 = function renderClock6(ctx, w, h, paint, size, now, options) {
+  global.renderClock6 = function renderClock6(ctx, w, h, paint, size, now, options) {
     now = now || new Date();
     options = options || {};
 
@@ -152,27 +194,28 @@ global.renderClock6 = function renderClock6(ctx, w, h, paint, size, now, options
       now.getSeconds() % 10,
     ];
 
-     let digitWidth = 20 + Math.floor(size * 0.42);
-     let digitHeight = 96 + Math.floor(size * 0.95);
-     let fontSize = 46 + Math.floor(size * 0.74);
-     let pairOuterGap = Math.floor(digitWidth * 0.68);
-     const pairBlock = digitWidth * 2;
-     let totalWidth = pairBlock * 3 + pairOuterGap * 2;
+    let digitWidth = 20 + Math.floor(size * 0.42);
+    let digitHeight = 96 + Math.floor(size * 0.95);
+    let fontSize = 46 + Math.floor(size * 0.74);
+    let pairOuterGap = Math.floor(digitWidth * 0.68);
+    const pairBlock = digitWidth * 2;
+    let totalWidth = pairBlock * 3 + pairOuterGap * 2;
 
-     const startX = Math.floor(w / 2 - totalWidth / 2);
-     const centerY = h / 2;
-     const nowMs = now.getTime();
-     const animDuration = 520;
+    const startX = Math.floor(w / 2 - totalWidth / 2);
+    const centerY = h / 2;
+    const nowMs = now.getTime();
+    const animDuration = 520;
+    const sizeScale = options.sizeScale || 1;
 
-     const xForIndex = (index) => {
-       const pairIndex = Math.floor(index / 2);
-       const inPairIndex = index % 2;
-       const x = startX + pairIndex * (pairBlock + pairOuterGap) + inPairIndex * digitWidth;
-       return x + digitWidth / 2;
-     };
+    const xForIndex = (index) => {
+      const pairIndex = Math.floor(index / 2);
+      const inPairIndex = index % 2;
+      const x = startX + pairIndex * (pairBlock + pairOuterGap) + inPairIndex * digitWidth;
+      return x + digitWidth / 2;
+    };
 
-     const colon1X = (xForIndex(1) + xForIndex(2)) / 2;
-     const colon2X = (xForIndex(3) + xForIndex(4)) / 2;
+    const colon1X = (xForIndex(1) + xForIndex(2)) / 2;
+    const colon2X = (xForIndex(3) + xForIndex(4)) / 2;
 
     const colorAt = (x, y) => sampleFontGradientColor(x, y, w, h, options, baseColor);
 
@@ -189,25 +232,38 @@ global.renderClock6 = function renderClock6(ctx, w, h, paint, size, now, options
       const colState = columnState[i];
       const colColor = colorAt(x, centerY);
 
+      // 秒（一の位）の常にスクロールしている列
       if (i === 5) {
-        drawContinuousColumn(ctx, x, centerY, digitHeight, colColor, fontSize, family, now);
-        colState.shown = digits[i];
+        const seconds = now.getSeconds();
+        const base = seconds % 10;
+        
+        // ★ 修正箇所: 1秒進んで数字がドラムの真裏（画面外）へ回り込んだ瞬間に、
+        // その数字の傾きを更新します。これにより、次回上から現れる時には完全に新しい傾きになります。
+        if (colState.shown !== base) {
+          colState.shown = base;
+          columnRotations[5][(base + 5) % 10] = getRandomRotation();
+          columnRotations[5][(base + 6) % 10] = getRandomRotation();
+        }
+        drawContinuousColumn(ctx, x, centerY, digitHeight, colColor, fontSize, family, now, i);
         colState.anim = null;
         continue;
       }
 
+      // 変化して落下中の列（fromDigit, toDigit それぞれ固有の角度を保ったまま描画されます）
       if (colState.anim) {
         const progress = Math.min(1, (nowMs - colState.anim.startedAt) / animDuration);
-        drawDropColumn(ctx, x, centerY, colState.anim.from, colState.anim.to, progress, colColor, fontSize, family, h);
+        drawDropColumn(ctx, x, centerY, colState.anim.from, colState.anim.to, progress, colColor, fontSize, family, h, sizeScale, i);
         if (progress >= 1) {
           colState.shown = colState.anim.to;
           colState.anim = null;
         }
       } else {
-        drawStaticColumn(ctx, x, centerY, colState.shown, colColor, fontSize, family);
+        // 静止中の列
+        drawStaticColumn(ctx, x, centerY, colState.shown, colColor, fontSize, family, i);
       }
     }
 
+    // コロンの描画（コロンは傾けず、垂直を保ちます）
     drawColon(ctx, colon1X, centerY, colorAt(colon1X, centerY), fontSize, family);
     drawColon(ctx, colon2X, centerY, colorAt(colon2X, centerY), fontSize, family);
   };

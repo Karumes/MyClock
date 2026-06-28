@@ -8,6 +8,12 @@
 
   const offscreenCache = {};
 
+  // -5度から+5度までのランダムな整数（角度）をラジアンに変換して返します
+  function getRandomRotation() {
+    const degrees = Math.floor(Math.random() * 11) - 5; // -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5
+    return degrees * (Math.PI / 180);
+  }
+
   function getOffscreen(key, physicalWidth, physicalHeight) {
     if (!offscreenCache[key]) {
       offscreenCache[key] = document.createElement("canvas");
@@ -79,7 +85,6 @@
     now = now || new Date();
     opts = opts || {};
 
-    // 画面解像度と直接バインド
     const pw = ctx.canvas.width;
     const ph = ctx.canvas.height;
 
@@ -90,14 +95,26 @@
     const minuteKey = `${hh}:${mm}`;
     const nowMs = now.getTime();
 
+    // 初回起動時、各数字に対してランダムな傾きを生成
     if (!state.chars) {
       state.chars = chars.slice();
       state.minuteKey = minuteKey;
-      state.rotations = [0, 0, 0, 0];
+      state.rotations = [
+        getRandomRotation(),
+        getRandomRotation(),
+        getRandomRotation(),
+        getRandomRotation()
+      ];
     }
+    // 1分ごとに、新しくランダムな傾きを再計算（数字が切り替わる演出を惹き立てます）
     if (state.minuteKey !== minuteKey) {
       state.minuteKey = minuteKey;
-      state.rotations = [0, 0, 0, 0];
+      state.rotations = [
+        getRandomRotation(),
+        getRandomRotation(),
+        getRandomRotation(),
+        getRandomRotation()
+      ];
     }
     chars.forEach((c, i) => {
       if (state.chars[i] !== c && !state.anims[i]) {
@@ -114,7 +131,6 @@
     const primary = typeof paint === "string" ? paint : "#69f7ff";
     const secondary = lighten(primary, 0.55);
 
-    // 【画質改善のコア】外側から指定されたsize（すでにデバイスピクセル比が乗算された絶対値）をそのまま使用
     let fontSize = Math.round(size || Math.min(ph * 0.75, pw * 0.22));
     const font = `850 ${fontSize}px ${family}`;
 
