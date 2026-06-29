@@ -119,6 +119,11 @@ ipcMain.on("close-app", () => {
   app.quit();
 });
 
+ipcMain.on("open-external", (event, url) => {
+  const { shell } = require("electron");
+  shell.openExternal(url);
+});
+
 app.whenReady().then(createWindows);
 
 app.on("window-all-closed", () => {

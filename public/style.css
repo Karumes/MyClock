@@ -1029,3 +1029,29 @@ button {
     padding-top: 12px;
   }
 }
+
+#donate-btn {
+  color: #ffd140; 
+  background: rgba(255, 209, 64, 0.08); 
+  border-color: rgba(255, 209, 64, 0.24);
+}
+
+#donate-btn:hover {
+  background: rgba(255, 209, 64, 0.18) !important;
+  border-color: rgba(255, 209, 64, 0.45) !important;
+  box-shadow: 0 0 28px rgba(255, 209, 64, 0.15) !important;
+  color: #ffffff !important;
+}
+
+#stripe-btn {
+  color: #ffd140; 
+  background: rgba(255, 209, 64, 0.08); 
+  border-color: rgba(255, 209, 64, 0.24);
+}
+
+#stripe-btn:hover {
+  background: rgba(255, 209, 64, 0.18) !important;
+  border-color: rgba(255, 209, 64, 0.45) !important;
+  box-shadow: 0 0 28px rgba(255, 209, 64, 0.15) !important;
+  color: #ffffff !important;
+}

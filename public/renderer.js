@@ -484,6 +484,20 @@ function initEvents() {
     if (!isClockMode && event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
   });
 
+  const donateBtn = document.getElementById("donate-btn");
+  if (donateBtn) {
+    donateBtn.addEventListener("click", () => {
+      window.electronAPI.openExternal("https://www.paypal.com/ncp/payment/L5YJBZE3DX6DQ");
+    });
+  }
+
+  const stripeBtn = document.getElementById("stripe-btn");
+  if (stripeBtn) {
+    stripeBtn.addEventListener("click", () => {
+      window.electronAPI.openExternal("https://donate.stripe.com/4gMbIU2lH9W1eBDgKodUY01");
+    });
+  }
+
   initModals();
 }
 
