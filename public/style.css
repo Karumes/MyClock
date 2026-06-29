@@ -1031,27 +1031,57 @@ button {
 }
 
 #donate-btn {
-  color: #ffd140; 
-  background: rgba(255, 209, 64, 0.08); 
-  border-color: rgba(255, 209, 64, 0.24);
+  color: var(--cyan);
+  background: rgba(105, 247, 255, 0.08) !important;
+  border-color: rgba(105, 247, 255, 0.28) !important;
 }
 
 #donate-btn:hover {
-  background: rgba(255, 209, 64, 0.18) !important;
-  border-color: rgba(255, 209, 64, 0.45) !important;
-  box-shadow: 0 0 28px rgba(255, 209, 64, 0.15) !important;
+  background: rgba(105, 247, 255, 0.18) !important;
+  border-color: rgba(105, 247, 255, 0.52) !important;
+  box-shadow: 0 0 28px rgba(105, 247, 255, 0.18) !important;
   color: #ffffff !important;
 }
 
-#stripe-btn {
-  color: #ffd140; 
-  background: rgba(255, 209, 64, 0.08); 
-  border-color: rgba(255, 209, 64, 0.24);
+.support-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
 }
 
-#stripe-btn:hover {
-  background: rgba(255, 209, 64, 0.18) !important;
-  border-color: rgba(255, 209, 64, 0.45) !important;
-  box-shadow: 0 0 28px rgba(255, 209, 64, 0.15) !important;
-  color: #ffffff !important;
+.support-card-btn {
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.support-card-btn:hover {
+  transform: translateY(-2px);
+}
+
+.support-card-btn.paypal {
+  background: #ffd140;
+  border-color: #ffd140;
+}
+
+.support-card-btn.paypal:hover {
+  background: #f4c21b;
+  box-shadow: 0 0 24px rgba(255, 209, 64, 0.25);
+}
+
+.support-card-btn.stripe {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+.support-card-btn.stripe:hover {
+  background: #f4f5f7;
+  border-color: #f4f5f7;
+  box-shadow: 0 0 24px rgba(99, 91, 255, 0.4);
 }

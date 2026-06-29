@@ -384,6 +384,29 @@ function initModals() {
   const feedbackStatus = document.getElementById("feedback-status");
   const submitBtn = document.getElementById("submit-feedback-btn");
 
+  const donateBtn = document.getElementById("donate-btn");
+  const supportModal = document.getElementById("support-modal");
+  const closeSupportModal = document.getElementById("close-support-modal");
+  const paypalBtn = document.getElementById("paypal-donate-btn");
+  const stripeBtn = document.getElementById("stripe-donate-btn");
+
+  if (donateBtn) {
+    donateBtn.addEventListener("click", () => openModal(supportModal));
+  }
+  if (closeSupportModal) {
+    closeSupportModal.addEventListener("click", () => closeModal(supportModal));
+  }
+  if (paypalBtn) {
+    paypalBtn.addEventListener("click", () => {
+      window.electronAPI.openExternal("https://www.paypal.com/ncp/payment/L5YJBZE3DX6DQ");
+    });
+  }
+  if (stripeBtn) {
+    stripeBtn.addEventListener("click", () => {
+      window.electronAPI.openExternal("https://donate.stripe.com/test_6oU8wIaSg6I8fLBbVN9Ve00");
+    });
+  }
+
   const openModal = (modal) => {
     modal.classList.remove("hidden");
   };
@@ -405,7 +428,7 @@ function initModals() {
   });
   closeFeedbackModal.addEventListener("click", () => closeModal(feedbackModal));
 
-  [authorModal, historyModal, feedbackModal].forEach((modal) => {
+  [authorModal, historyModal, feedbackModal, supportModal].forEach((modal) => {
     modal.addEventListener("click", (e) => {
       if (e.target === modal) {
         closeModal(modal);
@@ -483,20 +506,6 @@ function initEvents() {
   window.addEventListener("keydown", (event) => {
     if (!isClockMode && event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
   });
-
-  const donateBtn = document.getElementById("donate-btn");
-  if (donateBtn) {
-    donateBtn.addEventListener("click", () => {
-      window.electronAPI.openExternal("https://www.paypal.com/ncp/payment/L5YJBZE3DX6DQ");
-    });
-  }
-
-  const stripeBtn = document.getElementById("stripe-btn");
-  if (stripeBtn) {
-    stripeBtn.addEventListener("click", () => {
-      window.electronAPI.openExternal("https://donate.stripe.com/4gMbIU2lH9W1eBDgKodUY01");
-    });
-  }
 
   initModals();
 }
