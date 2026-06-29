@@ -357,7 +357,7 @@ button {
 #home-btn {
   width: 42px;
   height: 42px;
-  padding: 0 0 8px 0;       
+  padding: 0 0 7px 0;       
   font-size: 1.5rem;
   font-weight: 500;
   line-height: 1;
@@ -782,7 +782,7 @@ button {
   justify-content: center;
   cursor: pointer;
   transition: transform 180ms ease, background 180ms ease;
-  padding: 0 0 4.5px 0; 
+  padding: 0 0 5px 0; 
   line-height: 1;
 }
 
