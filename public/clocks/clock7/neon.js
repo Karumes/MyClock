@@ -156,7 +156,7 @@
     }
 
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = "#000000";
+    ctx.fillStyle = opts.bg || "#000000";
     ctx.fillRect(0, 0, w, h);
 
     const margin = Math.max(16, Math.min(w, h) * 0.05);

@@ -1,6 +1,5 @@
 (function () {
   window.renderClock7 = function (ctx, w, h, paint, size, now, opts) {
-    ctx.clearRect(0, 0, w, h);
 
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');

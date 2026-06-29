@@ -215,7 +215,6 @@
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, pw, ph);
     ctx.drawImage(compCv, 0, 0);
     ctx.restore();
   };

@@ -1,8 +1,6 @@
 (function () {
-  // window.renderClock8(ctx, w, h, paint, size, now, opts)
   window.renderClock8 = function (ctx, w, h, paint, size, now, opts) {
     now = now || new Date();
-    ctx.clearRect(0, 0, w, h);
     if (opts && !opts.suppressBg) {
       if (opts.bgGradient && Array.isArray(opts.bgGradient) && opts.bgGradient.length >= 2) {
         const g = ctx.createLinearGradient(0, 0, 0, h);

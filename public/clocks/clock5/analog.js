@@ -58,7 +58,6 @@
     const r = size;
     const colorAt = (x, y, fallback) => sampleFontGradientColor(x, y, fallback, opts);
 
-    ctx.clearRect(0,0,w,h);
     if (opts && !opts.suppressBg) {
       if (opts.bgGradient && Array.isArray(opts.bgGradient) && opts.bgGradient.length >= 2) {
         const g = ctx.createLinearGradient(0,0,0,h);
