@@ -1,5 +1,4 @@
 (function () {
-  // 7セグメントの点灯パターン (a, f, b, d, e, c, g)
   const SEGMENTS = {
     0: [1, 1, 1, 1, 1, 1, 0],
     1: [0, 0, 1, 0, 0, 1, 0],
@@ -33,7 +32,7 @@
     return `rgba(${c.r}, ${c.g}, ${c.b}, ${alpha})`;
   }
 
-  // 汎用的な多角形パス描画
+
   function drawPolygon(ctx, points, offsetX, offsetY) {
     if (points.length < 3) return;
     ctx.beginPath();
@@ -45,17 +44,13 @@
     ctx.fill();
   }
 
-  // 画像の形状（45度カットで隙間が限界まで詰まった配置）を生成
   function getStrictSegments(sw, sh, t) {
-    // 完全に噛み合わせた状態から、境界に作るごくわずかなスリット幅（ピクセル単位）
     const slit = Math.max(1, t * 0.08); 
 
     const midY = sh / 2;
-    const th = t; // 厚み
+    const th = t; 
 
-    // 各セグメントの頂点データをぴったり噛み合うように定義
     return [
-      // 0: トップ (a) - 両端が45度内側にカットされた六角形
       [
         { x: th + slit, y: 0 },
         { x: sw - th - slit, y: 0 },
@@ -64,7 +59,6 @@
         { x: th + slit, y: th },
         { x: th * 0.5 + slit, y: th * 0.5 }
       ],
-      // 1: 左上 (f) - 上端はaと45度で噛み合い、下端はgと噛み合う
       [
         { x: 0, y: th + slit },
         { x: th * 0.5, y: th * 0.5 + slit },
@@ -73,7 +67,6 @@
         { x: th * 0.5, y: midY - slit },
         { x: 0, y: midY - th * 0.5 - slit }
       ],
-      // 2: 右上 (b)
       [
         { x: sw - th, y: th + slit },
         { x: sw - th * 0.5, y: th * 0.5 + slit },
@@ -82,7 +75,6 @@
         { x: sw - th * 0.5, y: midY - slit },
         { x: sw - th, y: midY - th * 0.5 - slit }
       ],
-      // 3: ボトム (d)
       [
         { x: th + slit, y: sh - th },
         { x: sw - th - slit, y: sh - th },
@@ -91,7 +83,6 @@
         { x: th + slit, y: sh },
         { x: th * 0.5 + slit, y: sh - th * 0.5 }
       ],
-      // 4: 左下 (e)
       [
         { x: 0, y: midY + th * 0.5 + slit },
         { x: th * 0.5, y: midY + slit },
@@ -100,7 +91,6 @@
         { x: th * 0.5, y: sh - th * 0.5 - slit },
         { x: 0, y: sh - th - slit }
       ],
-      // 5: 右下 (c)
       [
         { x: sw - th, y: midY + th * 0.5 + slit },
         { x: sw - th * 0.5, y: midY + slit },
@@ -109,7 +99,6 @@
         { x: sw - th * 0.5, y: sh - th * 0.5 - slit },
         { x: sw - th, y: sh - th - slit }
       ],
-      // 6: ミドル (g) - 両端が左右の縦バーの凹みにぴったり入る六角形
       [
         { x: th + slit, y: midY - th * 0.5 },
         { x: sw - th - slit, y: midY - th * 0.5 },
@@ -123,7 +112,7 @@
 
   function drawDigitCore(ctx, x, y, sw, sh, digit, color) {
     const flags = SEGMENTS[digit] || SEGMENTS[8];
-    const thickness = Math.max(3, sw * 0.15); // 画像に合わせた太めの比率
+    const thickness = Math.max(3, sw * 0.15); 
     const segPointsList = getStrictSegments(sw, sh, thickness);
 
     ctx.save();
@@ -174,7 +163,7 @@
     const usableW = w - margin * 2;
 
     const digitW = Math.floor(clamp(size * 0.38, 24, usableW / 11.0));
-    const digitH = Math.floor(digitW * 1.75); // 画像のスマートな縦長感を再現
+    const digitH = Math.floor(digitW * 1.75); 
     
     const spacing = Math.floor(digitW * 0.45); 
     const colonW = Math.floor(digitW * 0.75);
@@ -192,7 +181,6 @@
       return x;
     };
 
-    // 各桁を描画
     drawDigitCore(ctx, getX(0), startY, digitW, digitH, Number(digits[0]), digitColor);
     drawDigitCore(ctx, getX(1), startY, digitW, digitH, Number(digits[1]), digitColor);
     drawColon(ctx, getX(1) + digitW + colonW / 2, colonY, digitH, digitColor);

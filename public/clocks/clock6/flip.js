@@ -87,7 +87,6 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  // ★高画質化の核心：一時Canvasを作らず、メインCanvasのコンテキストに直接描画する
   function drawRawText(ctx, x, y, width, height, pairText, color, family, glassOnly, fontSizeScale) {
     ctx.save();
     const scale = Math.max(0.7, Math.min(1.35, Number(fontSizeScale) || 1));
@@ -140,7 +139,6 @@
     const hingeY = y + height / 2;
     const skewMax = 0.12;
 
-    // 後方（土台）の静止部分のクリッピング描画
     if (t < 0.5) {
       ctx.save();
       ctx.beginPath();
@@ -157,7 +155,6 @@
       ctx.restore();
     }
 
-    // 前方（パタパタ回転する側）の変形クリッピング描画
     if (t < 0.5) {
       const scaleY = Math.max(0.0001, 1 - topProgress);
       const skew = (1 - scaleY) * skewMax;
@@ -166,7 +163,6 @@
       ctx.rect(x, y, width, hingeY - y);
       ctx.clip();
       
-      // アニメーション変形を直接メインCanvasのマトリクスに適用
       ctx.translate(x + width / 2, hingeY);
       ctx.transform(1, 0, skew, 1, 0, 0);
       ctx.scale(1, scaleY);
@@ -181,8 +177,7 @@
       ctx.beginPath();
       ctx.rect(x, hingeY, width, y + height - hingeY);
       ctx.clip();
-      
-      // アニメーション変形を直接メインCanvasのマトリクスに適用
+
       ctx.translate(x + width / 2, hingeY);
       ctx.transform(1, 0, skew, 1, 0, 0);
       ctx.scale(1, scaleY);

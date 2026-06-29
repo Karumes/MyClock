@@ -144,11 +144,15 @@ button {
   backdrop-filter: blur(24px);
 }
 
-.topbar-actions {
-  display: inline-flex;
-  gap: 8px;
+.topbar-actions button {
+  height: 38px;
+  padding: 0 14px 2px 14px;  
+  border-radius: 999px;
+  display: inline-flex;     
+  align-items: center;       
+  justify-content: center; 
+  line-height: 1;         
 }
-
 .topbar-actions button {
   height: 38px;
   padding: 0 14px;
@@ -158,9 +162,13 @@ button {
 .tab {
   min-width: 84px;
   height: 36px;
-  padding: 0 14px;
+  padding: 0 14px 2px 14px;  
   border-radius: 999px;
   color: var(--muted);
+  display: inline-flex;     
+  align-items: center;      
+  justify-content: center; 
+  line-height: 1;           
 }
 
 .tab.active,
@@ -338,23 +346,26 @@ button {
 .saver-actions button {
   height: 42px;
   min-width: 42px;
-  padding: 0 18px;
+  padding: 0 18px 2px 18px;  
   border-radius: 999px;
-  display: inline-flex;     /* Flexboxによる中央揃えをボタン全体に有効化 */
-  align-items: center;      /* 縦方向のズレを自動計算して完全中央に配置 */
-  justify-content: center;  /* 横方向を完全中央に配置 */
-  line-height: 1;   
+  display: inline-flex;     
+  align-items: center;      
+  justify-content: center; 
+  line-height: 1;         
 }
 
 #home-btn {
-  width: 42px;         /* 横幅を固定して、完全な正円にします */
-  height: 42px;        /* 縦幅を固定します */
-  padding: 0 0 3px 0;  /* 下側に3pxの余白を追加して、×ボタンを完璧に押し下げます */
-  font-size: 1.5rem;  /* シンボルのサイズを調整します */
+  width: 42px;
+  height: 42px;
+  padding: 0 0 7px 0;       
+  font-size: 1.5rem;
   font-weight: 500;
   line-height: 1;
 }
 
+#home-btn:hover {
+  transform: rotate(90deg) !important;
+}
 
 .settings-panel {
   position: fixed;
@@ -578,7 +589,7 @@ button {
   min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 0 36px 0 16px;
+  padding: 0 36px 3px 16px;   
   background: rgba(255, 255, 255, 0.08);
   color: var(--ink);
   backdrop-filter: blur(22px);
@@ -588,6 +599,10 @@ button {
   appearance: none;
   -webkit-appearance: none;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  
+  display: inline-flex;      
+  align-items: center;      
+  line-height: 1;          
 }
 
 .settings-row[data-setting="font"] {
@@ -635,15 +650,18 @@ button {
 
 .settings-panel button {
   height: 38px;
-  padding: 0 14px;
+  padding: 0 14px 2px 14px;  
   border-radius: 999px;
+  display: inline-flex;      
+  align-items: center;      
+  justify-content: center;  
+  line-height: 1;           
 }
 
 .hidden {
   display: none !important;
 }
 
-/* ── 新機能: フッター（フッターエリア） ── */
 .library-footer {
   margin-top: 52px;
   padding: 20px 24px;
@@ -702,11 +720,14 @@ button {
 
 .footer-actions button {
   height: 38px;
-  padding: 0 16px;
+  padding: 0 16px 2px 16px; 
   border-radius: 999px;
+  display: inline-flex;    
+  align-items: center;       
+  justify-content: center;  
+  line-height: 1;          
 }
 
-/* ── 新機能: 各種モーダルウィンドウ（共通オーバーレイ） ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -791,7 +812,6 @@ button {
   margin: 18px 0;
 }
 
-/* プロフィール用詳細スタイル */
 .modal-profile {
   text-align: center;
   display: flex;
@@ -828,7 +848,6 @@ button {
   margin: 0;
 }
 
-/* リリース履歴用スタイル */
 .history-list {
   display: flex;
   flex-direction: column;
@@ -870,7 +889,6 @@ button {
   margin-bottom: 6px;
 }
 
-/* フィードバック用スタイル */
 .feedback-form {
   display: flex;
   flex-direction: column;
@@ -914,11 +932,15 @@ button {
 
 .form-actions button {
   height: 38px;
-  padding: 0 20px;
+  padding: 0 20px 2px 20px;  
   border-radius: 999px;
   background: rgba(105, 247, 255, 0.12);
   border-color: rgba(105, 247, 255, 0.28);
   color: var(--cyan);
+  display: inline-flex;     
+  align-items: center;      
+  justify-content: center;   
+  line-height: 1;           
 }
 
 .form-actions button:hover {
@@ -980,23 +1002,20 @@ button {
   }
 }
 
-/* 名前と紹介文、メッセージを横並びにするための調整 */
 .author-widget {
   display: flex;
   align-items: center;
-  gap: 20px; /* パーツごとの横の間隔 */
+  gap: 20px; 
 }
 
-/* 追加した英文メッセージのスタイル */
 .author-message {
-  font-size: 0.95rem;          /* 紹介文(0.82rem)より大きく設定 */
-  color: #ffffff;              /* 文字を明るい白にして目立たせる */
-  line-height: 1.4;            /* 2行の行間を読みやすく調整 */
-  border-left: 1px solid var(--line); /* 左側に薄い区切り線を入れて見やすく */
-  padding-left: 20px;          /* 区切り線と文字の間の余白 */
+  font-size: 0.95rem;         
+  color: #ffffff;             
+  line-height: 1.4;            
+  border-left: 1px solid var(--line); 
+  padding-left: 20px;          
 }
 
-/* 画面が狭いスマホ表示などの時は、縦並びにして崩れを防ぐ */
 @media (max-width: 768px) {
   .author-widget {
     flex-direction: column;

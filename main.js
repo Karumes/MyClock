@@ -5,7 +5,6 @@ const fs = require("fs");
 const settingsPath = path.join(app.getPath("userData"), "clock-settings.json");
 let windows = [];
 
-// アプリケーションメニューバー（File, Edit, View, Window, Help）を完全に無効化して非表示にします
 Menu.setApplicationMenu(null);
 
 function getLaunchMode() {
@@ -96,7 +95,7 @@ function createWindows() {
       });
     });
   } else {
-    // 通常の設定ウィンドウ
+  
     const win = new BrowserWindow({
       width: 1024,
       height: 768,

@@ -4,14 +4,13 @@
     anim: null,
   }));
 
-  // 各コラム（列）内の数字「0〜9」それぞれに与える固有の傾き角度（初期値）
   const columnRotations = Array.from({ length: 6 }, () =>
     Array.from({ length: 10 }, () => getRandomRotation())
   );
 
-  // -5度から+5度までのランダムな整数（角度）をラジアンに変換して返します
+
   function getRandomRotation() {
-    const degrees = Math.floor(Math.random() * 11) - 5; // -5度〜+5度
+    const degrees = Math.floor(Math.random() * 11) - 5;
     return degrees * (Math.PI / 180);
   }
 
@@ -80,10 +79,10 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  // 常にスクロールする列用の描画関数
+
   function drawContinuousColumn(ctx, x, y, digitHeight, color, fontSize, family, now, columnIndex) {
     ctx.save();
-    ctx.translate(x, y); // 列自体の縦軸はまっすぐ直線のまま
+    ctx.translate(x, y); 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -112,10 +111,10 @@
     ctx.restore();
   }
 
-  // 静止している数字用の描画関数
+
   function drawStaticColumn(ctx, x, y, value, color, fontSize, family, columnIndex) {
     ctx.save();
-    ctx.translate(x, y); // 列自体の縦軸はまっすぐ直線のまま
+    ctx.translate(x, y); 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -130,7 +129,6 @@
     ctx.restore();
   }
 
-  // 数字が落下するアニメーション用の描画関数
   function drawDropColumn(ctx, x, y, fromValue, toValue, progress, color, fontSize, family, canvasHeight, sizeScale, columnIndex) {
     const eased = easeOutCubic(progress);
     const scaledHeight = canvasHeight / sizeScale;
@@ -140,13 +138,12 @@
     const outgoingY = 0 + (bottomEnd - 0) * eased;
 
     ctx.save();
-    ctx.translate(x, y); // 列自体の縦軸はまっすぐ直線のまま
+    ctx.translate(x, y); 
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `700 ${fontSize}px ${family}`;
 
-    // 去りゆく古い数字（落下中も、自分が持っていた元の傾き角度をそのまま保ちます）
     if (fromValue !== null && fromValue !== undefined) {
       ctx.save();
       ctx.translate(0, outgoingY);
@@ -157,7 +154,6 @@
       ctx.restore();
     }
 
-    // 新しく入ってくる数字（上から、新しく定義されている固有の傾き角度を保ったまま落ちてきます）
     ctx.save();
     ctx.translate(0, incomingY);
     const rotTo = columnRotations[columnIndex][toValue];
@@ -232,13 +228,10 @@
       const colState = columnState[i];
       const colColor = colorAt(x, centerY);
 
-      // 秒（一の位）の常にスクロールしている列
       if (i === 5) {
         const seconds = now.getSeconds();
         const base = seconds % 10;
         
-        // ★ 修正箇所: 1秒進んで数字がドラムの真裏（画面外）へ回り込んだ瞬間に、
-        // その数字の傾きを更新します。これにより、次回上から現れる時には完全に新しい傾きになります。
         if (colState.shown !== base) {
           colState.shown = base;
           columnRotations[5][(base + 5) % 10] = getRandomRotation();
@@ -249,7 +242,6 @@
         continue;
       }
 
-      // 変化して落下中の列（fromDigit, toDigit それぞれ固有の角度を保ったまま描画されます）
       if (colState.anim) {
         const progress = Math.min(1, (nowMs - colState.anim.startedAt) / animDuration);
         drawDropColumn(ctx, x, centerY, colState.anim.from, colState.anim.to, progress, colColor, fontSize, family, h, sizeScale, i);
@@ -258,12 +250,11 @@
           colState.anim = null;
         }
       } else {
-        // 静止中の列
+
         drawStaticColumn(ctx, x, centerY, colState.shown, colColor, fontSize, family, i);
       }
     }
 
-    // コロンの描画（コロンは傾けず、垂直を保ちます）
     drawColon(ctx, colon1X, centerY, colorAt(colon1X, centerY), fontSize, family);
     drawColon(ctx, colon2X, centerY, colorAt(colon2X, centerY), fontSize, family);
   };

@@ -23,12 +23,8 @@
     const cx = w / 2;
     const cy = h / 2;
     
-    // 【巨大化の完全解決】
-    // 画面全体の高さ(h)に依存させるのをやめ、外側から渡される絶対サイズ(size)をそのままパネルの高さの基準にします。
-    // これにより、プレビュー画面用の小さなサイズが渡されたときも、その中に綺麗に収まるようになります。
     const panelH = size; 
-    
-    // 縦幅(panelH)に対して常に「1:0.62」の固定アスペクト比を維持
+  
     const panelW = panelH * 0.62; 
     
     const totalW = panelW * 4;
@@ -71,8 +67,7 @@
 
       ctx.save();
       ctx.beginPath();
-      
-      // 横はパネル幅で厳格にクリップ、縦は無制限
+ 
       ctx.rect(x0, -10000, Math.ceil(panelW), h + 20000);
       ctx.clip();
 

@@ -81,7 +81,6 @@
 
     const ringR = r * 0.85;
 
-    // 1. 文字盤の背景装飾（チャプターリング）
     if (opts && !opts.suppressBg) {
       ctx.save();
       ctx.strokeStyle = basePaint;
@@ -93,14 +92,12 @@
       ctx.restore();
     }
 
-    // 2. インデックスの描画（円から数字に変更、ドロップシャドウ付き）
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
     ctx.shadowBlur = 4;
     ctx.shadowOffsetX = 1;
     ctx.shadowOffsetY = 1.5;
 
-    // 時計全体のサイズ(r)に応じて数字のフォントサイズを動的に調整
     const fontSize = Math.max(12, Math.round(r * 0.125));
     const family = opts.fontFamily || '"Arial Rounded MT Bold", "Nunito", "Segoe UI Rounded", "Helvetica Neue", sans-serif';
     ctx.font = `bold ${fontSize}px ${family}`;
@@ -112,7 +109,6 @@
       const x = cx + Math.cos(ang) * ringR;
       const y = cy + Math.sin(ang) * ringR;
 
-      // i=0 の時は 12 に、それ以外は i そのままを数字にします
       const numStr = String(i === 0 ? 12 : i);
 
       ctx.fillStyle = colorAt(x, y, basePaint);
@@ -124,7 +120,6 @@
     const min = now.getMinutes() + sec/60;
     const hr  = (now.getHours()%12) + min/60;
 
-    // 3. 先細り（テーパード）形状の時針・分針用関数
     function drawTaperedHand(angle, length, baseWidth, tipWidth, color) {
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
@@ -136,7 +131,6 @@
       ctx.rotate(angle);
       ctx.fillStyle = color;
 
-      // 後方にわずかに突き出すことで立体感を出す
       const backLength = length * 0.12; 
       ctx.beginPath();
       ctx.moveTo(-backLength, -baseWidth / 2);
@@ -148,7 +142,7 @@
       ctx.restore();
     }
 
-    // 4. カウンターウェイト付きの秒針用関数
+
     function drawSecondHand(angle, length, thickness, color) {
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
@@ -160,7 +154,6 @@
       ctx.rotate(angle);
       ctx.fillStyle = color;
 
-      // メイン秒針
       ctx.beginPath();
       ctx.moveTo(0, -thickness / 2);
       ctx.lineTo(length, -thickness / 4);
@@ -169,7 +162,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // カウンターウェイト
       const backLength = length * 0.25;
       ctx.beginPath();
       ctx.moveTo(0, -thickness);
@@ -201,26 +193,22 @@
     const secTipX = cx + Math.cos(secAng) * secLen;
     const secTipY = cy + Math.sin(secAng) * secLen;
 
-    // 時針・分針・秒針の描画
     drawTaperedHand(hourAng, hourLen, hourTh, Math.max(2, Math.round(hourTh * 0.35)), colorAt(hourTipX, hourTipY, basePaint));
     drawTaperedHand(minAng,  minLen,  minTh,  Math.max(1.5, Math.round(minTh * 0.35)), colorAt(minTipX, minTipY, basePaint));
     drawSecondHand(secAng,  secLen,  secTh,  colorAt(secTipX, secTipY, basePaint));
 
-    // 5. 真ん中の円（センターキャップ、立体的に配置）
     const centerR = Math.max(4, Math.round(r * 0.042));
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
     ctx.shadowBlur = 4;
     ctx.shadowOffsetX = 1;
     ctx.shadowOffsetY = 1;
-    
-    // ベース円
+
     ctx.fillStyle = colorAt(cx, cy, basePaint);
     ctx.beginPath();
     ctx.arc(cx, cy, centerR, 0, Math.PI * 2);
     ctx.fill();
     
-    // 内側の小円（ピボット風の金属感装飾）
     ctx.shadowColor = 'transparent';
     ctx.fillStyle = '#ffffff00';
     ctx.globalAlpha = 0.45;

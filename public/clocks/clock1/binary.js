@@ -8,9 +8,8 @@
 
   const offscreenCache = {};
 
-  // -5度から+5度までのランダムな整数（角度）をラジアンに変換して返します
   function getRandomRotation() {
-    const degrees = Math.floor(Math.random() * 11) - 5; // -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5
+    const degrees = Math.floor(Math.random() * 11) - 5; 
     return degrees * (Math.PI / 180);
   }
 
@@ -88,14 +87,12 @@
     const pw = ctx.canvas.width;
     const ph = ctx.canvas.height;
 
-    // ── 時刻・状態の更新 ──────────────────────────────────
     const hh = String(now.getHours()).padStart(2, "0");
     const mm = String(now.getMinutes()).padStart(2, "0");
     const chars = [hh[0], hh[1], mm[0], mm[1]];
     const minuteKey = `${hh}:${mm}`;
     const nowMs = now.getTime();
 
-    // 初回起動時、各数字に対してランダムな傾きを生成
     if (!state.chars) {
       state.chars = chars.slice();
       state.minuteKey = minuteKey;
@@ -106,7 +103,7 @@
         getRandomRotation()
       ];
     }
-    // 1分ごとに、新しくランダムな傾きを再計算（数字が切り替わる演出を惹き立てます）
+
     if (state.minuteKey !== minuteKey) {
       state.minuteKey = minuteKey;
       state.rotations = [
@@ -122,7 +119,6 @@
       }
     });
 
-    // ── フォント・色の設定 ────────────────────────────────
     const family =
       (typeof fontFamilies !== "undefined" && fontFamilies[opts.font]) ||
       opts.fontFamily ||
@@ -134,7 +130,6 @@
     let fontSize = Math.round(size || Math.min(ph * 0.75, pw * 0.22));
     const font = `850 ${fontSize}px ${family}`;
 
-    // ── 文字幅・配置の計算 ───────────────────────────────
     ctx.save();
     
     const { canvas: testCanvas, ctx: testCtx } = getOffscreen("test", 1, 1);
@@ -156,7 +151,6 @@
 
     const colors = [primary, secondary, primary, secondary];
 
-    // ── STEP 1: 各数字を描画 ──────────
     const charScreens = [];
     for (let i = 0; i < 4; i++) {
       const { canvas: cv, ctx: oc } = getOffscreen(`ch${i}`, pw, ph);
@@ -168,7 +162,6 @@
       charScreens.push(cv);
     }
 
-    // ── STEP 2: 重なりマスク生成 ────────────
     const overlapColor = lighten(primary, 0.82);
 
     function makeOverlapMask(maskKey, canvasA, canvasB) {
@@ -203,7 +196,6 @@
     compCtx.drawImage(overlay01, 0, 0);
     compCtx.drawImage(overlay23, 0, 0);
 
-    // ── STEP 3: コロンを描画 ─────────────────
     const cx = Math.round((positions[1] + positions[2]) / 2);
     const dotR = Math.round(Math.max(7 * (window.devicePixelRatio || 1), fontSize * 0.08));
 
@@ -220,7 +212,6 @@
     compCtx.fill();
     compCtx.restore();
 
-    // ── STEP 4: メインCanvasへの最終描画 ─────────────────
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
