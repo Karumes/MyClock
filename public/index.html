@@ -3,41 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Karumes</title>
+  <title>Karumes Clocks - Customizable Desktop Clocks & Screensavers</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Sniglet&family=Varela+Round&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Sniglet&family=Varela+Round&family=Roboto+Condensed:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main id="platform" class="platform-shell">
+  <!-- Web Navigation Bar -->
+  <header class="web-navbar">
+    <div class="navbar-container">
+      <div class="brand-logo">
+        <img src="Karumes Logo.png" alt="Karumes Logo" class="logo-img" />
+      </div>
+      <div class="navbar-actions">
+        <button class="web-download-btn primary-btn" type="button">Download for Windows</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="web-hero">
+  <div class="hero-container">
+    <div class="hero-left">
+      <h1 class="hero-headline">Turn your PC into your own custom clock</h1>
+      <p class="hero-subtext">
+        Karumes lets you customize and display stunning clocks on your desktop.
+      </p>
+      
+      <div class="hero-cta-group" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
+        <button class="web-download-btn primary-btn large-btn" type="button">Download for Windows</button>
+        
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); padding-left: 4px;">
+          <span>100% Free!</span>
+          <span style="opacity: 0.6;">|</span> <span style="font-weight: 700; color: #ffffff;">$0.00</span> </div>
+      </div>
+    </div>
+    
+    <div class="hero-right">
+      <div class="usage-mockup">
+        <div class="mockup-frame">
+          <div class="mockup-screen-glare"></div>
+          <div class="mockup-screen-content">
+            <span class="desktop-wallpaper-text">Karumes Active Setup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <!-- Interactive Simulator Platform Workspace -->
+  <main id="platform" class="platform-shell wrapper-section" id="interactive-platform">
     <header class="topbar">
-      <button id="brand-btn" class="brand-mark" type="button" aria-label="Karumes home">
-        <img src="Karumes Logo.png" alt="Logo" />
-      </button>
+      <div class="topbar-left">
+        <h2 class="section-title">Interactive Emulator</h2>
+        <p class="section-desc">Click any timepiece below to run in full-screen mode and test settings</p>
+      </div>
       <div class="topbar-actions">
         <button id="dashboard-settings-btn" type="button" aria-label="Customize selected clock">Settings</button>
-        <button id="launch-btn" type="button" aria-label="Launch selected clock">Launch</button>
+        <button id="launch-btn" type="button" aria-label="Launch selected clock">Launch Fullscreen</button>
       </div>
     </header>
 
     <section id="library-section" class="section active">
-      <div class="hero-copy">
-        <p>Clock selection platform</p>
-      </div>
-      
       <div id="clock-grid" class="clock-grid" aria-label="Clock previews"></div>
 
       <footer class="library-footer">
         <div id="author-widget" class="author-widget" title="Click to view full profile">
-          <img src="build/icon.ico" alt="Author Icon" class="author-avatar" onerror="this.src='katsu_face.png'"/>
+          <img src="katsu_face.png" alt="Author Icon" class="author-avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\' fill=\'%23555\'><circle cx=\'50\' cy=\'50\' r=\'40\'/></svg>'"/>
           <div class="author-info">
             <span class="author-name">Katsu</span>
             <span class="author-desc-brief">Designer & Developer of Karumes Clock</span>
           </div>
           <div class="author-message">
-          Karumes Clock is built by a solo developer, so your feedback really matters!<br>
-          If you love Karumes Clock, feel free to support my work and buy me a coffee!!☕👉
+            Karumes Clock is built by a solo developer, so your feedback really matters!
+            If you love Karumes Clock, feel free to support my work and buy me a coffee!!☕👉
           </div>
         </div>
         <div class="footer-actions">
@@ -49,7 +89,8 @@
     </section>
   </main>
 
-  <section id="saver" class="saver hidden" aria-label="Selected clock">
+  <!-- Fullscreen Emulator Stage (Saver Viewport) -->
+  <section id="saver" class="saver hidden" aria-label="Selected clock preview container">
     <canvas id="clockCanvas"></canvas>
     <div class="saver-actions">
       <button id="home-btn" type="button" aria-label="Back to Karumes">&times;</button>
@@ -57,9 +98,10 @@
     </div>
   </section>
 
+  <!-- Side Customization Controls Panel -->
   <aside id="settings-panel" class="settings-panel hidden" aria-label="Clock settings">
     <div class="settings-head">
-      <span id="settings-title">Clock</span>
+      <span id="settings-title">Clock Customize</span>
       <button id="close-settings" type="button" aria-label="Close settings">Close</button>
     </div>
 
@@ -70,24 +112,24 @@
         <div class="custom-color-panel"><input id="bg-custom-color" type="color" /></div>
       </div>
       <div class="settings-color" data-setting="primary" data-color-target="font-custom-color">
-        <span>Main</span>
+        <span>Main Color</span>
         <div class="color-swatches" data-swatches="primary"></div>
         <div class="custom-color-panel"><input id="font-custom-color" type="color" /></div>
       </div>
       <div class="settings-color" data-setting="colon" data-color-target="colon-custom-color">
-        <span>Accent</span>
+        <span>Accent Color</span>
         <div class="color-swatches" data-swatches="colon"></div>
         <div class="custom-color-panel"><input id="colon-custom-color" type="color" /></div>
       </div>
       <div class="settings-color" data-setting="card" data-color-target="card-custom-color">
-        <span>Surface</span>
+        <span>Surface Color</span>
         <div class="color-swatches" data-swatches="card"></div>
         <div class="custom-color-panel"><input id="card-custom-color" type="color" /></div>
       </div>
     </div>
 
     <div class="settings-row" data-setting="font">
-      <span>Font</span>
+      <span>Font Family</span>
       <select id="font-family-select">
         <option value="rounded">Font 1</option>
         <option value="modern">Font 2</option>
@@ -104,68 +146,60 @@
 
     <div class="settings-row" data-setting="fontSize">
       <span>Text size</span>
-      <input id="text-size-scale" type="range" min="0.65" max="3.5" step="0.01" />
+      <input id="text-size-scale" type="range" min="0.65" max="3.5" step="0.01" value="1.0" />
     </div>
 
     <div class="settings-row" data-setting="panelSize">
       <span>Panel size</span>
-      <input id="panel-size-scale" type="range" min="0.65" max="1.6" step="0.01" />
+      <input id="panel-size-scale" type="range" min="0.65" max="1.6" step="0.01" value="1.0" />
     </div>
 
     <div class="settings-actions">
-      <button id="apply-btn" type="button">Launch</button>
+      <button id="apply-btn" type="button" class="accent-solid-btn">Keep </button>
     </div>
   </aside>
 
+  <!-- Author Overlay Modal -->
   <div id="author-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <button class="modal-close" id="close-author-modal" type="button">&times;</button>
       <div class="modal-profile">
-        <img src="build/icon.ico" alt="Author Icon" class="modal-avatar" onerror="this.src='katsu_face.png'"/>
+        <img src="katsu_face.png" alt="Author Icon" class="modal-avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\' fill=\'%23555\'><circle cx=\'50\' cy=\'50\' r=\'40\'/></svg>'"/>
         <h2>Katsu</h2>
         <p class="modal-subtitle">UI Designer & Developer</p>
         <hr class="modal-divider"/>
         <p class="modal-description">
           Hi, I'm Katsu, the creator of Karumes Clock.<br/><br/>
-          I built this screensaver because I wanted to bring beautiful, relaxing, and highly customizable clocks to your desktop. As a solo developer, I designed and coded everything from scratch to make sure each clock moves beautifully, runs smoothly, and looks perfect on any screen.
+          I built this screensaver because I wanted to bring beautiful, relaxing, and highly customizable clocks to your desktop. As a solo developer, I designed and coded everything from scratch to make sure each clock moves beautifully, runs smoothly, and looks clean on any scale.
         </p>
       </div>
     </div>
   </div>
 
+  <!-- Donation Support Modal -->
   <div id="support-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <button class="modal-close" id="close-support-modal" type="button">&times;</button>
       <h2 class="modal-title">Support Karumes Clock</h2>
-
       <p class="modal-subtitle" style="font-size: 0.92rem; line-height: 1.5; color: rgba(255, 255, 255, 0.85); margin-bottom: 18px;">
         Hi! I'm the creator of Karumes Clock.<br/> 
-        I built this screen saver because I wanted something clean and beautiful for my own desktop.<br/><br/>
-        If it brings a smile to your face (or makes your setup look cooler!), please consider buying me a coffee! ☕ <br/>
-        Your support means the world to me and keeps me motivated to build more features and cool clock faces.<br/><br/>
-        Thank you so much for being a part of this journey! ✨      </p>
-      
-      <hr class="modal-divider"/>
-
-      <p class="modal-subtitle" style="margin-bottom: 8px; font-weight: 700; color: #ffffff;">Choose your preferred payment method:</p>
-      
-      <p class="modal-subtitle" style="font-size: 0.82rem; margin-bottom: 16px; color: var(--muted); line-height: 1.5;">
-        • <strong>PayPal:</strong> Supports PayPal, Apple Pay, and Credit Cards.<br/>
-        • <strong>Stripe:</strong> Supports Credit Cards (Visa, Mastercard, Amex, etc.) and Link.
+        I built this screensaver because I wanted something clean and beautiful for my own workspace.<br/><br/>
+        If it brings a smile to your face (or makes your physical setup look cool!), please consider supporting my work.
       </p>
-      
+      <hr class="modal-divider"/>
+      <p class="modal-subtitle" style="margin-bottom: 8px; font-weight: 700; color: #ffffff;">Choose your preferred gateway:</p>
       <div class="support-options">
         <button id="paypal-donate-btn" class="support-card-btn paypal" type="button" aria-label="Donate via PayPal">
-          <img src="paypal.png" alt="PayPal" style="height: 1.5rem;"/>
+          <span>PayPal Quick Pay</span>
         </button>
         <button id="stripe-donate-btn" class="support-card-btn stripe" type="button" aria-label="Donate via Stripe">
-          <img src="stripe.png" alt="Stripe" style="height: 1.95rem;"/>
+          <span>Stripe Checkout</span>
         </button>
       </div>
     </div>
-</div>
+  </div>
 
-
+  <!-- Product Version History Modal -->
   <div id="history-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <button class="modal-close" id="close-history-modal" type="button">&times;</button>
@@ -175,26 +209,25 @@
         <div class="history-item">
           <div class="history-meta">
             <span class="history-version">v1.0.0</span>
-            <span class="history-date">Initial Release</span>
+            <span class="history-date">Initial Stable Release</span>
           </div>
           <ul class="history-notes">
-            <ul class="history-notes">
-              <li>Launched 8 distinctive clock designs.</li>
-              <li>Implemented seamless multi-monitor support across all connected displays.</li>
-              <li>Introduced a dynamic settings menu to customize colors, surfaces, and fonts.</li>
-              <li>Provided a native Windows screensaver setup script for effortless installation.</li>
-            </ul>
+            <li>Launched 8 distinctive clock designs.</li>
+            <li>Implemented seamless multi-monitor support across all physical displays.</li>
+            <li>Introduced a dynamic settings menu to customize colors, surfaces, and typography.</li>
+            <li>Provided a native installation package for instant configuration.</li>
           </ul>
         </div> 
       </div>
     </div>
   </div>
 
+  <!-- User Feedback Form Modal -->
   <div id="feedback-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <button class="modal-close" id="close-feedback-modal" type="button">&times;</button>
       <h2 class="modal-title">Share Your Thoughts!</h2>
-      <p class="modal-subtitle">Whether it's a feature request, a bug report, or just some love for the app, I'd love to hear from you! Your message goes straight to my inbox.</p>
+      <p class="modal-subtitle">Whether it's a feature request, a bug report, or simple encouragement, I'd love to hear from you!</p>
       <hr class="modal-divider"/>
       <form id="feedback-form" class="feedback-form">
         <div class="form-group">
@@ -213,6 +246,22 @@
     </div>
   </div>
 
+  <!-- Standalone Download Gateway Mock Modal -->
+  <div id="download-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="text-align: center;">
+      <button class="modal-close" id="close-download-modal" type="button">&times;</button>
+      <h2 class="modal-title">Download Standalone App</h2>
+      <p class="modal-subtitle">Get the high-performance screensaver package directly for your system.</p>
+      <hr class="modal-divider" style="margin: 20px 0;"/>
+      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 320px; margin: 0 auto 20px;">
+        <button class="accent-solid-btn large-btn system-dl-link" data-platform="windows">Download for Windows (.exe)</button>
+        <button class="secondary-btn large-btn system-dl-link" data-platform="macos" style="border: 1px solid var(--line);">Download for macOS (.dmg)</button>
+      </div>
+      <p style="font-size: 0.78rem; color: var(--muted); margin: 0;">Multi-monitor rendering and automated launch configurations included.</p>
+    </div>
+  </div>
+
+  <!-- Dynamic Core Engine Modules -->
   <script src="clocks/clock-definitions.js"></script>
   <script src="clocks/clock1/binary.js"></script>
   <script src="clocks/clock2/rolling.js"></script>
