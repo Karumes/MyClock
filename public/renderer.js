@@ -403,7 +403,7 @@ function initModals() {
   }
   if (stripeBtn) {
     stripeBtn.addEventListener("click", () => {
-      window.electronAPI.openExternal("https://donate.stripe.com/test_6oU8wIaSg6I8fLBbVN9Ve00");
+      window.electronAPI.openExternal("https://donate.stripe.com/14A14g1hD0lrdxzdycdUY02");
     });
   }
 
