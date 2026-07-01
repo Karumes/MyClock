@@ -14,40 +14,14 @@ const colorPresets = {
 };
 
 const clocks = window.KARUMES_CLOCKS || [];
-
-// Browser Native Compatibility Fallbacks (overriding secure Electron IPC safely)
-const isBrowserEnv = typeof window.electronAPI === "undefined";
-const webStorageKey = "karumes_clock_web_settings";
-
-const browserAPI = {
-  loadSettings: async () => {
-    if (!isBrowserEnv) return window.electronAPI.loadSettings();
-    try {
-      const data = localStorage.getItem(webStorageKey);
-      return data ? JSON.parse(data) : null;
-    } catch (e) {
-      console.warn("Storage write blocked inside browser sandbox.", e);
-      return null;
-    }
-  },
-  saveSettings: async (data) => {
-    if (!isBrowserEnv) return window.electronAPI.saveSettings(data);
-    try {
-      localStorage.setItem(webStorageKey, JSON.stringify(data));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  },
-  openExternal: (url) => {
-    if (!isBrowserEnv) return window.electronAPI.openExternal(url);
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-};
+const launchParams = new URLSearchParams(window.location.search);
+const isClockMode = launchParams.get("mode") === "clock";
 
 const state = {
+  section: "library",
   selected: 0,
   activeSelected: 0,
+  pointerStart: null,
   profiles: clocks.map((clock) => ({
     bgColor: clock.defaultBg || "#000000",
     color: clock.defaultAccent || "#ffffff",
@@ -62,7 +36,7 @@ const state = {
 
 async function loadSettings() {
   try {
-    const saved = await browserAPI.loadSettings();
+    const saved = await window.electronAPI.loadSettings();
     if (saved) {
       if (typeof saved.selected === "number" && saved.selected >= 0 && saved.selected < clocks.length) {
         state.selected = saved.selected;
@@ -87,12 +61,13 @@ async function saveSettings() {
       selected: state.activeSelected,
       profiles: state.profiles,
     };
-    await browserAPI.saveSettings(dataToSave);
+    await window.electronAPI.saveSettings(dataToSave);
   } catch (error) {
     console.error("Failed to save clock settings:", error);
   }
 }
 
+const platform = document.getElementById("platform");
 const librarySection = document.getElementById("library-section");
 const clockGrid = document.getElementById("clock-grid");
 const saver = document.getElementById("saver");
@@ -180,7 +155,6 @@ function executeRenderer(renderer, ctx, w, h, clock, profile, baseSize, sizeScal
 
 function renderClock(ctx, canvas, index, now) {
   const clock = clocks[index];
-  if (!clock) return;
   const profile = state.profiles[index];
   const w = canvas.width;
   const h = canvas.height;
@@ -213,31 +187,22 @@ function createClockCard(clock, index) {
   card.type = "button";
   card.setAttribute("aria-label", `${clock.name} clock`);
   card.addEventListener("click", () => launchClock(index, false));
-  
   const img = document.createElement("img");
   img.className = "clock-preview-image";
   img.src = clock.previewImage || ""; 
   img.alt = `${clock.name} preview`;
-  
-  // Custom generated canvas element if visual preview is missing
-  img.onerror = () => {
-    img.style.display = 'none';
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = 320;
-    tempCanvas.height = 180;
-    const tCtx = tempCanvas.getContext("2d");
-    renderClock(tCtx, tempCanvas, index, new Date());
-    card.appendChild(tempCanvas);
-  };
-
-  card.appendChild(img);
+  img.style.width = "100%";
+  img.style.height = "100%";
+  img.style.objectFit = "contain";
+  const shine = document.createElement("span");
+  shine.className = "card-shine";
+  card.append(img, shine);
   clockGrid.appendChild(card);
   if (revealObserver) revealObserver.observe(card);
   else requestAnimationFrame(() => card.classList.add("revealed"));
 }
 
 function buildGrid() {
-  clockGrid.innerHTML = "";
   clocks.forEach(createClockCard);
   updateSelectionUI();
 }
@@ -249,6 +214,11 @@ function updateSelectionUI() {
   });
 }
 
+function setSection(section) {
+  state.section = section;
+  librarySection.classList.toggle("active", section === "library");
+}
+
 function launchClock(index, makeActive = false) {
   state.selected = index;
   if (makeActive) {
@@ -256,7 +226,7 @@ function launchClock(index, makeActive = false) {
     saveSettings();
   }
   updateSelectionUI();
-  document.body.style.overflow = "hidden"; // Block page scrolling when active
+  platform.classList.add("hidden");
   saver.classList.remove("hidden");
   closeSettings();
   resizeMainCanvas();
@@ -264,9 +234,10 @@ function launchClock(index, makeActive = false) {
 }
 
 function returnHome() {
+  if (isClockMode) return;
   saver.classList.add("hidden");
   settingsPanel.classList.add("hidden");
-  document.body.style.overflow = ""; // Restore page scrolling
+  platform.classList.remove("hidden");
   updateSelectionUI();
 }
 
@@ -378,6 +349,23 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
+function requestCloseApp() {
+  if (window.electronAPI && typeof window.electronAPI.closeApp === "function") {
+    window.electronAPI.closeApp();
+  }
+}
+
+function handleClockModeMouseMove(event) {
+  if (!isClockMode) return;
+  if (!state.pointerStart) {
+    state.pointerStart = { x: event.screenX, y: event.screenY };
+    return;
+  }
+  if (Math.hypot(event.screenX - state.pointerStart.x, event.screenY - state.pointerStart.y) >= 5) {
+    requestCloseApp();
+  }
+}
+
 const WEB3FORMS_ACCESS_KEY = "5f0c4abe-c128-4c14-9add-346edee2740c"; 
 
 function initModals() {
@@ -402,17 +390,6 @@ function initModals() {
   const paypalBtn = document.getElementById("paypal-donate-btn");
   const stripeBtn = document.getElementById("stripe-donate-btn");
 
-  const downloadModal = document.getElementById("download-modal");
-  const closeDownloadModal = document.getElementById("close-download-modal");
-
-  const openModal = (modal) => {
-    modal.classList.remove("hidden");
-  };
-
-  const closeModal = (modal) => {
-    modal.classList.add("hidden");
-  };
-
   if (donateBtn) {
     donateBtn.addEventListener("click", () => openModal(supportModal));
   }
@@ -421,30 +398,22 @@ function initModals() {
   }
   if (paypalBtn) {
     paypalBtn.addEventListener("click", () => {
-      browserAPI.openExternal("https://www.paypal.com/ncp/payment/L5YJBZE3DX6DQ");
+      window.electronAPI.openExternal("https://www.paypal.com/ncp/payment/L5YJBZE3DX6DQ");
     });
   }
   if (stripeBtn) {
     stripeBtn.addEventListener("click", () => {
-      browserAPI.openExternal("https://donate.stripe.com/14A14g1hD0lrdxzdycdUY02");
+      window.electronAPI.openExternal("https://donate.stripe.com/14A14g1hD0lrdxzdycdUY02");
     });
   }
 
-  // Bind Web Download Gateways
-  document.querySelectorAll(".web-download-btn").forEach(btn => {
-    btn.addEventListener("click", () => openModal(downloadModal));
-  });
-  if (closeDownloadModal) {
-    closeDownloadModal.addEventListener("click", () => closeModal(downloadModal));
-  }
+  const openModal = (modal) => {
+    modal.classList.remove("hidden");
+  };
 
-  document.querySelectorAll(".system-dl-link").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const platformType = e.currentTarget.dataset.platform;
-      alert(`Preparing package for ${platformType}. The setup script will download directly. This is a mockup deployment endpoint.`);
-      closeModal(downloadModal);
-    });
-  });
+  const closeModal = (modal) => {
+    modal.classList.add("hidden");
+  };
 
   authorWidget.addEventListener("click", () => openModal(authorModal));
   closeAuthorModal.addEventListener("click", () => closeModal(authorModal));
@@ -459,7 +428,7 @@ function initModals() {
   });
   closeFeedbackModal.addEventListener("click", () => closeModal(feedbackModal));
 
-  [authorModal, historyModal, feedbackModal, supportModal, downloadModal].forEach((modal) => {
+  [authorModal, historyModal, feedbackModal, supportModal].forEach((modal) => {
     modal.addEventListener("click", (e) => {
       if (e.target === modal) {
         closeModal(modal);
@@ -478,7 +447,8 @@ function initModals() {
 
     const payload = {
       access_key: WEB3FORMS_ACCESS_KEY,
-      subject: `[Karumes Web Feedback] ${subject}`,
+      subject: `[Karumes Feedback] ${subject}`,
+
       message: `Message:\n${message}`,
     };
 
@@ -508,10 +478,10 @@ function initModals() {
     } finally {
       submitBtn.disabled = false;
     }
-  });
-}
+  });}
 
 function initEvents() {
+  document.getElementById("brand-btn").addEventListener("click", () => setSection("library"));
   launchBtn.addEventListener("click", () => launchClock(state.selected, true));
   dashboardSettingsBtn.addEventListener("click", () => {
     state.selected = state.activeSelected;
@@ -529,9 +499,12 @@ function initEvents() {
     input.addEventListener("input", updateProfileFromControls);
     input.addEventListener("change", updateProfileFromControls);
   });
+  window.addEventListener("mousemove", handleClockModeMouseMove, { passive: true });
+  window.addEventListener("mousedown", () => { if (isClockMode) requestCloseApp(); });
+  window.addEventListener("keydown", () => { if (isClockMode) requestCloseApp(); });
   window.addEventListener("resize", resizeMainCanvas);
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
+    if (!isClockMode && event.key === "Escape" && !saver.classList.contains("hidden")) returnHome();
   });
 
   initModals();
@@ -543,6 +516,11 @@ async function init() {
   buildGrid();
   initEvents();
   resizeMainCanvas();
+  setSection("library");
+  if (isClockMode) {
+    document.body.classList.add("clock-mode");
+    launchClock(state.selected, false);
+  }
   requestAnimationFrame(loop);
 }
 
