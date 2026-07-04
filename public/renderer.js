@@ -28,6 +28,7 @@ const state = {
     colonColor: clock.defaultColon || "#ffffff",
     cardColor: clock.defaultSurface || "#d9dfe8",
     fontFamily: clock.defaultFont || "rounded",
+    difficulty: clock.defaultDifficulty || "easy",
     sizeScale: clock.defaultSizeScale || 1,
     fontSizeScale: clock.defaultFontSizeScale || 1,
     panelSizeScale: 1,
@@ -80,6 +81,7 @@ const fontInput = document.getElementById("font-custom-color");
 const colonInput = document.getElementById("colon-custom-color");
 const cardInput = document.getElementById("card-custom-color");
 const fontSelect = document.getElementById("font-family-select");
+const difficultySelect = document.getElementById("difficulty-select");
 const sizeScaleInput = document.getElementById("clock-size-scale");
 const fontSizeScaleInput = document.getElementById("text-size-scale");
 const panelSizeScaleInput = document.getElementById("panel-size-scale");
@@ -125,6 +127,7 @@ function buildRendererOptions(clock, profile) {
     circleDigitColor: profile.colonColor,
     cardColor: profile.cardColor,
     fontFamily: fontFamilies[profile.fontFamily] || fontFamilies.rounded,
+    mathDifficulty: profile.difficulty,
     sizeScale: profile.sizeScale,
     fontSizeScale: profile.fontSizeScale,
     panelSizeScale: profile.panelSizeScale,
@@ -301,6 +304,7 @@ function openSettings() {
   colonInput.value = profile.colonColor;
   cardInput.value = profile.cardColor;
   fontSelect.value = profile.fontFamily;
+  difficultySelect.value = profile.difficulty;
   if (sizeScaleInput) {
     sizeScaleInput.setAttribute("max", "10"); 
     sizeScaleInput.setAttribute("step", "0.05");
@@ -327,6 +331,7 @@ function updateProfileFromControls() {
   profile.colonColor = colonInput.value;
   profile.cardColor = cardInput.value;
   profile.fontFamily = fontSelect.value;
+  profile.difficulty = difficultySelect.value;
   profile.sizeScale = Number(sizeScaleInput.value);
   profile.fontSizeScale = Number(fontSizeScaleInput.value);
   profile.panelSizeScale = Number(panelSizeScaleInput.value);
@@ -495,7 +500,7 @@ function initEvents() {
     await saveSettings();
     returnHome();
   });
-  [bgInput, fontInput, colonInput, cardInput, fontSelect, sizeScaleInput, fontSizeScaleInput, panelSizeScaleInput].forEach((input) => {
+  [bgInput, fontInput, colonInput, cardInput, fontSelect, difficultySelect, sizeScaleInput, fontSizeScaleInput, panelSizeScaleInput].forEach((input) => {
     input.addEventListener("input", updateProfileFromControls);
     input.addEventListener("change", updateProfileFromControls);
   });

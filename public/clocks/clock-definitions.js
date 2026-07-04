@@ -98,5 +98,18 @@
       defaultSizeScale: 0.85,
       centerZoom: true,
     },
+    {
+      name: "Clock 9",
+      renderer: "renderClock9",
+      previewImage: "clock9.png",
+      size: 260,
+      defaultAccent: "#d8f7ff",
+      defaultFont: "condensed",
+      defaultDifficulty: "easy",
+      hasNumbers: true,
+      controls: ["bg", "primary", "font", "difficulty", "size"],
+      defaultSizeScale: 1.05,
+      centerZoom: true,
+    },
   ];
 })();
