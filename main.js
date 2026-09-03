@@ -79,7 +79,7 @@ function createWindows() {
         win.webContents.insertCSS("* { cursor: none !important; }");
       });
 
-      win.loadFile(path.join(__dirname, "public", "index.html"), {
+      win.loadFile(path.join(__dirname, "index.html"), {
         query: { mode },
       });
 
@@ -108,7 +108,7 @@ function createWindows() {
       },
     });
 
-    win.loadFile(path.join(__dirname, "public", "index.html"), {
+    win.loadFile(path.join(__dirname,  "index.html"), {
       query: { mode },
     });
     windows.push(win);

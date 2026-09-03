@@ -34,7 +34,7 @@
 
       <footer class="library-footer">
         <div id="author-widget" class="author-widget" title="Click to view full profile">
-          <img src="build/icon.ico" alt="Author Icon" class="author-avatar" onerror="this.src='katsu_face.png'"/>
+          <img src="katsu_face.png" alt="Author Icon" class="author-avatar" onerror="this.src='katsu_face.png'"/>
           <div class="author-info">
             <span class="author-name">Katsu</span>
             <span class="author-desc-brief">Designer & Developer of Karumes Clock</span>
@@ -47,7 +47,6 @@
         <div class="footer-actions">
           <button id="donate-btn" type="button">Donate</button>
           <button id="feedback-btn" type="button">Feedback</button>
-          <button id="history-btn" type="button">Version History</button>  
         </div>
       </footer>
     </section>
@@ -56,7 +55,6 @@
   <section id="saver" class="saver hidden" aria-label="Selected clock">
     <canvas id="clockCanvas"></canvas>
     <div id="saver-actions" class="saver-actions">
-      <!-- 【修正】ラズパイでのリンク切れを防ぐため、大文字「HOME.png」に修正 -->
       <button id="home-btn" type="button" aria-label="Back to Karumes">
         <img src="home.png" alt="Home">
       </button>
@@ -208,9 +206,9 @@
 
   <div id="author-modal" class="modal-overlay hidden">
     <div class="modal-content">
-      <button class="modal-close" id="close-author-modal" type="button">&times;</button>
+      <button class="modal-close" id="close-author-modal" type="button"></button>
       <div class="modal-profile">
-        <img src="build/icon.ico" alt="Author Icon" class="modal-avatar" onerror="this.src='katsu_face.png'"/>
+        <img src="katsu_face.png" alt="Author Icon" class="modal-avatar" onerror="this.src='katsu_face.png'"/>
         <h2>Katsu</h2>
         <p class="modal-subtitle">UI Designer & Developer</p>
         <hr class="modal-divider"/>
@@ -224,7 +222,7 @@
 
   <div id="support-modal" class="modal-overlay hidden">
     <div class="modal-content">
-      <button class="modal-close" id="close-support-modal" type="button">&times;</button>
+      <button class="modal-close" id="close-support-modal" type="button"></button>
       <h2 class="modal-title">Support Karumes Clock</h2>
 
       <p class="modal-subtitle" style="font-size: 0.92rem; line-height: 1.5; color: rgba(255, 255, 255, 0.85); margin-bottom: 18px;">
@@ -254,34 +252,9 @@
     </div>
 </div>
 
-
-  <div id="history-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <button class="modal-close" id="close-history-modal" type="button">&times;</button>
-      <h2 class="modal-title">Version History</h2>
-      <hr class="modal-divider"/>
-      <div class="history-list">
-        <div class="history-item">
-          <div class="history-meta">
-            <span class="history-version">v1.0.0</span>
-            <span class="history-date">Initial Release</span>
-          </div>
-          <ul class="history-notes">
-            <ul class="history-notes">
-              <li>Launched 9 distinctive clock designs.</li>
-              <li>Implemented seamless multi-monitor support across all connected displays.</li>
-              <li>Introduced a dynamic settings menu to customize colors, surfaces, and fonts.</li>
-              <li>Provided a native Windows screensaver setup script for effortless installation.</li>
-            </ul>
-          </ul>
-        </div> 
-      </div>
-    </div>
-  </div>
-
   <div id="feedback-modal" class="modal-overlay hidden">
     <div class="modal-content">
-      <button class="modal-close" id="close-feedback-modal" type="button">&times;</button>
+      <button class="modal-close" id="close-feedback-modal" type="button"></button>
       <h2 class="modal-title">Share Your Thoughts!</h2>
       <p class="modal-subtitle">Whether it's a feature request, a bug report, or just some love for the app, I'd love to hear from you! Your message goes straight to my inbox.</p>
       <hr class="modal-divider"/>

@@ -957,30 +957,56 @@ button {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* ==========================================================================
+   Modal Close Button (Matching Settings Close Button Style)
+   ========================================================================== */
 .modal-close {
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--line);
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--ink);
-  font-size: 1.2rem;
-  display: flex;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 180ms ease, background 180ms ease;
-  padding: 0 0 5px 0; 
-  line-height: 1;
+  overflow: hidden;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.modal-close::before,
+.modal-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 2px;
+  background-color: var(--ink);
+  border-radius: 999px;
+  transition: background-color 180ms ease;
+}
+
+.modal-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.modal-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .modal-close:hover {
   transform: rotate(90deg);
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  border-color: rgba(105, 247, 255, 0.52);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.modal-close:hover::before,
+.modal-close:hover::after {
+  background-color: #ffffff;
 }
 
 .modal-title {
@@ -1051,12 +1077,6 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.history-version {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #ffffff;
 }
 
 .history-date {
