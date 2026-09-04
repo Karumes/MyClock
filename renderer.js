@@ -985,16 +985,23 @@ function initEvents() {
   // モーダル関連のイベント初期化を追加
   initModals();
 }
-
 async function init() {
-  await loadSettings();
-  
+  // フォントがCanvas描画前に完全にロードされるよう待機
   if (document.fonts) {
-    Object.values(fontFamilies).forEach((family) => {
-      document.fonts.load(`10px ${family}`);      
-      document.fonts.load(`700 10px ${family}`);  
+    const loadPromises = Object.values(fontFamilies).map((family) => {
+      return Promise.all([
+        document.fonts.load(`10px ${family}`),
+        document.fonts.load(`700 10px ${family}`)
+      ]);
     });
+    try {
+      await Promise.all(loadPromises);
+    } catch (e) {
+      console.warn("Some fonts failed to load dynamically", e);
+    }
   }
+
+  await loadSettings();
 
   buildColorSwatches();
   buildGrid();
