@@ -1,11 +1,10 @@
-/* style.css 全体 */
 :root {
   color-scheme: dark;
   --glow-x: 50%;
   --glow-y: 42%;
   --black: #000000;
   --ink: #f8fbff;
-  --muted: rgba(235, 244, 255, 0.66);
+  --muted: rgba(235, 244, 255, 0.68);
   --glass: rgba(255, 255, 255, 0.075);
   --glass-strong: rgba(255, 255, 255, 0.13);
   --line: rgba(255, 255, 255, 0.16);
@@ -79,7 +78,7 @@ button {
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
-/* ブランドマーク単独：ホバーエフェクトを完全排除 */
+/* ブランドマークホバー無効化 */
 .brand-mark {
   background: transparent !important;
   border: none !important;
@@ -103,7 +102,6 @@ button {
   object-fit: contain;
 }
 
-/* ブランドマークにホバーしても何もないように設定 */
 .brand-mark:hover {
   transform: none !important;
   border-color: transparent !important;
@@ -142,7 +140,7 @@ button {
 }
 
 /* ==========================================================================
-   時計グリッド & カード (LAUNHCE用の光る枠線強化を含む)
+   時計グリッド & カード
    ========================================================================== */
 .clock-grid {
   display: grid;
@@ -178,7 +176,7 @@ button {
   box-shadow: 0 22px 85px rgba(0, 0, 0, 0.44), 0 0 46px rgba(105, 247, 255, 0.22);
 }
 
-/* 起動した時計（LAUNCHしたやつ）に光る枠線を適用・より洗練させて移動を際立たせる */
+/* LAUNCHされた時計（選択中）の枠線をホールド */
 .clock-card.selected {
   border-color: rgba(105, 247, 255, 0.95) !important;
   transform: translateY(-4px) scale(1.015);
@@ -205,7 +203,6 @@ button {
   background: #000000;
 }
 
-/* ホバー時のシャイン（光沢）アニメーション */
 .card-shine {
   position: absolute;
   inset: 0;
@@ -351,7 +348,7 @@ button {
 }
 
 /* ==========================================================================
-   設定パネル & 各行のUI要素
+   設定パネル
    ========================================================================== */
 .settings-panel {
   position: fixed;
@@ -404,7 +401,7 @@ button {
 
 .settings-color,
 .settings-row {
-  height: 58px;            
+  height: auto;            
   min-height: 58px;
   padding: 12px 14px;
   border: 1px solid rgba(255,255,255,0.08);
@@ -760,20 +757,20 @@ button {
 }
 
 /* ==========================================================================
-   ホーム画面フッター & グラス調統一デザイン
+   ホーム画面フッター（ユーザーフレンドリー対応）
    ========================================================================== */
 .library-footer {
   margin-top: 52px;
-  padding: 24px;
+  padding: 24px 30px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  background: rgba(14, 18, 26, 0.85); /* 設定パネルと同じダーク調グラスに変更 */
+  background: rgba(14, 18, 26, 0.88); 
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 28px;
   flex-wrap: wrap;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
@@ -784,66 +781,70 @@ button {
   gap: 20px;
   cursor: pointer;
   transition: transform 180ms ease, opacity 180ms ease;
+  flex: 1 1 500px;
 }
 
 .author-widget:hover {
-  opacity: 0.95;
+  opacity: 0.98;
   transform: translateY(-1px);
 }
 
 .author-avatar {
-  width: 58px;
-  height: 58px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  border: 1.5px solid rgba(105, 247, 255, 0.35); /* サイバーネオン調アバターリング */
+  border: 2px solid rgba(105, 247, 255, 0.45); 
   object-fit: cover;
-  box-shadow: 0 0 14px rgba(105, 247, 255, 0.15);
+  box-shadow: 0 0 14px rgba(105, 247, 255, 0.2);
+  flex-shrink: 0;
 }
 
 .author-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .author-name {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 750;
   color: #ffffff;
 }
 
 .author-desc-brief {
   font-size: 0.82rem;
-  color: var(--cyan); /* メインのシアンで一貫性を持たせる */
-  font-weight: 500;
+  color: var(--cyan); 
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .author-message {
-  font-size: 0.92rem;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.45;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  padding-left: 20px;
+  font-size: 0.94rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.6;
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  padding-left: 24px;
 }
 
 .footer-actions {
   display: flex;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .footer-actions button {
-  height: 38px;
-  padding: 0 18px;
+  height: 40px;
+  padding: 0 20px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
-/* ドネーション（寄付）ボタン */
 #donate-btn {
   color: var(--cyan);
   background: rgba(105, 247, 255, 0.08) !important;
@@ -858,13 +859,13 @@ button {
 }
 
 /* ==========================================================================
-   モーダル / フィードバック / バージョン履歴（サイバーグラス調）
+   モーダル / フィードバック / 寄付（ユーザーフレンドリー対応）
    ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(3, 5, 8, 0.8);
+  background: rgba(3, 5, 8, 0.82);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   display: flex;
@@ -881,14 +882,14 @@ button {
 }
 
 .modal-content {
-  background: rgba(14, 18, 26, 0.96); /* 設定パネルと同一のグラス背景 */
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(14, 18, 26, 0.98); 
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
-  width: min(500px, 100%);
+  width: min(540px, 100%); 
   max-height: 85vh;
   overflow-y: auto;
-  padding: 30px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  padding: 34px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.75);
   position: relative;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -950,24 +951,24 @@ button {
 }
 
 .modal-title {
-  font-size: 1.35rem;
-  font-weight: 750;
-  margin: 0 0 14px;
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin: 0 0 16px;
   color: #ffffff;
   letter-spacing: -0.2px;
 }
 
 .modal-subtitle {
-  font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.72);
-  line-height: 1.5;
-  margin: 0 0 14px;
+  font-size: 0.94rem;
+  color: rgba(255, 255, 255, 0.88); 
+  line-height: 1.6;
+  margin: 0 0 16px;
 }
 
 .modal-divider {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 22px 0;
 }
 
 .modal-profile {
@@ -978,17 +979,17 @@ button {
 }
 
 .modal-avatar {
-  width: 96px;
-  height: 96px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  border: 2px solid rgba(105, 247, 255, 0.4);
+  border: 2px solid rgba(105, 247, 255, 0.45);
   object-fit: cover;
-  margin-bottom: 16px;
-  box-shadow: 0 0 20px rgba(105, 247, 255, 0.2);
+  margin-bottom: 18px;
+  box-shadow: 0 0 24px rgba(105, 247, 255, 0.25);
 }
 
 .modal-profile h2 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 800;
   margin: 0 0 4px;
   color: #ffffff;
@@ -996,16 +997,17 @@ button {
 
 .modal-profile .modal-subtitle {
   color: var(--cyan);
-  font-weight: 600;
-  font-size: 0.88rem;
-  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 20px;
+  letter-spacing: 0.4px;
 }
 
 .modal-description {
   text-align: left;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.96rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
 }
 
@@ -1014,14 +1016,14 @@ button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .support-card-btn {
-  height: 52px;
+  height: 54px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1029,7 +1031,6 @@ button {
   transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
-/* ホバー時にブランドの色（PayPal=ゴールド、Stripe=ライトパープル）の輝きを薄く帯びる */
 .support-card-btn.paypal {
   border-color: rgba(255, 209, 64, 0.25);
 }
@@ -1041,7 +1042,7 @@ button {
 }
 
 .support-card-btn.stripe {
-  border-color: rgba(99, 91, 255, 0.2);
+  border-color: rgba(99, 91, 255, 0.25);
 }
 .support-card-btn.stripe:hover {
   transform: translateY(-2px);
@@ -1054,7 +1055,7 @@ button {
 .feedback-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .form-group {
@@ -1064,218 +1065,259 @@ button {
 }
 
 .form-group label {
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.88);
 }
 
-/* 設定パネル内の入力要素と同様のシックなインプットに変更 */
 .form-group input,
 .form-group textarea {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
-  padding: 12px 14px;
+  padding: 12px 16px;
   outline: none;
-  font-size: 0.9rem;
+  font-size: 0.94rem;
   transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.38); 
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: rgba(105, 247, 255, 0.52);
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 0 14px rgba(105, 247, 255, 0.12);
+  border-color: rgba(105, 247, 255, 0.65);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 16px rgba(105, 247, 255, 0.16);
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .feedback-status {
-  font-size: 0.84rem;
-  line-height: 1.4;
-  margin-top: 8px;
-  border-radius: 6px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-top: 10px;
+  border-radius: 8px;
+  padding: 8px 14px;
 }
 
 .feedback-status.sending {
   color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .feedback-status.success {
   color: var(--green);
+  background: rgba(137, 255, 191, 0.08);
+  border: 1px solid rgba(137, 255, 191, 0.2);
 }
 
 .feedback-status.error {
   color: var(--pink);
+  background: rgba(255, 79, 216, 0.08);
+  border: 1px solid rgba(255, 79, 216, 0.2);
 }
+
 
 /* ==========================================================================
-   レスポンシブデザイン
+   レスポンシブデザイン (TV、タブレット、スマホ、超小画面)
    ========================================================================== */
-@media (max-width: 768px) {
-  .author-widget {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+
+/* 1. 超大画面 (TV / 4K / ウルトラワイドモニターなど) */
+@media (min-width: 1920px) {
+  .platform-shell {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 40px 80px 100px;
   }
-  .author-message {
-    border-left: none;
-    padding-left: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    padding-top: 12px;
+  .clock-grid {
+    grid-template-columns: repeat(4, 1fr); /* 4列に拡張して大画面に対応 */
+    gap: 32px;
+  }
+  .library-footer {
+    max-width: 1600px;
+    margin-top: 80px;
   }
 }
 
-@media (max-width: 680px) {
+/* 2. デスクトップ通常 (1200px - 1919px) */
+@media (max-width: 1400px) {
+  .clock-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3列に自動調整 */
+  }
+}
+
+/* 3. タブレット（横・縦）および小型PC (768px - 1199px) */
+@media (max-width: 1199px) {
+  .clock-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2列に制限 */
+    gap: 20px;
+  }
+}
+
+/* 4. タブレット（縦）およびスマホ横 (481px - 767px) */
+@media (max-width: 767px) {
+  .platform-shell {
+    padding: 20px 24px 60px;
+  }
+  .topbar {
+    padding: 10px 0;
+  }
+  .clock-grid {
+    grid-template-columns: 1fr; /* 横幅を確保するため1列表示 */
+    max-width: 480px;
+    margin: 0 auto;
+  }
   .library-footer {
     flex-direction: column;
     align-items: stretch;
-    gap: 18px;
+    gap: 20px;
+    padding: 20px;
+  }
+  .author-widget {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    width: 100%;
+  }
+  .author-message {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-left: 0;
+    padding-top: 16px;
+    text-align: center;
+  }
+  .footer-actions {
+    justify-content: center;
+    width: 100%;
+  }
+  .footer-actions button {
+    flex: 1; /* タブレットでのタップしやすさを考慮し全幅均等配置 */
+  }
+  
+  /* 設定パネルのタブレット・スマホ対応 */
+  .settings-panel {
+    top: auto !important;
+    bottom: 20px !important;
+    left: 20px !important;
+    right: 20px !important;
+    width: auto !important;
+    max-height: 70vh !important;
+    border-radius: 20px !important;
   }
 }
 
+/* 5. スマートフォン (320px - 480px) */
 @media (max-width: 480px) {
   .platform-shell {
     padding: 16px 16px 44px;
   }
-
   .topbar {
-    padding: 8px 0 14px;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+    padding: 8px 0 16px;
   }
-
   .brand-mark {
-    height: 40px;
+    height: 38px;
   }
-
   .brand-mark img {
-    max-width: 130px;
+    max-width: 120px;
   }
-
-  .clock-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  
+  /* モーダルのスマホ画面はみ出し・見切れ対策 */
+  .modal-content {
+    padding: 20px;
+    border-radius: 16px;
+    margin: 10px;
+    max-height: 90vh;
   }
-
-  .saver-actions {
-    top: auto !important;
-    bottom: 24px !important;
-    right: 50% !important;
-    transform: translateX(50%) !important;
-    gap: 16px;
+  .modal-title {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
   }
-
+  .modal-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .modal-avatar {
+    width: 80px;
+    height: 80px;
+  }
+  .support-options {
+    grid-template-columns: 1fr; /* スマホでは縦並びにしてタップ領域を拡張 */
+    gap: 12px;
+  }
+  .support-card-btn {
+    height: 48px;
+  }
+  
+  /* スマホの親指で最も操作しやすい「ボトムシート」形状へ滑らかに変化 */
   .settings-panel {
-    top: auto !important;
-    bottom: 12px !important;
-    left: 12px !important;
-    right: 12px !important;
-    width: auto !important;
-    border-radius: 20px !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    border-radius: 24px 24px 0 0 !important;
     max-height: 75vh !important;
-    overflow-y: auto !important;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+    padding: 20px 16px 30px !important;
+    border-bottom: none;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
   }
-
+  
+  /* 要素の折り返し（wrap）を許可し、極小画面での窮屈なはみ出しを解消 */
   .settings-color, .settings-row {
-    padding: 8px 12px;
+    padding: 10px 12px;
     height: auto;
     min-height: 52px;
     border-radius: 12px;
+    flex-wrap: wrap; 
   }
-
-  .custom-select-wrapper, .settings-panel input[type="range"] {
-    width: 130px !important;
-    min-width: 130px !important;
+  
+  .settings-color span, .settings-row span {
+    font-size: 0.9rem;
   }
-
+  
+  .custom-select-wrapper, 
+  .settings-panel input[type="range"] {
+    width: 100% !important; /* スマホ時は100%幅で美しくフィット */
+    min-width: 100% !important;
+    margin-top: 6px;
+  }
+  
   .color-swatches {
-    gap: 4px;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 6px;
   }
-
+  
   .settings-panel .color-swatch {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    min-height: 24px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
   }
 }
 
-/* ==========================================================================
-   カスタムフォント定義
-   ========================================================================== */
-@font-face {
-  font-family: 'font-1';
-  src: url('fonts/Quicksand-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-2';
-  src: url('fonts/Segoe UI Bold.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-3';
-  src: url('fonts/Poppins-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-4';
-  src: url('fonts/Oswald-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-5';
-  src: url('fonts/Scrapitup-EEK4.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-6';
-  src: url('fonts/Kbsticktoit-vJ3M.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-7';
-  src: url('fonts/GamjaFlower-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-8';
-  src: url('fonts/CupcakePartyDemo-46xK.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'font-9';
-  src: url('fonts/OblataDisplayRegular-Zp8o8.otf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
+/* 6. 超小型スマートフォン (320px以下) */
+@media (max-width: 320px) {
+  .platform-shell {
+    padding: 12px 10px;
+  }
+  .author-avatar {
+    width: 50px;
+    height: 50px;
+  }
+  .author-message {
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
 }

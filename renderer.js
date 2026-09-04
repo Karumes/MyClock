@@ -1,13 +1,13 @@
 const fontFamilies = {
-  font1: '"font-1"',
-  font2: '"font-2"',
-  font3: '"font-3"',
-  font4: '"font-4"',
-  font5: '"font-5"',   
-  font6: '"font-6"',      
-  font7: '"font-7"',
-  font8: '"font-8"',    
-  font9: '"font-9"',
+  font1: 'font-1',
+  font2: 'font-2',
+  font3: 'font-3',
+  font4: 'font-4',
+  font5: 'font-5',   
+  font6: 'font-6',      
+  font7: 'font-7',
+  font8: 'font-8',    
+  font9: 'font-9',
 };
 
 const colorPresets = {
@@ -43,8 +43,8 @@ const state = {
     showDay: false,
     showSeconds: true,
     showMidline: true,
-    showWave: true,      // 波の状態の初期値
-    showDigital: false,   // デジタル表示の状態の初期値
+    showWave: true,      
+    showDigital: false,   
     compiledOptions: null,
   })),
 };
@@ -290,7 +290,8 @@ function createClockCard(clock, index) {
   card.type = "button";
   card.setAttribute("aria-label", `${clock.name} clock`);
   
-  card.addEventListener("click", () => launchClock(index, true));
+  // 【バグ修正】第二引数を false に設定。一覧でのクリック時はプレビュー扱いとし、Applyされるまで枠線の光は移動させない。
+  card.addEventListener("click", () => launchClock(index, false));
   
   const img = document.createElement("img");
   img.className = "clock-preview-image";
@@ -687,7 +688,6 @@ function handleClockModeMouseMove(event) {
   }
 }
 
-// モーダルダイアログ & フィードバック & 寄付リンク制御
 function initModals() {
   const authorWidget = document.getElementById("author-widget");
   const authorModal = document.getElementById("author-modal");
@@ -819,7 +819,6 @@ function initEvents() {
   const brandBtn = document.getElementById("brand-btn");
   if (brandBtn) brandBtn.addEventListener("click", () => setSection("library"));
 
-  // 旧UI互換用ボタンのイベントリスナー
   const launchBtn = document.getElementById("launch-btn");
   if (launchBtn) {
     launchBtn.addEventListener("click", () => launchClock(state.selected, true));
@@ -834,6 +833,7 @@ function initEvents() {
   const applyBtn = document.getElementById("apply-btn");
   if (applyBtn) {
     applyBtn.addEventListener("click", async () => {
+      // ユーザーが明示的にLaunchを押したときのみ、アクティブなインデックスを上書き
       state.activeSelected = state.selected;
       await saveSettings();
       returnHome();
@@ -982,11 +982,10 @@ function initEvents() {
     }, 200);
   });
 
-  // モーダル関連のイベント初期化を追加
   initModals();
 }
+
 async function init() {
-  // フォントがCanvas描画前に完全にロードされるよう待機
   if (document.fonts) {
     const loadPromises = Object.values(fontFamilies).map((family) => {
       return Promise.all([
