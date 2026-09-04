@@ -724,7 +724,7 @@ function initModals() {
   if (paypalBtn) {
     paypalBtn.addEventListener("click", () => {
       if (window.electronAPI && typeof window.electronAPI.openExternal === "function") {
-        window.electronAPI.openExternal("https://www.paypal.com/ncp/payment/L5YJBZE3DQ6DQ");
+        window.electronAPI.openExternal("https://www.paypal.com/ncp/payment/L5YJBZE3DX6DQ");
       }
     });
   }
